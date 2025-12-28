@@ -1,28 +1,84 @@
-import { useState } from "react";
-import { FaStore, FaUniversity, FaSave } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaStore, FaUniversity, FaSave, FaUser } from "react-icons/fa";
+// 👇 CHANGE 1: Import axios directly to bypass 'api.js' interceptors
+import axios from "axios";
 
 const VendorProfile = () => {
-  // Mock Data (In real app, fetch from API)
+  const [loading, setLoading] = useState(true);
+
+  // Initial State
   const [profile, setProfile] = useState({
-    name: "Rahul Sharma",
-    email: "rahul@myshop.com",
-    phone: "9876543210",
-    businessName: "Rahul Electronics",
-    businessAddress: "Shop 12, MG Road, Mumbai",
-    gst: "27ABCDE1234F1Z5",
-    bankName: "HDFC Bank",
-    bankAccount: "********9876",
-    ifsc: "HDFC0001234",
+    name: "",
+    email: "",
+    phone: "",
+    businessName: "",
+    businessAddress: "",
+    gst: "",
+    bankName: "",
+    bankAccount: "",
+    ifsc: "",
   });
+
+  // Fetch Vendor Data on Page Load
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("vendorToken");
+
+        if (!token) {
+          // If no token, we can't fetch.
+          // (The Layout usually handles redirect, but good to be safe)
+          setLoading(false);
+          return;
+        }
+
+        // 👇 CHANGE 2: Use direct axios call with full URL
+        const response = await axios.get(
+          "http://localhost:5007/api/vendor/me",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // 3. Map Backend Data to Frontend State
+        const data = response.data;
+        setProfile({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          businessName: data.businessName,
+          businessAddress: data.businessAddress,
+          gst: data.gstNumber,
+          bankName: data.bankName,
+          bankAccount: data.bankAccountNumber,
+          ifsc: data.bankIFSC,
+        });
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        // Optional: specific handling for 403
+        if (error.response && error.response.status === 403) {
+          alert("Session expired or unauthorized. Please login again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Profile Updated Successfully!");
+    alert("Profile Update feature coming soon!");
   };
+
+  if (loading) {
+    return <div className="p-10 text-center">Loading Profile...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -39,14 +95,20 @@ const VendorProfile = () => {
               <label className="block text-sm font-medium text-gray-600">
                 Owner Name
               </label>
-              <input
-                type="text"
-                name="name"
-                value={profile.name}
-                onChange={handleChange}
-                className="w-full border p-2 rounded mt-1"
-              />
+              <div className="relative mt-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  disabled
+                  className="w-full border p-2 pl-10 rounded bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-600">
                 Shop Name
@@ -59,18 +121,31 @@ const VendorProfile = () => {
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600">
+                Email
+              </label>
+              <input
+                type="text"
+                value={profile.email}
+                disabled
+                className="w-full border p-2 rounded mt-1 bg-gray-50 text-gray-500"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-600">
                 Phone
               </label>
               <input
                 type="text"
-                name="phone"
                 value={profile.phone}
-                onChange={handleChange}
-                className="w-full border p-2 rounded mt-1"
+                disabled
+                className="w-full border p-2 rounded mt-1 bg-gray-50 text-gray-500"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-600">
                 GST Number
@@ -78,7 +153,7 @@ const VendorProfile = () => {
               <input
                 type="text"
                 name="gst"
-                value={profile.gst}
+                value={profile.gst || "N/A"}
                 disabled
                 className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
               />
@@ -86,6 +161,7 @@ const VendorProfile = () => {
                 Contact Admin to change GST
               </p>
             </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-600">
                 Address
@@ -135,7 +211,7 @@ const VendorProfile = () => {
                 Account Number
               </label>
               <input
-                type="password"
+                type="text"
                 name="bankAccount"
                 value={profile.bankAccount}
                 onChange={handleChange}

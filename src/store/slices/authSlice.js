@@ -16,7 +16,17 @@ const getTokenFromStorage = () => {
 const getUserFromStorage = () => {
   if (typeof window !== "undefined") {
     const user = localStorage.getItem("user");
-    return user ? JSON.parse(user) : null;
+    // Check if user is null, undefined, or the string "undefined"
+    if (!user || user === "undefined") return null;
+
+    try {
+      return JSON.parse(user);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      // Clean up corrupt data automatically
+      localStorage.removeItem("user");
+      return null;
+    }
   }
   return null;
 };

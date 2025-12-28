@@ -1,4 +1,8 @@
 import api from "./api";
+import axios from "axios"; // Import axios directly to bypass default interceptors
+
+// Helper to get the base URL consistent with api.js
+const BASE_URL = "http://localhost:5007/api";
 
 // ==========================================
 // CONFIGURATION: REAL BACKEND CONNECTION
@@ -8,11 +12,8 @@ const USE_MOCK = false;
 // --- PUBLIC ROUTES ---
 
 // 1. Get All Products (Matches: GET /api/products)
-// Supports query params: ?category=Electronics&sort=asc
 export const getProducts = async (params = {}) => {
   if (USE_MOCK) return [];
-
-  // The backend controller accepts 'category' and 'sort' in req.query
   const response = await api.get("/products", { params });
   return response.data;
 };
@@ -20,19 +21,32 @@ export const getProducts = async (params = {}) => {
 // 2. Get Single Product (Matches: GET /api/products/:id)
 export const getProductById = async (id) => {
   if (USE_MOCK) return null;
-
   const response = await api.get(`/products/${id}`);
   return response.data;
 };
 
 // --- VENDOR & ADMIN ROUTES ---
 
+// Helper function to choose the right token and method
+// If a vendor token exists, we prioritize it for creation/updates to support the Vendor Dashboard
+const getAuthHeaders = () => {
+  const vendorToken = localStorage.getItem("vendorToken");
+  const adminToken = localStorage.getItem("token"); // Assuming admin uses the standard auth slice
+
+  // Logic: Use Vendor Token if available, otherwise fall back to Admin/User Token
+  return vendorToken ? `Bearer ${vendorToken}` : `Bearer ${adminToken}`;
+};
+
 // 3. Create Product (Matches: POST /api/products)
-// IMPORTANT: 'productData' must be a FormData object because of file upload
 export const createProduct = async (productData) => {
-  const response = await api.post("/products", productData, {
+  // We use direct axios here to ensure we can control the token priority
+  const token =
+    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+
+  const response = await axios.post(`${BASE_URL}/products`, productData, {
     headers: {
       "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${token}`,
     },
   });
   return response.data;
@@ -40,13 +54,16 @@ export const createProduct = async (productData) => {
 
 // 4. Update Product (Matches: PUT /api/products/:id)
 export const updateProduct = async (id, productData) => {
-  const response = await api.put(`/products/${id}`, productData, {
+  const token =
+    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+
+  const response = await axios.put(`${BASE_URL}/products/${id}`, productData, {
     headers: {
-      // If sending file, use multipart/form-data, otherwise json
       "Content-Type":
         productData instanceof FormData
           ? "multipart/form-data"
           : "application/json",
+      Authorization: `Bearer ${token}`,
     },
   });
   return response.data;
@@ -54,7 +71,14 @@ export const updateProduct = async (id, productData) => {
 
 // 5. Delete Product (Matches: DELETE /api/products/:id)
 export const deleteProduct = async (id) => {
-  const response = await api.delete(`/products/${id}`);
+  const token =
+    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+
+  const response = await axios.delete(`${BASE_URL}/products/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return response.data;
 };
 
@@ -62,9 +86,19 @@ export const deleteProduct = async (id) => {
 export const getVendorProducts = async () => {
   if (USE_MOCK) return [];
 
-  const response = await api.get("/products/vendor/my-products");
+  // 1. Get the Vendor Token explicitly
+  const token = localStorage.getItem("vendorToken");
+
+  if (!token) {
+    throw new Error("No vendor token found. Please login as a vendor.");
+  }
+
+  // 2. Use direct axios call to avoid 'api' interceptor overwriting with customer token
+  const response = await axios.get(`${BASE_URL}/products/vendor/my-products`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   return response.data;
 };
-
-// Note: Your backend routes currently DO NOT have a specific endpoint for 'getCategories'.
-// If you need that, we might need to add it to the backend later.

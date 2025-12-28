@@ -27,6 +27,7 @@ import VendorAddProduct from "./pages/vendor/VendorAddProduct";
 import VendorOrders from "./pages/vendor/VendorOrders";
 import VendorProfile from "./pages/vendor/VendorProfile";
 import AdminSettings from "./pages/admin/AdminSettings";
+import VendorLogin from "./pages/vendor/VendorLogin";
 
 function App() {
   return (
@@ -64,15 +65,17 @@ function App() {
 
           {/* <--- 2. ADD VENDOR ROUTE HERE --- */}
           <Route path="vendor/register" element={<VendorRegister />} />
+          <Route path="vendor/login" element={<VendorLogin />} />
 
           <Route path="shop" element={<Shop />} />
           <Route path="product/:id" element={<ProductDetails />} />
           <Route path="cart" element={<Cart />} />
 
+          <Route path="order-success" element={<OrderSuccess />} />
+
           {/* Protected Customer Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="checkout" element={<Checkout />} />
-            <Route path="order-success" element={<OrderSuccess />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 

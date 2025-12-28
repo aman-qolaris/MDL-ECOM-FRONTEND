@@ -1,19 +1,63 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   FaBox,
   FaChartLine,
   FaClipboardList,
   FaSignOutAlt,
   FaStore,
-  FaUser, // <--- 1. Import User Icon
+  FaUser,
 } from "react-icons/fa";
+import api from "../../services/api";
+import axios from "axios"; // Direct axios for manual token control
 
 const VendorLayout = () => {
   const navigate = useNavigate();
+  const [shopName, setShopName] = useState("My Shop");
+
+  useEffect(() => {
+    const fetchShopName = async () => {
+      const token = localStorage.getItem("vendorToken");
+
+      // 1. If no token, redirect immediately
+      if (!token) {
+        navigate("/vendor/login");
+        return;
+      }
+
+      try {
+        // 2. Fetch Profile
+        // We use direct axios to ensure we send the VENDOR token, not the customer one
+        const response = await axios.get(
+          "http://localhost:5007/api/vendor/me",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data && response.data.businessName) {
+          setShopName(response.data.businessName);
+        }
+      } catch (error) {
+        console.error("Failed to fetch shop name:", error);
+
+        // 3. If 401 (Unauthorized) or 403 (Forbidden), force logout
+        if (
+          error.response &&
+          (error.response.status === 401 || error.response.status === 403)
+        ) {
+          localStorage.removeItem("vendorToken");
+          navigate("/vendor/login");
+        }
+      }
+    };
+
+    fetchShopName();
+  }, [navigate]);
 
   const handleLogout = () => {
-    // In real app: dispatch logout action
-    navigate("/login");
+    localStorage.removeItem("vendorToken");
+    navigate("/vendor/login");
   };
 
   return (
@@ -24,7 +68,9 @@ const VendorLayout = () => {
           <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
             <FaStore /> Vendor Panel
           </h1>
-          <p className="text-purple-300 text-sm mt-1">My Shop Name</p>
+          <p className="text-purple-300 text-sm mt-1 font-medium px-2 truncate">
+            {shopName}
+          </p>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -46,8 +92,6 @@ const VendorLayout = () => {
           >
             <FaClipboardList /> My Orders
           </Link>
-
-          {/* <--- 2. Added Profile Link Here */}
           <Link
             to="/vendor/profile"
             className="flex items-center gap-3 px-4 py-3 hover:bg-purple-700 rounded-lg transition"
@@ -66,12 +110,10 @@ const VendorLayout = () => {
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 overflow-y-auto">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800">Vendor Portal</h2>
-
-          {/* <--- 3. Wrapped Top Right Section in Link */}
           <Link
             to="/vendor/profile"
             className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
@@ -80,7 +122,7 @@ const VendorLayout = () => {
               Verified Seller
             </span>
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600">
-              VS
+              {shopName.charAt(0).toUpperCase()}
             </div>
           </Link>
         </header>

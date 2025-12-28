@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import AddressForm from "../components/checkout/AddressForm";
 import PaymentForm from "../components/checkout/PaymentForm";
 // 1. IMPORT THE NEW PAYMENT SERVICE
+import { clearCartThunk } from "../store/thunks/cartThunks"; // Import Thunk instead of Slice action
 import { initiatePayment } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
 import { clearCart } from "../store/slices/cartSlice";
@@ -26,6 +27,8 @@ const Checkout = () => {
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
 
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+
   // --- FETCH ADDRESSES ON LOAD ---
   useEffect(() => {
     if (user) {
@@ -40,7 +43,7 @@ const Checkout = () => {
     }
   }, [user]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && !isPaymentSuccess) {
     return <Navigate to="/shop" replace />;
   }
 
@@ -68,98 +71,85 @@ const Checkout = () => {
     }
   };
 
-  // --- UPDATED: ORDER SUBMISSION LOGIC ---
   const handleOrderSubmit = async (paymentData) => {
     try {
       setLoading(true);
 
-      // Handle COD separately (no payment popup needed)
+      const payload = {
+        userId: user?.id,
+        items: items.map((item) => ({
+          productId: item.productId,
+          vendorId: item.vendorId || null,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        amount: total,
+        address: shippingAddress,
+        paymentMethod: paymentData.method === "cod" ? "COD" : "RAZORPAY",
+        payment: paymentData.method === "razorpay" ? true : false,
+      };
+
+      // 1. Handle COD
       if (paymentData.method === "cod") {
-        const orderData = {
-          userId: user?.id,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          totalAmount: total,
-          shippingAddress,
-          paymentMethod: "cod",
-          paymentStatus: "Pending",
-        };
+        console.log("Creating COD Order:", payload);
+        const response = await createOrder(payload);
 
-        console.log("Creating COD Order:", orderData);
+        // 👇 SET FLAG TO TRUE FIRST
+        setIsPaymentSuccess(true);
 
-        // Create Order (or use fallback if backend unavailable)
-        let response;
-        try {
-          response = await createOrder(orderData);
-        } catch (error) {
-          console.log("Backend unavailable, using mock order:", error.message);
-          response = { id: "ORD" + Date.now(), orderId: "ORD" + Date.now() };
-        }
-
-        // Clear Cart immediately (synchronous)
-        dispatch(clearCart());
-
-        // Redirect to Success Page
+        // ✅ FIX: Navigate FIRST, then clear cart
         navigate("/order-success", {
           state: {
-            orderId: response.id || response.orderId,
-            orderDetails: {
-              itemCount: items.length,
-              totalAmount: total,
-            },
+            orderId: response.orderId || response.id,
+            orderDetails: { itemCount: items.length, totalAmount: total },
           },
         });
+        dispatch(clearCartThunk());
         return;
       }
 
-      // Handle Razorpay payment
+      // 2. Handle Razorpay
       await initiatePayment(total, user, async (paymentResponse) => {
-        // This runs only if user successfully pays
-        const orderData = {
-          userId: user?.id,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          totalAmount: total,
-          shippingAddress,
-          paymentMethod: "razorpay",
-          paymentId: paymentResponse.razorpay_payment_id,
-          paymentStatus: "Paid",
+        const razorpayPayload = {
+          ...payload,
+          payment: true,
         };
 
-        console.log("Payment Success! Creating Order:", orderData);
+        console.log("Payment Success! Creating Order:", razorpayPayload);
+        const response = await createOrder(razorpayPayload);
 
-        // Create Order (or use fallback if backend unavailable)
-        let response;
-        try {
-          response = await createOrder(orderData);
-        } catch (error) {
-          console.log("Backend unavailable, using mock order:", error.message);
-          response = { id: "ORD" + Date.now(), orderId: "ORD" + Date.now() };
-        }
+        // 👇 SET FLAG TO TRUE FIRST
+        setIsPaymentSuccess(true);
 
-        // Clear Cart immediately (synchronous)
-        dispatch(clearCart());
-
-        // Redirect to Success Page
+        // ✅ FIX: Navigate FIRST, then clear cart
         navigate("/order-success", {
           state: {
-            orderId: response.id || response.orderId,
-            orderDetails: {
-              itemCount: items.length,
-              totalAmount: total,
-            },
+            orderId: response.orderId || response.id,
+            orderDetails: { itemCount: items.length, totalAmount: total },
           },
         });
+        dispatch(clearCartThunk());
       });
     } catch (error) {
-      console.error("Payment or Order Failed", error);
-      alert("Failed to place order. Please try again.");
+      console.error("Order Failed:", error);
+      if (error.response?.status === 400) {
+        alert(
+          "Order failed: " + (error.response.data.message || "Invalid Data")
+        );
+      } else {
+        console.warn("Backend failed, proceeding with Mock Success (Dev Mode)");
+
+        setIsPaymentSuccess(true); // <--- Add here too
+
+        // ✅ FIX: Navigate FIRST here too for the mock fallback
+        navigate("/order-success", {
+          state: {
+            orderId: "MOCK-" + Date.now(),
+            orderDetails: { itemCount: items.length, totalAmount: total },
+          },
+        });
+        dispatch(clearCartThunk());
+      }
     } finally {
       setLoading(false);
     }

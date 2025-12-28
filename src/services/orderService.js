@@ -1,55 +1,75 @@
 import api from "./api";
+import axios from "axios"; // Import axios directly for manual token handling
 
-// 1. DISABLE MOCK
-const USE_MOCK = false;
+// Helper for Base URL (Matches your api.js config)
+const BASE_URL = "http://localhost:5007/api";
+
+// ==================================================
+// 🛍️ CUSTOMER ROUTES
+// ==================================================
 
 // 1. CREATE ORDER (Checkout)
 export const createOrder = async (orderData) => {
-  if (USE_MOCK) return { success: true, id: "mock-id" };
-
-  // Backend Route: POST /orders/checkout
-  console.log("Sending order to backend:", orderData);
   const response = await api.post("/orders/checkout", orderData);
-  console.log("Order created, backend response:", response.data);
   return response.data;
 };
 
-// 2. GET MY ORDERS (Customer)
-export const getMyOrders = async (userId) => {
-  if (USE_MOCK) return [];
-
-  // Backend Route: GET /orders (The controller uses req.user.id from token)
-  // Note: Your backend route is explicitly router.get("/", ...), so we request "/orders"
-  try {
-    const response = await api.get("/orders");
-    console.log("Fetched orders from backend:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Error fetching orders:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
+// 2. GET MY ORDERS (Customer Profile)
+export const getMyOrders = async () => {
+  const response = await api.get("/orders");
+  return response.data;
 };
 
-// 3. GET ALL ORDERS (Admin)
+// 3. GET SINGLE ORDER DETAILS
+export const getOrderById = async (orderId) => {
+  const response = await api.get(`/orders/${orderId}`);
+  return response.data;
+};
+
+// ==================================================
+// 🏢 VENDOR ROUTES (Fixes 401 Error)
+// ==================================================
+
+// 4. Get Vendor's Items to Fulfill
+export const getVendorOrders = async () => {
+  const token = localStorage.getItem("vendorToken");
+
+  if (!token) {
+    console.error("No vendor token found in localStorage");
+    return [];
+  }
+
+  // We use direct 'axios' here to force the Vendor Token
+  const response = await axios.get(`${BASE_URL}/orders/vendor`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+// 5. Update Item Status (e.g., Vendor marks as "PACKED")
+export const updateVendorItemStatus = async (itemId, status) => {
+  const token = localStorage.getItem("vendorToken");
+
+  const response = await axios.put(
+    `${BASE_URL}/orders/item/${itemId}`,
+    { status },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+// ==================================================
+// 🛡️ ADMIN ROUTES
+// ==================================================
+
+// 6. GET ALL ORDERS (Admin)
 export const getAllOrders = async () => {
-  // Backend Route: GET /orders/admin/all
   const response = await api.get("/orders/admin/all");
   return response.data;
 };
 
-// 4. UPDATE ORDER STATUS (Admin)
+// 7. UPDATE ORDER STATUS (Admin: Shipped/Delivered)
 export const updateOrderStatus = async (orderId, status) => {
-  // Backend Route: PUT /orders/admin/:id/status
   const response = await api.put(`/orders/admin/${orderId}/status`, { status });
-  return response.data;
-};
-
-// 5. GET SINGLE ORDER DETAILS
-export const getOrderById = async (orderId) => {
-  // Backend Route: GET /orders/:id
-  const response = await api.get(`/orders/${orderId}`);
   return response.data;
 };
