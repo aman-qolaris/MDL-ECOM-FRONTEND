@@ -3,27 +3,32 @@ import { useParams, Link } from "react-router-dom";
 import {
   getAdminOrderDetails,
   updateOrderStatus,
+  getAllDeliveryBoys,
+  assignDeliveryBoy,
+  reassignDeliveryBoy,
+  getAllVendors, // 👈 Imported
+  updateOrderItemStatus, // 👈 Imported
 } from "../../services/orderService";
+import { getProductById } from "../../services/productService"; // 👈 Import this
 import {
   FaArrowLeft,
   FaCheckCircle,
   FaTruck,
   FaUserClock,
   FaBox,
+  FaStore,
 } from "react-icons/fa";
-
-// Mock Data for Delivery Boys (Replace with real API call later)
-const MOCK_DELIVERY_BOYS = [
-  { id: 101, name: "Rahul Kumar", status: "Available", activeOrders: 0 },
-  { id: 102, name: "Amit Singh", status: "Busy", activeOrders: 2 },
-  { id: 103, name: "Vikram Roy", status: "Available", activeOrders: 0 },
-];
 
 const AdminOrderDetails = () => {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Data States
+  const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [selectedDriver, setSelectedDriver] = useState(null);
+  const [vendors, setVendors] = useState([]); // 👈 Store vendors
+  const [products, setProducts] = useState({}); // 👈 Store product details (images)
 
   useEffect(() => {
     fetchData();
@@ -31,38 +36,82 @@ const AdminOrderDetails = () => {
 
   const fetchData = async () => {
     try {
-      const data = await getAdminOrderDetails(id);
-      setOrder(data);
-      // If order already has a driver assigned, set it
-      if (data.deliveryBoyId) setSelectedDriver(data.deliveryBoyId);
+      setLoading(true);
+      // 1. Fetch Order, Delivery Boys, and Vendors
+      const [orderData, boysData, vendorsData] = await Promise.all([
+        getAdminOrderDetails(id),
+        getAllDeliveryBoys(),
+        getAllVendors(),
+      ]);
+
+      setOrder(orderData);
+      setDeliveryBoys(boysData);
+      setVendors(vendorsData);
+
+      if (orderData.deliveryBoyId) {
+        setSelectedDriver(orderData.deliveryBoyId);
+      }
+
+      // 2. Fetch Product Details (Images/Names) for all items
+      const productMap = {};
+      const productPromises = orderData.OrderItems.map(async (item) => {
+        try {
+          const product = await getProductById(item.productId);
+          productMap[item.productId] = product;
+        } catch (e) {
+          console.error(`Failed to fetch product ${item.productId}`);
+        }
+      });
+      await Promise.all(productPromises);
+      setProducts(productMap);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // 1. Toggle Item Ready Status
-  const toggleItemReady = (index) => {
-    const updatedItems = [...order.OrderItems];
-    const currentStatus = updatedItems[index].status;
-    // Toggle logic: If "PACKED" -> make "PENDING", else make "PACKED"
-    updatedItems[index].status =
-      currentStatus === "PACKED" ? "PENDING" : "PACKED";
-
-    // Update local state immediately (Optimistic UI)
-    setOrder({ ...order, OrderItems: updatedItems });
-
-    // TODO: Call API here: updateOrderItemStatus(updatedItems[index].id, updatedItems[index].status)
+  // Helper: Get Shop Name
+  const getVendorShopName = (vendorId) => {
+    if (!vendorId) return "Admin Store";
+    const vendor = vendors.find((v) => v.id === vendorId);
+    return vendor ? vendor.shopName : `Vendor #${vendorId}`;
   };
 
-  // 2. Check Dispatch Eligibility
+  // Logic: Toggle Item Ready (Connects to Backend)
+  const toggleItemReady = async (index) => {
+    const item = order.OrderItems[index];
+
+    // Restrict Admin from packing Vendor items
+    if (item.vendorId !== null) {
+      alert("Only the Vendor can mark their items as Packed.");
+      return;
+    }
+
+    const newStatus = item.status === "PACKED" ? "PENDING" : "PACKED";
+
+    try {
+      // Optimistic Update
+      const updatedItems = [...order.OrderItems];
+      updatedItems[index].status = newStatus;
+      setOrder({ ...order, OrderItems: updatedItems });
+
+      // API Call
+      await updateOrderItemStatus(item.id, newStatus);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status");
+      fetchData(); // Revert on error
+    }
+  };
+
+  // Check Dispatch Eligibility
   const areAllItemsReady = order?.OrderItems?.every(
     (item) => item.status === "PACKED"
   );
   const isCod = order?.paymentMethod === "COD";
 
-  // Dispatch Button Logic
+  // Dispatch Logic
   const handleDispatch = async () => {
     if (!areAllItemsReady) return;
 
@@ -79,12 +128,47 @@ const AdminOrderDetails = () => {
       )
     ) {
       try {
+        if (selectedDriver && !order.deliveryBoyId) {
+          await assignDeliveryBoy(order.id, selectedDriver);
+        }
         await updateOrderStatus(order.id, "Out for Delivery");
         setOrder({ ...order, status: "Out for Delivery" });
         alert("Order Dispatched Successfully!");
       } catch (e) {
-        alert("Failed to update status");
+        console.error(e);
+        alert("Failed to update status or assign driver");
       }
+    }
+  };
+
+  // Reassign Logic
+  const handleReassign = async () => {
+    if (!order.deliveryBoyId) {
+      alert(
+        "No driver is currently assigned. Just select one and click Dispatch."
+      );
+      return;
+    }
+    if (selectedDriver === order.deliveryBoyId) {
+      alert("Please select a DIFFERENT driver from the list below first.");
+      return;
+    }
+
+    const reason = prompt("Enter reason for reassignment (e.g., Driver busy):");
+    if (!reason) return;
+
+    try {
+      await reassignDeliveryBoy(
+        order.id,
+        order.deliveryBoyId,
+        selectedDriver,
+        reason
+      );
+      alert("Delivery Boy Reassigned Successfully!");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to reassign driver");
     }
   };
 
@@ -145,21 +229,37 @@ const AdminOrderDetails = () => {
                       : "bg-white border-gray-200"
                   }`}
                 >
-                  {/* Product Info */}
+                  {/* Product Info with Image */}
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center text-xs font-bold text-gray-500">
-                      IMG
+                    {/* 👇 Updated Image Logic */}
+                    <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden border border-gray-200">
+                      {products[item.productId]?.image ? (
+                        <img
+                          src={`http://localhost:5007${
+                            products[item.productId].image
+                          }`} // Adjust host if needed
+                          alt="Product"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-bold text-gray-400">
+                          IMG
+                        </span>
+                      )}
                     </div>
+
                     <div>
                       <p className="font-bold text-gray-800">
-                        Product ID: {item.productId}
+                        {products[item.productId]?.name ||
+                          `Product ID: ${item.productId}`}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+
+                      {/* 👇 Updated Shop Name Display */}
+                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                        <FaStore className="text-gray-400" />
                         Fulfillment:{" "}
                         <span className="font-semibold text-blue-600">
-                          {item.vendorId
-                            ? `Vendor #${item.vendorId}`
-                            : "Admin Store"}
+                          {getVendorShopName(item.vendorId)}
                         </span>
                       </p>
                     </div>
@@ -175,22 +275,38 @@ const AdminOrderDetails = () => {
                     </div>
 
                     {/* Ready Toggle */}
-                    <button
-                      onClick={() => toggleItemReady(idx)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition ${
-                        item.status === "PACKED"
-                          ? "bg-green-600 text-white shadow-green-200 hover:bg-green-700"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                      }`}
-                    >
-                      {item.status === "PACKED" ? (
-                        <>
-                          <FaCheckCircle /> Ready
-                        </>
-                      ) : (
-                        "Mark Ready"
-                      )}
-                    </button>
+                    {item.vendorId === null ? (
+                      // Admin Item: Allow Toggle
+                      <button
+                        onClick={() => toggleItemReady(idx)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition ${
+                          item.status === "PACKED"
+                            ? "bg-green-600 text-white shadow-green-200 hover:bg-green-700"
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {item.status === "PACKED" ? (
+                          <>
+                            <FaCheckCircle /> Ready
+                          </>
+                        ) : (
+                          "Mark Ready"
+                        )}
+                      </button>
+                    ) : (
+                      // Vendor Item: Read Only Badge
+                      <span
+                        className={`px-3 py-2 rounded-lg text-xs font-bold border ${
+                          item.status === "PACKED"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-yellow-50 text-yellow-600 border-yellow-200"
+                        }`}
+                      >
+                        {item.status === "PACKED"
+                          ? "Packed by Vendor"
+                          : "Pending Vendor"}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -258,39 +374,68 @@ const AdminOrderDetails = () => {
               <FaUserClock className="text-orange-500" /> Delivery Assignment
             </h3>
 
+            {/* REASSIGN BUTTON BLOCK */}
+            {order && order.deliveryBoyId && (
+              <div className="mb-4 pb-4 border-b border-gray-100">
+                <button
+                  onClick={handleReassign}
+                  className="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm font-bold hover:bg-orange-100 transition flex justify-center items-center gap-2"
+                >
+                  <FaUserClock /> Reassign Selected Driver
+                </button>
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  * To change: Select a new driver from the list below, then
+                  click above.
+                </p>
+              </div>
+            )}
+
             {isCod && (
               <div className="mb-4 bg-red-50 text-red-700 text-xs p-3 rounded border border-red-100 font-medium">
                 ⚠️ COD Payment: Active Delivery Boy required.
               </div>
             )}
 
-            <div className="space-y-3">
-              {MOCK_DELIVERY_BOYS.map((boy) => (
-                <div
-                  key={boy.id}
-                  onClick={() => setSelectedDriver(boy.id)}
-                  className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition ${
-                    selectedDriver === boy.id
-                      ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                      : "border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                      {boy.name.charAt(0)}
+            {/* Delivery Boys List */}
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {deliveryBoys.length > 0 ? (
+                deliveryBoys.map((boy) => (
+                  <div
+                    key={boy.id}
+                    onClick={() => setSelectedDriver(boy.id)}
+                    className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition ${
+                      selectedDriver === boy.id
+                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                        : "border-gray-200 hover:border-blue-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                        {boy.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          {boy.name}
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            boy.active ? "text-green-600" : "text-gray-400"
+                          }`}
+                        >
+                          {boy.active ? "Available" : "Unavailable"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">
-                        {boy.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{boy.status}</p>
-                    </div>
+                    {selectedDriver === boy.id && (
+                      <FaCheckCircle className="text-blue-500" />
+                    )}
                   </div>
-                  {selectedDriver === boy.id && (
-                    <FaCheckCircle className="text-blue-500" />
-                  )}
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-400 py-4">
+                  No delivery boys found
+                </p>
+              )}
             </div>
           </div>
 

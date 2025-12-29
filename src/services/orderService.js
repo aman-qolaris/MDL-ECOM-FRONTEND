@@ -68,22 +68,60 @@ export const getAllOrders = async () => {
   return response.data;
 };
 
+// 👇 ADD THIS: Fetch all vendors (to get shop names)
+export const getAllVendors = async () => {
+  const response = await api.get("/admin/vendors");
+  return response.data;
+};
+
 // 7. UPDATE ORDER STATUS (Admin: Shipped/Delivered)
 export const updateOrderStatus = async (orderId, status) => {
   const response = await api.put(`/orders/admin/${orderId}/status`, { status });
   return response.data;
 };
 
-// 👇 ADD THIS FUNCTION
+// 8. GET ADMIN SPECIFIC ORDER DETAILS (Includes Delivery Info)
 export const getAdminOrderDetails = async (orderId) => {
   const response = await api.get(`/orders/admin/${orderId}`);
   return response.data;
 };
 
-// 👇 ADD THIS: To toggle specific item status (Ready/Packed)
+// 9. UPDATE ORDER ITEM STATUS (Admin: Ready/Packed)
+// ✅ FIX: Changed URL from /orders/items/ to /orders/admin/item/
 export const updateOrderItemStatus = async (itemId, status) => {
-  // Assuming you have a route for this, or we handle it via generic update
-  // For now, we will assume a put request to update item
-  const response = await api.put(`/orders/items/${itemId}`, { status });
+  const response = await api.put(`/orders/admin/item/${itemId}`, { status });
+  return response.data;
+};
+
+// ==================================================
+// 🚚 DELIVERY BOY ROUTES
+// ==================================================
+
+// 10. Fetch all delivery boys
+export const getAllDeliveryBoys = async () => {
+  const response = await api.get("/orders/admin/delivery-boys");
+  return response.data;
+};
+
+// 11. Assign a delivery boy to an order
+export const assignDeliveryBoy = async (orderId, deliveryBoyId) => {
+  const response = await api.post(`/orders/${orderId}/assign`, {
+    deliveryBoyId,
+  });
+  return response.data;
+};
+
+// 12. Reassign a delivery boy (when one is already assigned but needs changing)
+export const reassignDeliveryBoy = async (
+  orderId,
+  oldDeliveryBoyId,
+  newDeliveryBoyId,
+  reason
+) => {
+  const response = await api.put(`/orders/${orderId}/reassign`, {
+    oldDeliveryBoyId,
+    newDeliveryBoyId,
+    reason,
+  });
   return response.data;
 };
