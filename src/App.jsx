@@ -28,6 +28,9 @@ import VendorOrders from "./pages/vendor/VendorOrders";
 import VendorProfile from "./pages/vendor/VendorProfile";
 import AdminSettings from "./pages/admin/AdminSettings";
 import VendorLogin from "./pages/vendor/VendorLogin";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminVendors from "./pages/admin/AdminVendors";
+import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
 
 function App() {
   return (
@@ -35,12 +38,16 @@ function App() {
       <Routes>
         {/* === ADMIN ROUTES (PROTECTED) === */}
         {/* Wrap AdminLayout with AdminRoute */}
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />{" "}
             <Route path="products/new" element={<AdminAddProduct />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetails />} />
+            <Route path="vendors" element={<AdminVendors />} />
+            {/* 👈 Add this line */}
             <Route path="users" element={<AdminUsers />} />
             <Route path="settings" element={<AdminSettings />} />
             {/* Future admin routes... */}

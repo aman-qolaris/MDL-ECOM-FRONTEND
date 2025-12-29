@@ -6,6 +6,7 @@ import {
   FaUsers,
   FaSignOutAlt,
   FaCog,
+  FaStore,
 } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice";
@@ -20,6 +21,7 @@ const AdminSidebar = () => {
     { path: "/admin/dashboard", name: "Dashboard", icon: <FaTachometerAlt /> },
     { path: "/admin/products", name: "Products", icon: <FaBox /> },
     { path: "/admin/orders", name: "Orders", icon: <FaShoppingBag /> },
+    { path: "/admin/vendors", name: "Vendors", icon: <FaStore /> },
     { path: "/admin/users", name: "Users", icon: <FaUsers /> },
     { path: "/admin/settings", name: "Settings", icon: <FaCog /> },
   ];
