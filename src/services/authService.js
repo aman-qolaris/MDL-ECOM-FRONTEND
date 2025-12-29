@@ -36,6 +36,13 @@ export const loginUser = async ({ phone, password }) => {
   };
 };
 
+// ✅ ADD THIS FUNCTION
+export const loginAdmin = async (credentials) => {
+  // Hits: http://localhost:5007/api/admin/login
+  const response = await api.post("/admin/login", credentials);
+  return response.data;
+};
+
 // --- PROFILE MANAGEMENT ---
 
 export const getProfile = async () => {

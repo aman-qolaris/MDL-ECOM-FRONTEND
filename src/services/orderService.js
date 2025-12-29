@@ -73,3 +73,17 @@ export const updateOrderStatus = async (orderId, status) => {
   const response = await api.put(`/orders/admin/${orderId}/status`, { status });
   return response.data;
 };
+
+// 👇 ADD THIS FUNCTION
+export const getAdminOrderDetails = async (orderId) => {
+  const response = await api.get(`/orders/admin/${orderId}`);
+  return response.data;
+};
+
+// 👇 ADD THIS: To toggle specific item status (Ready/Packed)
+export const updateOrderItemStatus = async (itemId, status) => {
+  // Assuming you have a route for this, or we handle it via generic update
+  // For now, we will assume a put request to update item
+  const response = await api.put(`/orders/items/${itemId}`, { status });
+  return response.data;
+};
