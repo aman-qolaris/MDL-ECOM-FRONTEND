@@ -27,7 +27,7 @@ const AdminOrders = () => {
   // Dynamic Filtering
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();
-    const customerName = order.address?.name || "Guest";
+    const customerName = order.address?.fullName || "Guest";
     const matchesSearch =
       order.id.toString().includes(searchTerm) ||
       customerName.toLowerCase().includes(searchLower);
@@ -107,7 +107,7 @@ const AdminOrders = () => {
                   #{order.id}
                 </td>
                 <td className="py-4 px-6 font-medium">
-                  {order.address?.name || "Guest"}
+                  {order.address?.fullName || "Guest"}
                 </td>
 
                 {/* Payment Column */}

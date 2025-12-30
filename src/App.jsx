@@ -31,6 +31,7 @@ import VendorLogin from "./pages/vendor/VendorLogin";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminVendors from "./pages/admin/AdminVendors";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
+import AdminDeliveryBoys from "./pages/admin/AdminDeliveryBoys";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
             <Route path="vendors" element={<AdminVendors />} />
             {/* 👈 Add this line */}
             <Route path="users" element={<AdminUsers />} />
+            <Route path="delivery-boys" element={<AdminDeliveryBoys />} />
             <Route path="settings" element={<AdminSettings />} />
             {/* Future admin routes... */}
           </Route>

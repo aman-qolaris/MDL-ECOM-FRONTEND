@@ -51,11 +51,9 @@ export const getProfile = async () => {
   return response.data;
 };
 
-export const updateUserProfile = async (userId, updatedData) => {
-  // Note: Your User Service might not have a general 'update' route exposed yet.
-  // Standard route usually: PUT /users/:id or PUT /auth/profile
-  // Assuming /users/:id based on standard REST, but check your backend.
-  const response = await api.put(`/users/${userId}`, updatedData);
+export const updateUserProfile = async (updatedData) => {
+  // Matches Gateway route: app.put("/api/auth/profile", ...)
+  const response = await api.put("/auth/profile", updatedData);
   return response.data;
 };
 
@@ -87,4 +85,13 @@ export const deleteUser = async (userId) => {
 
   // Return dummy success to keep UI working
   return userId;
+};
+
+// 👇 ADD THIS FUNCTION
+export const changeAdminPassword = async (oldPassword, newPassword) => {
+  const response = await api.post("/admin/change-password", {
+    oldPassword,
+    newPassword,
+  });
+  return response.data;
 };
