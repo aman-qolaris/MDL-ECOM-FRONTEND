@@ -28,6 +28,35 @@ const ProductDetails = () => {
   const product =
     currentProduct || dummyProducts.find((p) => p.id === parseInt(id));
 
+  // Add this inside the ProductDetails component - MUST be before any conditional returns
+  useEffect(() => {
+    if (product) {
+      // Ensure product data is loaded
+      try {
+        // 1. Get existing history
+        const existing =
+          JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+
+        // 2. Remove if duplicate (so we can move it to the top)
+        const filtered = existing.filter((item) => item.id !== product.id);
+
+        // 3. Add current product to the front
+        const newItem = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.imageUrl || product.image, // Handle different naming conventions
+        };
+
+        // 4. Save back to local storage (Limit to 8 items)
+        const updatedList = [newItem, ...filtered].slice(0, 8);
+        localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
+      } catch (err) {
+        console.error("Failed to save recent view:", err);
+      }
+    }
+  }, [product]); // Runs whenever 'product' changes
+
   if (loading)
     return <div className="text-center py-20 text-xl">Loading...</div>;
   if (!product)
@@ -63,35 +92,6 @@ const ProductDetails = () => {
       alert(`${product.name} added to cart!`);
     }
   };
-
-  // Add this inside the ProductDetails component
-  useEffect(() => {
-    if (product) {
-      // Ensure product data is loaded
-      try {
-        // 1. Get existing history
-        const existing =
-          JSON.parse(localStorage.getItem("recentlyViewed")) || [];
-
-        // 2. Remove if duplicate (so we can move it to the top)
-        const filtered = existing.filter((item) => item.id !== product.id);
-
-        // 3. Add current product to the front
-        const newItem = {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.imageUrl || product.image, // Handle different naming conventions
-        };
-
-        // 4. Save back to local storage (Limit to 8 items)
-        const updatedList = [newItem, ...filtered].slice(0, 8);
-        localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
-      } catch (err) {
-        console.error("Failed to save recent view:", err);
-      }
-    }
-  }, [product]); // Runs whenever 'product' changes
 
   return (
     <div className="container mx-auto px-4 py-8">
