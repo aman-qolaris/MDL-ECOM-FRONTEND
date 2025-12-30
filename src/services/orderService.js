@@ -103,6 +103,16 @@ export const getAllDeliveryBoys = async () => {
   return response.data;
 };
 
+export const addDeliveryBoy = async (data) => {
+  const response = await api.post("/orders/admin/delivery-boys", data);
+  return response.data;
+};
+
+export const deleteDeliveryBoy = async (id) => {
+  const response = await api.delete(`/orders/admin/delivery-boys/${id}`);
+  return response.data;
+};
+
 // 11. Assign a delivery boy to an order
 export const assignDeliveryBoy = async (orderId, deliveryBoyId) => {
   const response = await api.post(`/orders/${orderId}/assign`, {

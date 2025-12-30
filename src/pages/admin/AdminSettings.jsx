@@ -1,21 +1,55 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaUserShield, FaSave } from "react-icons/fa";
+import { changeAdminPassword } from "../../services/authService"; // 👈 Import service
 
 const AdminSettings = () => {
   const [adminData, setAdminData] = useState({
-    name: "Super Admin",
-    email: "admin@ecommerce.com",
+    name: "",
+    email: "",
     currentPassword: "",
     newPassword: "",
   });
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      setAdminData((prev) => ({
+        ...prev,
+        name: parsed.name || "Admin",
+        email: parsed.email || "admin@example.com",
+      }));
+    }
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Admin Settings Updated!");
+
+    // 2. Validate Password Fields
+    if (!adminData.currentPassword || !adminData.newPassword) {
+      alert("Please enter both current and new passwords to change them.");
+      return;
+    }
+
+    try {
+      // 3. Call the API
+      await changeAdminPassword(
+        adminData.currentPassword,
+        adminData.newPassword
+      );
+
+      alert("Password updated successfully!");
+
+      // Clear password fields
+      setAdminData({ ...adminData, currentPassword: "", newPassword: "" });
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || "Failed to update password");
+    }
   };
 
   return (
-    <div>
+    <div className="animate-fadeIn">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Settings</h2>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-2xl">
@@ -24,55 +58,70 @@ const AdminSettings = () => {
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Read-Only Fields (Backend doesn't support update yet) */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              Display Name
+              Display Name{" "}
+              <span className="text-xs text-gray-400">(Read Only)</span>
             </label>
             <input
               type="text"
               value={adminData.name}
-              onChange={(e) =>
-                setAdminData({ ...adminData, name: e.target.value })
-              }
-              className="w-full border p-2 rounded mt-1"
+              disabled
+              className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-600">
-              Email
+              Email <span className="text-xs text-gray-400">(Read Only)</span>
             </label>
             <input
               type="email"
               value={adminData.email}
-              onChange={(e) =>
-                setAdminData({ ...adminData, email: e.target.value })
-              }
-              className="w-full border p-2 rounded mt-1"
+              disabled
+              className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
             />
           </div>
 
           <hr className="my-4" />
 
+          {/* Password Fields - Now Connected */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
               Current Password
             </label>
-            <input type="password" className="w-full border p-2 rounded mt-1" />
+            <input
+              type="password"
+              value={adminData.currentPassword}
+              onChange={(e) =>
+                setAdminData({ ...adminData, currentPassword: e.target.value })
+              }
+              className="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter current password"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-600">
               New Password
             </label>
-            <input type="password" className="w-full border p-2 rounded mt-1" />
+            <input
+              type="password"
+              value={adminData.newPassword}
+              onChange={(e) =>
+                setAdminData({ ...adminData, newPassword: e.target.value })
+              }
+              className="w-full border p-2 rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter new password"
+            />
           </div>
 
           <button
             type="submit"
             className="mt-4 px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition flex items-center gap-2"
           >
-            <FaSave /> Update Settings
+            <FaSave /> Update Password
           </button>
         </form>
       </div>
