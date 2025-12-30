@@ -32,10 +32,12 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminVendors from "./pages/admin/AdminVendors";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
 import AdminDeliveryBoys from "./pages/admin/AdminDeliveryBoys";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* === ADMIN ROUTES (PROTECTED) === */}
         {/* Wrap AdminLayout with AdminRoute */}

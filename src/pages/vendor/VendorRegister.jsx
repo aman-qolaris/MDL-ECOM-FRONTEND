@@ -2,10 +2,24 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
-import { FaStore, FaUser, FaFileInvoiceDollar } from "react-icons/fa";
-import api from "../../services/api"; // ✅ Use your configured API instance
+// Added extra icons for the modern input fields
+import {
+  FaStore,
+  FaUser,
+  FaFileInvoiceDollar,
+  FaEnvelope,
+  FaPhoneAlt,
+  FaLock,
+  FaIdCard,
+  FaMapMarkerAlt,
+  FaClock,
+  FaUniversity,
+  FaMoneyCheckAlt,
+  FaBuilding,
+} from "react-icons/fa";
+import api from "../../services/api"; // ✅ Your configured API instance
 
-// === VALIDATION SCHEMA ===
+// === VALIDATION SCHEMA (UNCHANGED) ===
 const schema = yup
   .object({
     // 1. Personal Details
@@ -85,34 +99,26 @@ const VendorRegister = () => {
   const onSubmit = async (data) => {
     try {
       // 1. MAP FRONTEND NAMES -> BACKEND NAMES
-      // The backend expects specific keys like "aadharNumber" instead of "aadhar"
       const payload = {
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
-
-        // Mapped Fields
-        aadharNumber: data.aadhar, // Backend: aadharNumber
-        panNumber: data.pan, // Backend: panNumber
-        gstNumber: data.gst, // Backend: gstNumber
-
+        aadharNumber: data.aadhar,
+        panNumber: data.pan,
+        gstNumber: data.gst,
         businessName: data.businessName,
         businessType: data.businessType,
         businessAddress: data.businessAddress,
-        yearsInBusiness: Number(data.yearsInBusiness), // Ensure it's a number
-
-        // Mapped Bank Fields
-        bankAccountHolderName: data.bankHolderName, // Backend: bankAccountHolderName
-        bankAccountNumber: data.bankAccount, // Backend: bankAccountNumber
-        bankIFSC: data.ifscCode, // Backend: bankIFSC
+        yearsInBusiness: Number(data.yearsInBusiness),
+        bankAccountHolderName: data.bankHolderName,
+        bankAccountNumber: data.bankAccount,
+        bankIFSC: data.ifscCode,
         bankName: data.bankName,
       };
 
       console.log("Sending payload to backend:", payload);
 
-      // 2. SEND ACTUAL REQUEST TO GATEWAY (Port 5007)
-      // This hits: API Gateway -> Vendor Service -> Register Controller
       const response = await api.post("/vendor/register", payload);
 
       if (response.status === 200 || response.status === 201) {
@@ -131,240 +137,306 @@ const VendorRegister = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-purple-700 px-8 py-6 text-center">
-          <h2 className="text-3xl font-extrabold text-white">
+    // Outer Container with Animation
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 animate-fadeIn flex justify-center">
+      {/* GLASS CARD */}
+      <div className="max-w-4xl w-full bg-white/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden relative">
+        {/* Decorative Background Blob */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 pointer-events-none"></div>
+
+        {/* Header Section */}
+        <div className="bg-white/40 border-b border-white/50 px-8 py-8 text-center relative z-10">
+          <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">
             Vendor Registration
           </h2>
-          <p className="text-purple-200 mt-2">
+          <p className="text-purple-600 mt-2 font-medium">
             Join our marketplace and start selling today.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-          {/* --- PERSONAL --- */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="p-8 space-y-8 relative z-10"
+        >
+          {/* --- 1. PERSONAL DETAILS --- */}
           <div>
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 border-b pb-2 mb-4">
+            <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2 border-b border-gray-200/50 pb-2 mb-6">
               <FaUser className="text-purple-600" /> Personal Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Full Name *
                 </label>
-                <input
-                  type="text"
-                  {...register("name")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">{errors.name?.message}</p>
+                <div className="relative">
+                  <FaUser className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("name")}
+                    className="input-glass pl-10"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <p className="error-text">{errors.name?.message}</p>
               </div>
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Email Address *
                 </label>
-                <input
-                  type="email"
-                  {...register("email")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">{errors.email?.message}</p>
+                <div className="relative">
+                  <FaEnvelope className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="email"
+                    {...register("email")}
+                    className="input-glass pl-10"
+                    placeholder="vendor@example.com"
+                  />
+                </div>
+                <p className="error-text">{errors.email?.message}</p>
               </div>
+              {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Phone Number *
                 </label>
-                <input
-                  type="tel"
-                  {...register("phone")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">{errors.phone?.message}</p>
+                <div className="relative">
+                  <FaPhoneAlt className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="tel"
+                    {...register("phone")}
+                    className="input-glass pl-10"
+                    placeholder="9876543210"
+                  />
+                </div>
+                <p className="error-text">{errors.phone?.message}</p>
               </div>
+              {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Password *
                 </label>
-                <input
-                  type="password"
-                  {...register("password")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.password?.message}
-                </p>
+                <div className="relative">
+                  <FaLock className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="password"
+                    {...register("password")}
+                    className="input-glass pl-10"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <p className="error-text">{errors.password?.message}</p>
               </div>
+              {/* Aadhar */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Aadhar Number *
                 </label>
-                <input
-                  type="text"
-                  {...register("aadhar")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">{errors.aadhar?.message}</p>
+                <div className="relative">
+                  <FaIdCard className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("aadhar")}
+                    className="input-glass pl-10"
+                    placeholder="12-digit UID"
+                  />
+                </div>
+                <p className="error-text">{errors.aadhar?.message}</p>
               </div>
             </div>
           </div>
 
-          {/* --- BUSINESS --- */}
+          {/* --- 2. BUSINESS INFORMATION --- */}
           <div>
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 border-b pb-2 mb-4">
+            <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2 border-b border-gray-200/50 pb-2 mb-6">
               <FaStore className="text-purple-600" /> Business Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Business Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Business Name *
                 </label>
-                <input
-                  type="text"
-                  {...register("businessName")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.businessName?.message}
-                </p>
+                <div className="relative">
+                  <FaBuilding className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("businessName")}
+                    className="input-glass pl-10"
+                    placeholder="My Awesome Store"
+                  />
+                </div>
+                <p className="error-text">{errors.businessName?.message}</p>
               </div>
+              {/* Business Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Business Type *
                 </label>
-                <select
-                  {...register("businessType")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                >
-                  <option value="Retail">Retailer</option>
-                  <option value="Wholesale">Wholesaler</option>
-                  <option value="Manufacturer">Manufacturer</option>
-                </select>
-                <p className="text-red-500 text-xs">
-                  {errors.businessType?.message}
-                </p>
+                <div className="relative">
+                  <FaStore className="absolute top-3.5 left-3 text-gray-400" />
+                  <select
+                    {...register("businessType")}
+                    className="input-glass pl-10 appearance-none"
+                  >
+                    <option value="Retail">Retailer</option>
+                    <option value="Wholesale">Wholesaler</option>
+                    <option value="Manufacturer">Manufacturer</option>
+                  </select>
+                </div>
+                <p className="error-text">{errors.businessType?.message}</p>
               </div>
+              {/* Address */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Physical Address *
                 </label>
-                <textarea
-                  {...register("businessAddress")}
-                  rows="2"
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                ></textarea>
-                <p className="text-red-500 text-xs">
-                  {errors.businessAddress?.message}
-                </p>
+                <div className="relative">
+                  <FaMapMarkerAlt className="absolute top-3.5 left-3 text-gray-400" />
+                  <textarea
+                    {...register("businessAddress")}
+                    rows="2"
+                    className="input-glass pl-10"
+                    placeholder="Shop No, Street, City..."
+                  ></textarea>
+                </div>
+                <p className="error-text">{errors.businessAddress?.message}</p>
               </div>
+              {/* Years in Business */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Years in Business *
                 </label>
-                <input
-                  type="number"
-                  {...register("yearsInBusiness")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.yearsInBusiness?.message}
-                </p>
+                <div className="relative">
+                  <FaClock className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="number"
+                    {...register("yearsInBusiness")}
+                    className="input-glass pl-10"
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <p className="error-text">{errors.yearsInBusiness?.message}</p>
               </div>
             </div>
           </div>
 
-          {/* --- LEGAL & BANKING --- */}
+          {/* --- 3. LEGAL & BANKING --- */}
           <div>
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 border-b pb-2 mb-4">
+            <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2 border-b border-gray-200/50 pb-2 mb-6">
               <FaFileInvoiceDollar className="text-purple-600" /> Legal &
               Banking
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* PAN */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   PAN Number *
                 </label>
-                <input
-                  type="text"
-                  {...register("pan")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg uppercase"
-                />
-                <p className="text-red-500 text-xs">{errors.pan?.message}</p>
+                <div className="relative">
+                  <FaIdCard className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("pan")}
+                    className="input-glass pl-10 uppercase"
+                    placeholder="ABCDE1234F"
+                  />
+                </div>
+                <p className="error-text">{errors.pan?.message}</p>
               </div>
+              {/* GST */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   GST Number *
                 </label>
-                <input
-                  type="text"
-                  {...register("gst")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg uppercase"
-                />
-                <p className="text-red-500 text-xs">{errors.gst?.message}</p>
+                <div className="relative">
+                  <FaFileInvoiceDollar className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("gst")}
+                    className="input-glass pl-10 uppercase"
+                    placeholder="22AAAAA0000A1Z5"
+                  />
+                </div>
+                <p className="error-text">{errors.gst?.message}</p>
               </div>
+              {/* Bank Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Bank Name *
                 </label>
-                <input
-                  type="text"
-                  {...register("bankName")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.bankName?.message}
-                </p>
+                <div className="relative">
+                  <FaUniversity className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("bankName")}
+                    className="input-glass pl-10"
+                    placeholder="SBI, HDFC, etc."
+                  />
+                </div>
+                <p className="error-text">{errors.bankName?.message}</p>
               </div>
+              {/* IFSC */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   IFSC Code *
                 </label>
-                <input
-                  type="text"
-                  {...register("ifscCode")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg uppercase"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.ifscCode?.message}
-                </p>
+                <div className="relative">
+                  <FaBuilding className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("ifscCode")}
+                    className="input-glass pl-10 uppercase"
+                    placeholder="SBIN0001234"
+                  />
+                </div>
+                <p className="error-text">{errors.ifscCode?.message}</p>
               </div>
+              {/* Holder Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Account Holder Name *
                 </label>
-                <input
-                  type="text"
-                  {...register("bankHolderName")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.bankHolderName?.message}
-                </p>
+                <div className="relative">
+                  <FaUser className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("bankHolderName")}
+                    className="input-glass pl-10"
+                    placeholder="Name as per Bank"
+                  />
+                </div>
+                <p className="error-text">{errors.bankHolderName?.message}</p>
               </div>
+              {/* Account Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   Bank Account Number *
                 </label>
-                <input
-                  type="password"
-                  {...register("bankAccount")}
-                  className="mt-1 w-full border border-gray-300 p-2 rounded-lg"
-                />
-                <p className="text-red-500 text-xs">
-                  {errors.bankAccount?.message}
-                </p>
+                <div className="relative">
+                  <FaMoneyCheckAlt className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    type="password"
+                    {...register("bankAccount")}
+                    className="input-glass pl-10"
+                    placeholder="Account Number"
+                  />
+                </div>
+                <p className="error-text">{errors.bankAccount?.message}</p>
               </div>
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full text-white font-bold py-4 rounded-xl shadow-lg text-lg transition ${
+              className={`w-full text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-all duration-300 transform hover:scale-[1.01] hover:shadow-xl ${
                 isSubmitting
                   ? "bg-purple-400 cursor-not-allowed"
-                  : "bg-purple-700 hover:bg-purple-800"
+                  : "bg-gradient-to-r from-purple-600 to-indigo-600"
               }`}
             >
               {isSubmitting
@@ -374,13 +446,44 @@ const VendorRegister = () => {
           </div>
         </form>
 
-        <div className="text-center py-4">
+        <div className="text-center py-6 bg-white/30 border-t border-white/50">
           Already have an account?{" "}
-          <Link to="/login" className="text-purple-700 font-bold">
+          <Link
+            to="/login"
+            className="text-purple-700 font-bold hover:underline"
+          >
             Login here
           </Link>
         </div>
       </div>
+
+      {/* Tailwind Utility for Inputs (You can add this to your index.css or keep inline) */}
+      <style>{`
+        .input-glass {
+          width: 100%;
+          padding-right: 1rem;
+          padding-top: 0.75rem;
+          padding-bottom: 0.75rem;
+          border-radius: 0.75rem;
+          background-color: rgba(255, 255, 255, 0.5);
+          border: 1px solid #e5e7eb;
+          transition: all 0.3s;
+          box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+          outline: none;
+        }
+        .input-glass:focus {
+          background-color: #ffffff;
+          ring: 2px;
+          ring-color: #a855f7;
+          border-color: transparent;
+        }
+        .error-text {
+          color: #ef4444;
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          padding-left: 0.25rem;
+        }
+      `}</style>
     </div>
   );
 };

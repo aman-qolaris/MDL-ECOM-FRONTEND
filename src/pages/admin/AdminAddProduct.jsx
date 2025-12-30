@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 // FIX 1: Import 'createProduct' (New Name)
-import { createProduct } from "../../services/productService";
+import { createProduct, getAllCategories } from "../../services/productService";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 
 const AdminAddProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]); // 👈 State for categories
 
   // FIX 2: State updated to match Backend Schema
   const [formData, setFormData] = useState({
@@ -19,6 +20,19 @@ const AdminAddProduct = () => {
 
   // FIX 3: Separate state for File Upload
   const [imageFile, setImageFile] = useState(null);
+
+  // 👇 ADD THIS USE EFFECT TO FETCH CATEGORIES
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories");
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -133,23 +147,27 @@ const AdminAddProduct = () => {
           </div>
         </div>
 
-        {/* Category ID */}
+        {/* 👇 UPDATED CATEGORY DROPDOWN */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category ID *
+            Category *
           </label>
-          <input
-            type="number"
+          <select
             name="categoryId"
             value={formData.categoryId}
             onChange={handleChange}
             required
-            placeholder="Enter Category ID (e.g., 1)"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Please enter the ID of an existing category in your database.
-          </p>
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+          >
+            <option value="" disabled>
+              -- Select a Category --
+            </option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Image Upload */}

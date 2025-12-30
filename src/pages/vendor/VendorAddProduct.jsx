@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { createProductThunk } from "../../store/thunks/productThunks";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useEffect, useState } from "react";
+import { getAllCategories } from "../../services/productService";
 
 // Schema Validation
 const schema = yup
@@ -35,6 +37,7 @@ const VendorAddProduct = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.products);
+  const [categories, setCategories] = useState([]); // 👈 State for categories
 
   const {
     register,
@@ -43,6 +46,19 @@ const VendorAddProduct = () => {
   } = useForm({
     resolver: yupResolver(schema),
   });
+
+  // 👇 Fetch Categories on Load
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories");
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const onSubmit = async (data) => {
     // 1. Create FormData object for file upload
@@ -113,20 +129,22 @@ const VendorAddProduct = () => {
           </div>
         </div>
 
-        {/* Category ID */}
+        {/* 👇 UPDATED: Category Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category ID
+            Category
           </label>
-          <input
+          <select
             {...register("categoryId")}
-            type="number"
-            className="w-full border border-gray-300 rounded-lg p-2.5"
-            placeholder="Enter 1, 2, or 3..."
-          />
-          <p className="text-gray-400 text-xs mt-1">
-            Make sure this Category ID exists in your database.
-          </p>
+            className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
+          >
+            <option value="">-- Select Category --</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
           <p className="text-red-500 text-xs mt-1">
             {errors.categoryId?.message}
           </p>

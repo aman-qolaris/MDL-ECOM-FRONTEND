@@ -64,6 +64,35 @@ const ProductDetails = () => {
     }
   };
 
+  // Add this inside the ProductDetails component
+  useEffect(() => {
+    if (product) {
+      // Ensure product data is loaded
+      try {
+        // 1. Get existing history
+        const existing =
+          JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+
+        // 2. Remove if duplicate (so we can move it to the top)
+        const filtered = existing.filter((item) => item.id !== product.id);
+
+        // 3. Add current product to the front
+        const newItem = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.imageUrl || product.image, // Handle different naming conventions
+        };
+
+        // 4. Save back to local storage (Limit to 8 items)
+        const updatedList = [newItem, ...filtered].slice(0, 8);
+        localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
+      } catch (err) {
+        console.error("Failed to save recent view:", err);
+      }
+    }
+  }, [product]); // Runs whenever 'product' changes
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Link
