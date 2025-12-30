@@ -1,56 +1,54 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getFeaturedProducts } from "../store/thunks/productThunks";
+
+// Components
 import Hero from "../components/home/Hero";
-import FeaturedCategories from "../components/home/FeaturedCategories";
-import ProductCard from "../components/common/ProductCard";
-import { dummyProducts } from "../data/dummyData";
+import CreativeFilters from "../components/home/CreativeFilters";
+import RecentlyViewed from "../components/home/RecentlyViewed";
+import FeaturedProducts from "../components/home/FeaturedProducts";
+import TrustValues from "../components/home/TrustValues";
+import PromoBanner from "../components/home/PromoBanner";
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { featured, loading, error } = useSelector((state) => state.products);
 
   useEffect(() => {
-    // Fetch products when component mounts
     dispatch(getFeaturedProducts());
   }, [dispatch]);
 
-  const displayProducts =
-    featured.length > 0 ? featured : dummyProducts.slice(0, 4);
-
   return (
-    <div className="pb-10">
-      <Hero />
+    <div className="space-y-16 pb-10">
+      {/* 1. Hero Section */}
+      <div className="animate-fadeIn">
+        <Hero />
+      </div>
 
-      <FeaturedCategories />
+      {/* 2. Trust Values (Floating Glass Strip) */}
+      <div className="glass-panel rounded-2xl p-6 mx-2 md:mx-0 animate-slideUp">
+        <TrustValues />
+      </div>
 
-      <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Featured Products
-          </h2>
-          <button className="text-blue-600 hover:underline font-medium">
-            View All
-          </button>
+      {/* 3. Filters & Banner */}
+      <div className="space-y-10">
+        <CreativeFilters />
+
+        <div className="transform hover:scale-[1.01] transition-transform duration-500">
+          <PromoBanner />
         </div>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-10">Loading products...</div>
-        ) : error ? (
-          // Fallback to dummy data if error (for dev purposes)
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {displayProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {displayProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+      {/* 4. Featured Products (FIXING THE BLANK SPACE HERE) */}
+      {/* We wrap the product grid in a glass-panel so it stands out */}
+      <section className="glass-panel rounded-3xl p-8 animate-slideUp">
+        {/* FeaturedProducts component handles the grid inside */}
+        <FeaturedProducts />
       </section>
+
+      {/* 5. Recently Viewed */}
+      <div className="animate-slideUp">
+        <RecentlyViewed />
+      </div>
     </div>
   );
 };
