@@ -110,7 +110,9 @@ const AdminOrderDetails = () => {
     if (!areAllItemsReady) return;
 
     if (isCod && !selectedDriver) {
-      alert("⚠️ Action Required: COD Orders require an active Delivery Boy assignment.");
+      alert(
+        "⚠️ Action Required: COD Orders require an active Delivery Boy assignment."
+      );
       return;
     }
 
@@ -131,7 +133,9 @@ const AdminOrderDetails = () => {
 
   const handleReassign = async () => {
     if (!order.deliveryBoyId) {
-      alert("No driver is currently assigned. Just select one and click Dispatch.");
+      alert(
+        "No driver is currently assigned. Just select one and click Dispatch."
+      );
       return;
     }
     if (selectedDriver === order.deliveryBoyId) {
@@ -157,17 +161,24 @@ const AdminOrderDetails = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading Order Details...</div>;
-  if (!order) return <div className="p-8 text-center text-red-500">Order Not Found</div>;
+  if (loading)
+    return <div className="p-8 text-center">Loading Order Details...</div>;
+  if (!order)
+    return <div className="p-8 text-center text-red-500">Order Not Found</div>;
 
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto pb-10">
       <div className="flex items-center justify-between mb-6">
-        <Link to="/admin/orders" className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition font-medium">
+        <Link
+          to="/admin/orders"
+          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition font-medium"
+        >
           <FaArrowLeft /> Back to List
         </Link>
         <div className="text-right">
-          <h1 className="text-2xl font-bold text-gray-800">Order #{order.id}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Order #{order.id}
+          </h1>
           <span className="text-sm text-gray-500">
             Placed on {new Date(order.createdAt).toLocaleString()}
           </span>
@@ -182,16 +193,30 @@ const AdminOrderDetails = () => {
               <h3 className="font-bold text-gray-700 flex items-center gap-2">
                 <FaBox className="text-blue-500" /> Order Breakdown
               </h3>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${areAllItemsReady ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                {areAllItemsReady ? "All Items Ready" : "Preparation in Progress"}
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  areAllItemsReady
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                {areAllItemsReady
+                  ? "All Items Ready"
+                  : "Preparation in Progress"}
               </span>
             </div>
 
             <div className="p-6 space-y-4">
               {order.OrderItems.map((item, idx) => (
-                <div key={idx} className={`flex items-center justify-between p-4 rounded-lg border transition ${item.status === "PACKED" ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
+                <div
+                  key={idx}
+                  className={`flex items-center justify-between p-4 rounded-lg border transition ${
+                    item.status === "PACKED"
+                      ? "bg-green-50 border-green-200"
+                      : "bg-white border-gray-200"
+                  }`}
+                >
                   <div className="flex items-center gap-4">
-                    
                     {/* ✅ FIX 2: Use .imageUrl directly (Minio returns full URL) */}
                     <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden border border-gray-200">
                       {products[item.productId]?.imageUrl ? (
@@ -201,15 +226,18 @@ const AdminOrderDetails = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-xs font-bold text-gray-400">IMG</span>
+                        <span className="text-xs font-bold text-gray-400">
+                          IMG
+                        </span>
                       )}
                     </div>
 
                     <div>
                       <p className="font-bold text-gray-800">
-                        {products[item.productId]?.name || `Product ID: ${item.productId}`}
+                        {products[item.productId]?.name ||
+                          `Product ID: ${item.productId}`}
                       </p>
-                      
+
                       {/* ✅ FIX 1 Applied: Shows businessName */}
                       <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                         <FaStore className="text-gray-400" />
@@ -224,7 +252,9 @@ const AdminOrderDetails = () => {
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="font-bold text-gray-800">₹{item.price}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                      <p className="text-xs text-gray-500">
+                        Qty: {item.quantity}
+                      </p>
                     </div>
 
                     {item.vendorId === null ? (
@@ -236,11 +266,25 @@ const AdminOrderDetails = () => {
                             : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                         }`}
                       >
-                        {item.status === "PACKED" ? <><FaCheckCircle /> Ready</> : "Mark Ready"}
+                        {item.status === "PACKED" ? (
+                          <>
+                            <FaCheckCircle /> Ready
+                          </>
+                        ) : (
+                          "Mark Ready"
+                        )}
                       </button>
                     ) : (
-                      <span className={`px-3 py-2 rounded-lg text-xs font-bold border ${item.status === "PACKED" ? "bg-green-100 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-600 border-yellow-200"}`}>
-                        {item.status === "PACKED" ? "Packed by Vendor" : "Pending Vendor"}
+                      <span
+                        className={`px-3 py-2 rounded-lg text-xs font-bold border ${
+                          item.status === "PACKED"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-yellow-50 text-yellow-600 border-yellow-200"
+                        }`}
+                      >
+                        {item.status === "PACKED"
+                          ? "Packed by Vendor"
+                          : "Pending Vendor"}
                       </span>
                     )}
                   </div>
@@ -249,13 +293,24 @@ const AdminOrderDetails = () => {
             </div>
 
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-              <div className="text-sm text-gray-500">* Mark all items as ready to enable dispatch.</div>
+              <div className="text-sm text-gray-500">
+                * Mark all items as ready to enable dispatch.
+              </div>
               <button
                 onClick={handleDispatch}
-                disabled={!areAllItemsReady || order.status === "Out for Delivery"}
-                className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition ${!areAllItemsReady || order.status === "Out for Delivery" ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"}`}
+                disabled={
+                  !areAllItemsReady || order.status === "Out for Delivery"
+                }
+                className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
+                  !areAllItemsReady || order.status === "Out for Delivery"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"
+                }`}
               >
-                <FaTruck /> {order.status === "Out for Delivery" ? "Dispatched" : "Mark Out for Delivery"}
+                <FaTruck />{" "}
+                {order.status === "Out for Delivery"
+                  ? "Dispatched"
+                  : "Mark Out for Delivery"}
               </button>
             </div>
           </div>
@@ -263,10 +318,17 @@ const AdminOrderDetails = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-700 mb-4">Price Details</h3>
             <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex justify-between"><span>Subtotal</span><span>₹{order.amount}</span></div>
-              <div className="flex justify-between"><span>Delivery Fee</span><span className="text-green-600">Free</span></div>
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>₹{order.amount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Delivery Fee</span>
+                <span className="text-green-600">Free</span>
+              </div>
               <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg text-gray-800">
-                <span>Total Amount</span><span>₹{order.amount}</span>
+                <span>Total Amount</span>
+                <span>₹{order.amount}</span>
               </div>
             </div>
           </div>
@@ -274,14 +336,23 @@ const AdminOrderDetails = () => {
 
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
-          <div className={`bg-white rounded-xl shadow-sm border p-6 ${isCod && !selectedDriver ? "border-red-300 ring-4 ring-red-50" : "border-gray-200"}`}>
+          <div
+            className={`bg-white rounded-xl shadow-sm border p-6 ${
+              isCod && !selectedDriver
+                ? "border-red-300 ring-4 ring-red-50"
+                : "border-gray-200"
+            }`}
+          >
             <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
               <FaUserClock className="text-orange-500" /> Delivery Assignment
             </h3>
 
             {order && order.deliveryBoyId && (
               <div className="mb-4 pb-4 border-b border-gray-100">
-                <button onClick={handleReassign} className="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm font-bold hover:bg-orange-100 transition flex justify-center items-center gap-2">
+                <button
+                  onClick={handleReassign}
+                  className="w-full py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm font-bold hover:bg-orange-100 transition flex justify-center items-center gap-2"
+                >
                   <FaUserClock /> Reassign Selected Driver
                 </button>
               </div>
@@ -293,33 +364,58 @@ const AdminOrderDetails = () => {
               </div>
             )}
 
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {deliveryBoys.length > 0 ? (
-                deliveryBoys.map((boy) => (
-                  <div key={boy.id} onClick={() => setSelectedDriver(boy.id)} className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition ${selectedDriver === boy.id ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-gray-200 hover:border-blue-300"}`}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">{boy.name.charAt(0)}</div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-800">{boy.name}</p>
-                        <p className={`text-xs ${boy.active ? "text-green-600" : "text-gray-400"}`}>{boy.active ? "Available" : "Unavailable"}</p>
-                      </div>
-                    </div>
-                    {selectedDriver === boy.id && <FaCheckCircle className="text-blue-500" />}
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-sm text-gray-400 py-4">No delivery boys found</p>
-              )}
+            {/*Drop down for delivery boys */}
+            <div className="relative">
+              <select
+                value={selectedDriver || ""}
+                onChange={(e) => setSelectedDriver(Number(e.target.value))}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-gray-700 font-medium cursor-pointer"
+              >
+                <option value="" disabled>
+                  -- Select Delivery Boy --
+                </option>
+                {deliveryBoys.map((boy) => (
+                  <option
+                    key={boy.id}
+                    value={boy.id}
+                    disabled={!boy.active}
+                    className="py-2"
+                  >
+                    {boy.name} {boy.active ? "(Available)" : "(Unavailable)"}
+                  </option>
+                ))}
+              </select>
+
+              {/* Dropdown Arrow Icon Overlay */}
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
+
+            {/* Show Selected Driver Details below dropdown if needed */}
+            {selectedDriver && (
+              <div className="mt-3 text-sm text-green-600 font-medium flex items-center gap-2">
+                <FaCheckCircle /> Driver Selected
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-700 mb-4">Customer Details</h3>
             <div className="text-sm text-gray-600 space-y-1">
-              <p className="font-bold text-gray-800 text-base">{order.address?.name || "Guest"}</p>
-              <p>{order.address?.street}</p>
-              <p>{order.address?.city}, {order.address?.state} - {order.address?.zip}</p>
-              <p className="pt-2 font-mono text-gray-500">Ph: {order.address?.phone}</p>
+              <p className="font-bold text-gray-800 text-base">
+                {order.address?.fullName || "Guest"}
+              </p>
+              <p>{order.address?.addressLine1}</p>
+              <p>
+                {order.address?.city}, {order.address?.state} -{" "}
+                {order.address?.zipCode}
+              </p>
+              <p className="pt-2 font-mono text-gray-500">
+                Ph: {order.address?.phone}
+              </p>
             </div>
           </div>
 
@@ -327,10 +423,18 @@ const AdminOrderDetails = () => {
             <h3 className="font-bold text-gray-700 mb-2">Payment Info</h3>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Method</span>
-              <span className="font-bold text-gray-800">{order.paymentMethod}</span>
+              <span className="font-bold text-gray-800">
+                {order.paymentMethod}
+              </span>
             </div>
             <div className="mt-4">
-              <span className={`block text-center py-2 rounded font-bold text-sm ${order.payment ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+              <span
+                className={`block text-center py-2 rounded font-bold text-sm ${
+                  order.payment
+                    ? "bg-green-100 text-green-700"
+                    : "bg-orange-100 text-orange-700"
+                }`}
+              >
                 {order.payment ? "PAID" : "PENDING"}
               </span>
             </div>

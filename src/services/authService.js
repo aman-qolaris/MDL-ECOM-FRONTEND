@@ -92,3 +92,12 @@ export const deleteUser = async (userId) => {
   console.warn("Backend does not support user deletion yet.");
   return userId;
 };
+
+// 👇 ADD THIS FUNCTION
+export const changeAdminPassword = async (oldPassword, newPassword) => {
+  const response = await api.post("/admin/change-password", {
+    oldPassword,
+    newPassword,
+  });
+  return response.data;
+};
