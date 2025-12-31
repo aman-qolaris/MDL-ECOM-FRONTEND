@@ -1,12 +1,56 @@
+import { useEffect, useState } from "react";
 import { FaTimes, FaMapMarkerAlt, FaCreditCard, FaBox } from "react-icons/fa";
+import { getProductById } from "../../services/productService"; // 1. Import Product Service
 
 const OrderDetailModal = ({ order, onClose }) => {
+  const [enrichedItems, setEnrichedItems] = useState([]); // 2. State to hold items with images
+  const [loadingItems, setLoadingItems] = useState(true);
+
+  // 3. Effect: Fetch Product Details for every item in the order
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      if (!order) return;
+
+      const rawItems = order.OrderItems || order.items || [];
+      setLoadingItems(true);
+
+      try {
+        // Fetch details for all items in parallel
+        const itemPromises = rawItems.map(async (item) => {
+          // Only fetch if we don't already have the Product object
+          if (!item.Product || !item.Product.imageUrl) {
+            try {
+              const productData = await getProductById(item.productId);
+              // Merge the fetched product data (name, imageUrl) into the item
+              return {
+                ...item,
+                Product: productData,
+              };
+            } catch (error) {
+              console.error(`Failed to fetch product ${item.productId}`, error);
+              return item; // Return item without details on error
+            }
+          }
+          return item; // Item already has details
+        });
+
+        const completedItems = await Promise.all(itemPromises);
+        setEnrichedItems(completedItems);
+      } catch (error) {
+        console.error("Error enriching order items:", error);
+      } finally {
+        setLoadingItems(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [order]);
+
   if (!order) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
-      {/* Modal Container */}
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-opacity duration-150">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150 relative z-[10000]">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
           <div>
@@ -28,7 +72,6 @@ const OrderDetailModal = ({ order, onClose }) => {
               <p className="text-xs text-gray-500 uppercase font-bold">
                 Order Date
               </p>
-              {/* Use dummy date if createdAt is missing in mock */}
               <p className="text-gray-800 font-medium">
                 {order.createdAt
                   ? new Date(order.createdAt).toLocaleDateString()
@@ -57,18 +100,23 @@ const OrderDetailModal = ({ order, onClose }) => {
               <FaBox className="text-blue-600" /> Items Ordered
             </h3>
             <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {order.items &&
-                order.items.map((item, idx) => (
+              {/* 4. Use enrichedItems instead of raw order.OrderItems */}
+              {loadingItems ? (
+                <div className="p-4 text-center text-gray-500">
+                  Loading item details...
+                </div>
+              ) : (
+                enrichedItems.map((item, idx) => (
                   <div
                     key={idx}
                     className="flex gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition"
                   >
-                    {/* Image Placeholder */}
+                    {/* Image */}
                     <div className="w-16 h-16 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center">
                       {item.Product?.imageUrl ? (
                         <img
                           src={item.Product.imageUrl}
-                          alt={item.Product.name}
+                          alt=""
                           className="w-full h-full object-contain mix-blend-multiply"
                         />
                       ) : (
@@ -77,58 +125,57 @@ const OrderDetailModal = ({ order, onClose }) => {
                     </div>
 
                     <div className="flex-1">
+                      {/* Name */}
                       <p className="font-semibold text-gray-800">
-                        {item.Product?.name || "Product Name"}
+                        {item.Product?.name || `Product ID: ${item.productId}`}
                       </p>
                       <p className="text-sm text-gray-500">
                         Qty: {item.quantity}
                       </p>
                     </div>
+
                     <div className="text-right">
                       <p className="font-bold text-gray-800">
-                        ₹
-                        {(item.Product?.price * item.quantity).toLocaleString()}
+                        ₹{(item.price * item.quantity).toLocaleString()}
                       </p>
                       <p className="text-xs text-gray-400">
-                        ₹{item.Product?.price} each
+                        ₹{item.price} each
                       </p>
                     </div>
                   </div>
-                ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Shipping Address */}
+            {/* Address */}
             <div>
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <FaMapMarkerAlt className="text-blue-600" /> Shipping Address
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 space-y-1 border border-gray-200">
-                {order.shippingAddress ? (
+                {order.address ? (
                   <>
                     <p className="font-bold text-gray-900">
-                      {order.shippingAddress.fullName}
+                      {order.address.fullName}
                     </p>
-                    <p>{order.shippingAddress.addressLine1}</p>
+                    <p>{order.address.addressLine1}</p>
                     <p>
-                      {order.shippingAddress.city},{" "}
-                      {order.shippingAddress.state}{" "}
-                      {order.shippingAddress.zipCode}
+                      {order.address.city}, {order.address.state}{" "}
+                      {order.address.zipCode}
                     </p>
                     <p className="mt-2 text-gray-500">
-                      📞 {order.shippingAddress.phone}
+                      📞 {order.address.phone}
                     </p>
                   </>
                 ) : (
-                  <p className="italic text-gray-400">
-                    Address details not available
-                  </p>
+                  <p className="italic text-gray-400">Address not available</p>
                 )}
               </div>
             </div>
 
-            {/* Payment Summary */}
+            {/* Payment */}
             <div>
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <FaCreditCard className="text-blue-600" /> Payment Info
@@ -143,7 +190,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium text-gray-900">
-                    ₹{order.totalAmount}
+                    ₹{order.amount}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -153,7 +200,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                 <div className="flex justify-between border-t border-gray-200 pt-2 mt-1">
                   <span className="font-bold text-gray-800">Total Paid</span>
                   <span className="font-bold text-blue-600 text-lg">
-                    ₹{order.totalAmount}
+                    ₹{order.amount}
                   </span>
                 </div>
               </div>
@@ -161,7 +208,6 @@ const OrderDetailModal = ({ order, onClose }) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-gray-100 bg-gray-50 text-right rounded-b-xl">
           <button
             onClick={onClose}
