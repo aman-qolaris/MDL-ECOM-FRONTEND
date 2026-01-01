@@ -1,38 +1,56 @@
-// Toggle this to FALSE later when you have a Real Key
-const USE_MOCK = true;
+import { loadRazorpayScript } from "../utils/loadRazorpay";
 
-// You can leave this empty for now
-const RAZORPAY_KEY_ID = "";
+// ✅ Access the key from the .env file
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
 export const initiatePayment = async (amount, user, onSuccess) => {
-  if (USE_MOCK) {
-    console.log("Initializing Mock Payment...");
+  if (!RAZORPAY_KEY_ID) {
+    alert("Razorpay Key is missing! Check your .env file.");
+    return;
+  }
 
-    // 1. Simulate a short network delay (like connecting to a bank)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    const isLoaded = await loadRazorpayScript();
 
-    // 2. Open a Browser Confirmation Box (This acts as the "Payment Popup")
-    const isConfirmed = window.confirm(
-      `MOCK PAYMENT GATEWAY\n\nPay ₹${amount}?\n\n(Click 'OK' to simulate Success, 'Cancel' to simulate Failure)`
-    );
-
-    if (isConfirmed) {
-      // 3. Simulate Success Response from Razorpay
-      const mockResponse = {
-        razorpay_payment_id: "pay_mock_" + Date.now(),
-        razorpay_order_id: "order_mock_" + Date.now(),
-        razorpay_signature: "mock_signature_123",
-      };
-
-      console.log("Payment Successful (Mock)!", mockResponse);
-      await onSuccess(mockResponse); // <--- Triggers the "Place Order" logic
-    } else {
-      // 4. Simulate Failure
-      throw new Error("Payment cancelled");
+    if (!isLoaded) {
+      alert("Razorpay SDK failed to load. Check internet connection.");
+      return;
     }
-  } else {
-    // Real Backend/Razorpay Logic (We will add this later when you have a key)
-    console.log("Real payment integration pending key...");
-    alert("Real Payment Key missing. Switch to Mock mode.");
+
+    const options = {
+      key: RAZORPAY_KEY_ID, // Uses the key from .env
+      amount: amount * 100,
+      currency: "INR",
+      name: "My E-Comm Store",
+      description: "Order Payment",
+
+      handler: function (response) {
+        console.log("Payment Successful:", response);
+        onSuccess({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+        });
+      },
+
+      prefill: {
+        name: user?.name || "",
+        email: user?.email || "",
+        contact: user?.phone || "",
+      },
+      theme: {
+        color: "#2563EB",
+      },
+    };
+
+    const paymentObject = new window.Razorpay(options);
+    paymentObject.on("payment.failed", function (response) {
+      alert("Payment Failed: " + response.error.description);
+    });
+
+    paymentObject.open();
+  } catch (error) {
+    console.error("Payment Error:", error);
+    alert("Something went wrong with payment.");
   }
 };
