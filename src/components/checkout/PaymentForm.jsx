@@ -1,189 +1,79 @@
 import { useState } from "react";
-import { FaCreditCard, FaMoneyBillWave, FaMobileAlt } from "react-icons/fa";
-import { SiRazorpay } from "react-icons/si";
+import { FaMoneyBillWave, FaCreditCard } from "react-icons/fa";
 
-const PaymentForm = ({ onSubmit, onBack }) => {
-  const [paymentMethod, setPaymentMethod] = useState("razorpay");
-  const [razorpayMethod, setRazorpayMethod] = useState("card"); // card or upi
-
-  // State for Payment Details (not needed for Razorpay as it handles its own UI)
-  const [cardDetails, setCardDetails] = useState({
-    number: "",
-    name: "",
-    expiry: "",
-    cvv: "",
-  });
-  const [upiId, setUpiId] = useState("");
-
-  const handleCardChange = (e) => {
-    setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // For Razorpay, we just pass the method and preferred payment type
-    if (paymentMethod === "razorpay") {
-      onSubmit({
-        method: "razorpay",
-        preferredMethod: razorpayMethod, // card or upi
-      });
-      return;
-    }
-
-    // For COD
-    if (paymentMethod === "cod") {
-      onSubmit({
-        method: "cod",
-      });
-    }
-  };
-
+const PaymentForm = ({ paymentMethod, setPaymentMethod, onBack, onSubmit }) => {
   return (
-    <form onSubmit={handleSubmit} className="animate-fadeIn space-y-6">
-      <div className="space-y-4">
-        {/* === OPTION 1: RAZORPAY === */}
-        <div
-          className={`border rounded-xl transition overflow-hidden ${
+    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+      <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+
+      <div className="space-y-4 mb-6">
+        {/* OPTION 1: RAZORPAY (Single Row with Logo) */}
+        <label
+          className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition ${
             paymentMethod === "razorpay"
-              ? "border-blue-500 ring-2 ring-blue-500"
-              : "border-gray-200"
+              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+              : "border-gray-200 hover:border-blue-200"
           }`}
         >
-          <label
-            className={`flex items-center p-4 cursor-pointer ${
-              paymentMethod === "razorpay" ? "bg-blue-50" : "hover:bg-gray-50"
-            }`}
-          >
+          <div className="flex items-center gap-3">
             <input
               type="radio"
               name="payment"
               value="razorpay"
               checked={paymentMethod === "razorpay"}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="text-blue-600 focus:ring-blue-500 h-4 w-4"
             />
-            <div className="ml-4 flex-1 flex justify-between items-center">
-              <span className="font-medium text-gray-900">
-                Pay with Razorpay
-              </span>
-              <SiRazorpay className="text-blue-600 text-2xl" />
-            </div>
-          </label>
+            <span className="font-semibold text-gray-700">Pay Online</span>
+          </div>
+          {/* Razorpay Logo Image */}
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg"
+            alt="Razorpay"
+            className="h-6 object-contain"
+          />
+        </label>
 
-          {/* RAZORPAY SUB-OPTIONS (Card/UPI) */}
-          {paymentMethod === "razorpay" && (
-            <div className="p-4 border-t border-blue-100 bg-white space-y-3 animate-fadeIn">
-              <p className="text-sm text-gray-600 mb-3">
-                Choose your preferred payment method:
-              </p>
-
-              {/* Card Option */}
-              <label
-                className={`flex items-center p-3 border rounded-lg cursor-pointer transition ${
-                  razorpayMethod === "card"
-                    ? "border-blue-400 bg-blue-50"
-                    : "border-gray-200 hover:bg-gray-50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="razorpayMethod"
-                  value="card"
-                  checked={razorpayMethod === "card"}
-                  onChange={(e) => setRazorpayMethod(e.target.value)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <FaCreditCard className="ml-3 text-gray-600" />
-                <span className="ml-2 text-sm font-medium text-gray-800">
-                  Credit / Debit Card
-                </span>
-              </label>
-
-              {/* UPI Option */}
-              <label
-                className={`flex items-center p-3 border rounded-lg cursor-pointer transition ${
-                  razorpayMethod === "upi"
-                    ? "border-blue-400 bg-blue-50"
-                    : "border-gray-200 hover:bg-gray-50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="razorpayMethod"
-                  value="upi"
-                  checked={razorpayMethod === "upi"}
-                  onChange={(e) => setRazorpayMethod(e.target.value)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <FaMobileAlt className="ml-3 text-blue-600" />
-                <span className="ml-2 text-sm font-medium text-gray-800">
-                  UPI (GPay, PhonePe, Paytm)
-                </span>
-              </label>
-
-              <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-xs text-gray-600">
-                  💡 You'll be redirected to Razorpay's secure payment page to
-                  complete your transaction.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* === OPTION 2: COD === */}
-        <div
-          className={`border rounded-xl transition ${
+        {/* OPTION 2: CASH ON DELIVERY (COD) */}
+        <label
+          className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
             paymentMethod === "cod"
-              ? "border-blue-500 ring-1 ring-blue-500"
-              : "border-gray-200"
+              ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+              : "border-gray-200 hover:border-blue-200"
           }`}
         >
-          <label
-            className={`flex items-center p-4 cursor-pointer ${
-              paymentMethod === "cod" ? "bg-blue-50" : "hover:bg-gray-50"
-            }`}
-          >
+          <div className="flex items-center gap-3">
             <input
               type="radio"
               name="payment"
               value="cod"
               checked={paymentMethod === "cod"}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="text-blue-600 focus:ring-blue-500 h-4 w-4"
             />
-            <div className="ml-4 flex-1 flex justify-between items-center">
-              <span className="font-medium text-gray-900">
-                Cash on Delivery
-              </span>
-              <FaMoneyBillWave className="text-green-500 text-xl" />
-            </div>
-          </label>
-        </div>
+            <span className="font-semibold text-gray-700">
+              Cash on Delivery
+            </span>
+          </div>
+          <FaMoneyBillWave className="ml-auto text-green-600 text-xl" />
+        </label>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4 pt-4">
+      <div className="flex justify-between mt-8">
         <button
-          type="button"
           onClick={onBack}
-          className="w-1/3 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+          className="text-gray-600 hover:text-gray-800 font-medium px-6 py-2"
         >
           Back
         </button>
         <button
-          type="submit"
-          className="w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-sm"
+          onClick={onSubmit}
+          className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200"
         >
-          {paymentMethod === "cod"
-            ? "Place Order"
-            : `Pay ₹ with Razorpay (${
-                razorpayMethod === "card" ? "Card" : "UPI"
-              })`}
+          {paymentMethod === "cod" ? "Place Order" : "Pay Now"}
         </button>
       </div>
-    </form>
+    </div>
   );
 };
 

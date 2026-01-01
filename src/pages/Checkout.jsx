@@ -3,11 +3,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import AddressForm from "../components/checkout/AddressForm";
 import PaymentForm from "../components/checkout/PaymentForm";
-// 1. IMPORT THE NEW PAYMENT SERVICE
-import { clearCartThunk } from "../store/thunks/cartThunks"; // Import Thunk instead of Slice action
+import { clearCartThunk } from "../store/thunks/cartThunks";
 import { initiatePayment } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
-import { clearCart } from "../store/slices/cartSlice";
 import { getAddresses } from "../services/addressService";
 import { FaPlus } from "react-icons/fa";
 
@@ -21,6 +19,9 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // ✅ CHANGE 1: Added State for Payment Method
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
 
   // --- SAVED ADDRESSES STATE ---
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -71,7 +72,8 @@ const Checkout = () => {
     }
   };
 
-  const handleOrderSubmit = async (paymentData) => {
+  // ✅ CHANGE 2: Updated Order Submit Logic to use State
+  const handleOrderSubmit = async () => {
     try {
       setLoading(true);
 
@@ -85,19 +87,17 @@ const Checkout = () => {
         })),
         amount: total,
         address: shippingAddress,
-        paymentMethod: paymentData.method === "cod" ? "COD" : "RAZORPAY",
-        payment: paymentData.method === "razorpay" ? true : false,
+        // Using the state variable here
+        paymentMethod: paymentMethod === "cod" ? "COD" : "RAZORPAY",
+        payment: paymentMethod === "razorpay" ? true : false,
       };
 
       // 1. Handle COD
-      if (paymentData.method === "cod") {
+      if (paymentMethod === "cod") {
         console.log("Creating COD Order:", payload);
         const response = await createOrder(payload);
 
-        // 👇 SET FLAG TO TRUE FIRST
         setIsPaymentSuccess(true);
-
-        // ✅ FIX: Navigate FIRST, then clear cart
         navigate("/order-success", {
           state: {
             orderId: response.orderId || response.id,
@@ -113,15 +113,13 @@ const Checkout = () => {
         const razorpayPayload = {
           ...payload,
           payment: true,
+          paymentDetails: paymentResponse, // Optional: Save payment ID
         };
 
         console.log("Payment Success! Creating Order:", razorpayPayload);
         const response = await createOrder(razorpayPayload);
 
-        // 👇 SET FLAG TO TRUE FIRST
         setIsPaymentSuccess(true);
-
-        // ✅ FIX: Navigate FIRST, then clear cart
         navigate("/order-success", {
           state: {
             orderId: response.orderId || response.id,
@@ -138,10 +136,7 @@ const Checkout = () => {
         );
       } else {
         console.warn("Backend failed, proceeding with Mock Success (Dev Mode)");
-
-        setIsPaymentSuccess(true); // <--- Add here too
-
-        // ✅ FIX: Navigate FIRST here too for the mock fallback
+        setIsPaymentSuccess(true);
         navigate("/order-success", {
           state: {
             orderId: "MOCK-" + Date.now(),
@@ -314,7 +309,10 @@ const Checkout = () => {
               Payment Method
             </h2>
             {step === 2 && (
+              // ✅ CHANGE 3: Passed state and setter to PaymentForm
               <PaymentForm
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
                 onSubmit={handleOrderSubmit}
                 onBack={() => setStep(1)}
               />
@@ -322,7 +320,7 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: SUMMARY (UPDATED) */}
+        {/* RIGHT COLUMN: SUMMARY */}
         <div className="lg:w-1/3">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
             <h2 className="text-xl font-bold mb-4 text-gray-800">
@@ -330,9 +328,7 @@ const Checkout = () => {
             </h2>
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
               {items.map((item) => {
-                // ROBUST DATA CHECK: Handle uppercase 'Product' or lowercase 'product'
                 const product = item.Product || item.product || {};
-
                 return (
                   <div
                     key={item.id || item.cartItemId}
