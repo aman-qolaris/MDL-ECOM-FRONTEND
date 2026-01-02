@@ -363,11 +363,11 @@ const Profile = () => {
                     <tbody className="divide-y divide-gray-100">
                       {orders.map((order) => (
                         <tr
-                          key={order.orderId}
+                          key={order.id}
                           className="hover:bg-gray-50 transition duration-150 group"
                         >
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            #{order.orderId}
+                            #{order.id}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleDateString(
