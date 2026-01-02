@@ -10,8 +10,9 @@ import {
   FaSignOutAlt,
   FaEdit,
   FaLock,
+  FaEye,
+  FaEyeSlash,
   FaCamera,
-  FaChevronRight, // Arrow icon for table
 } from "react-icons/fa";
 import OrderDetailModal from "../components/profile/OrderDetailModal";
 
@@ -32,6 +33,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // ✅ New State for Raw File
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -48,6 +50,9 @@ const Profile = () => {
   });
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -68,11 +73,7 @@ const Profile = () => {
     setLoading(true);
     try {
       const data = await getMyOrders(user?.id);
-      // ✅ SORT: Newest First
-      const sortedData = data.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      setOrders(sortedData);
+      setOrders(data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -83,7 +84,10 @@ const Profile = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // ✅ 1. Store raw file
       setSelectedFile(file);
+
+      // 2. Preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData({ ...formData, profilePic: reader.result });
@@ -96,8 +100,9 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
+
+      // ✅ 3. Create FormData
       const data = new FormData();
-      // Even though name is disabled, we send existing name back to ensure no data loss
       data.append("name", formData.name);
       data.append("email", formData.email);
 
@@ -109,7 +114,7 @@ const Profile = () => {
       dispatch(updateUser(updatedData));
 
       setIsEditing(false);
-      setSelectedFile(null);
+      setSelectedFile(null); // Reset file
       alert("Profile Updated!");
     } catch (error) {
       alert("Failed to update.");
@@ -131,6 +136,7 @@ const Profile = () => {
       return;
     }
 
+    // Simple length check for brevity, keep regex if preferred
     if (passwordData.new.length < 8) {
       setPasswordError("Password must be at least 8 chars");
       return;
@@ -161,7 +167,7 @@ const Profile = () => {
       <div className="flex flex-col md:flex-row gap-8">
         {/* SIDEBAR */}
         <div className="md:w-1/4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex flex-col items-center">
               <div className="relative group">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md mb-3 bg-blue-100 flex items-center justify-center">
@@ -239,7 +245,7 @@ const Profile = () => {
         {/* CONTENT */}
         <div className="md:w-3/4">
           {activeTab === "profile" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800">
                   Personal Information
@@ -247,7 +253,7 @@ const Profile = () => {
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg font-semibold transition"
+                    className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg font-semibold"
                   >
                     <FaEdit /> Edit
                   </button>
@@ -255,14 +261,14 @@ const Profile = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg transition"
+                      className="text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProfile}
                       disabled={saving}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                     >
                       {saving ? "Saving..." : "Save Changes"}
                     </button>
@@ -271,26 +277,24 @@ const Profile = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 🔒 FULL NAME - NON-EDITABLE */}
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Full Name
                   </label>
-                  <div className="relative">
+                  {isEditing ? (
                     <input
                       type="text"
+                      name="name"
                       value={formData.name}
-                      disabled
-                      className="w-full border p-2 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                      onChange={handleInputChange}
+                      className="w-full border p-2 rounded-lg"
                     />
-                    <FaLock
-                      className="absolute right-3 top-3 text-gray-400"
-                      size={12}
-                    />
-                  </div>
+                  ) : (
+                    <p className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg">
+                      {user?.name}
+                    </p>
+                  )}
                 </div>
-
-                {/* 🔒 PHONE - NON-EDITABLE */}
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Phone
@@ -308,8 +312,6 @@ const Profile = () => {
                     />
                   </div>
                 </div>
-
-                {/* ✏️ EMAIL - EDITABLE */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Email
@@ -320,10 +322,10 @@ const Profile = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full border p-2 rounded-lg"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <p className="text-gray-900 font-medium p-3 bg-gray-50 rounded-lg">
                       {user?.email}
                     </p>
                   )}
@@ -333,97 +335,54 @@ const Profile = () => {
           )}
 
           {activeTab === "orders" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fadeIn">
-              <div className="p-6 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Order History
-                </h2>
-              </div>
-
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold mb-6 text-gray-800">
+                Order History
+              </h2>
               {loading ? (
-                <div className="p-10 text-center text-gray-500">
-                  Loading your orders...
-                </div>
+                <p>Loading...</p>
               ) : orders.length === 0 ? (
-                <div className="p-10 text-center text-gray-500">
-                  No orders found. Start shopping!
-                </div>
+                <p>No orders.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-semibold border-b border-gray-100">
-                        <th className="px-6 py-4">Order ID</th>
-                        <th className="px-6 py-4">Date</th>
-                        <th className="px-6 py-4">Total Amount</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {orders.map((order) => (
-                        <tr
-                          key={order.id}
-                          className="hover:bg-gray-50 transition duration-150 group"
-                        >
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            #{order.id}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                            ₹{order.amount?.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                order.status === "DELIVERED"
-                                  ? "bg-green-100 text-green-800"
-                                  : order.status === "CANCELLED"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {order.status || "Processing"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => setSelectedOrder(order)}
-                              className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition"
-                            >
-                              View Details <FaChevronRight size={12} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="border border-gray-100 rounded-lg p-4 flex justify-between"
+                    >
+                      <div>
+                        <span className="font-bold">#{order.id}</span>
+                      </div>
+                      <div>
+                        <span className="font-bold text-blue-600">
+                          ₹{order.amount}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-blue-500 hover:underline"
+                      >
+                        View
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
 
           {activeTab === "security" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold mb-6 text-gray-800">
                 Change Password
               </h2>
               {passwordSuccess && (
-                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">
                   {passwordSuccess}
                 </div>
               )}
               {passwordError && (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm font-medium">
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
                   {passwordError}
                 </div>
               )}
@@ -438,7 +397,7 @@ const Profile = () => {
                   <input
                     type="password"
                     required
-                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    className="w-full border rounded-lg px-4 py-2"
                     value={passwordData.current}
                     onChange={(e) =>
                       setPasswordData({
@@ -455,7 +414,7 @@ const Profile = () => {
                   <input
                     type="password"
                     required
-                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    className="w-full border rounded-lg px-4 py-2"
                     value={passwordData.new}
                     onChange={(e) =>
                       setPasswordData({ ...passwordData, new: e.target.value })
@@ -469,7 +428,7 @@ const Profile = () => {
                   <input
                     type="password"
                     required
-                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    className="w-full border rounded-lg px-4 py-2"
                     value={passwordData.confirm}
                     onChange={(e) =>
                       setPasswordData({
@@ -482,7 +441,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition shadow-sm"
+                  className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {saving ? "Updating..." : "Update Password"}
                 </button>

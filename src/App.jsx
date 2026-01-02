@@ -33,7 +33,6 @@ import AdminVendors from "./pages/admin/AdminVendors";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
 import AdminDeliveryBoys from "./pages/admin/AdminDeliveryBoys";
 import ScrollToTop from "./components/layout/ScrollToTop";
-import VendorOrderDetails from "./pages/vendor/VendorOrderDetails";
 
 function App() {
   return (
@@ -66,7 +65,6 @@ function App() {
           <Route path="products" element={<VendorProducts />} />
           <Route path="products/new" element={<VendorAddProduct />} />
           <Route path="orders" element={<VendorOrders />} />
-          <Route path="orders/:id" element={<VendorOrderDetails />} />
           <Route path="profile" element={<VendorProfile />} />
         </Route>
 
