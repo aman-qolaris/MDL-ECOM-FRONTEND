@@ -33,6 +33,8 @@ import AdminVendors from "./pages/admin/AdminVendors";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
 import AdminDeliveryBoys from "./pages/admin/AdminDeliveryBoys";
 import ScrollToTop from "./components/layout/ScrollToTop";
+import AdminInventory from "./pages/admin/AdminInventory";
+import AdminVendorSales from "./pages/admin/AdminVendorSales";
 
 function App() {
   return (
@@ -45,8 +47,18 @@ function App() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProducts />} />{" "}
-            <Route path="products/new" element={<AdminAddProduct />} />
+            {/* 👇 CHANGE 1: Main link now goes to Vendor List */}
+            <Route path="inventory" element={<AdminInventory />} />
+
+            {/* 👇 CHANGE 2: Dynamic route for specific vendor products. Reuses AdminProducts */}
+            <Route
+              path="inventory/vendor/:vendorId"
+              element={<AdminProducts />}
+            />
+            <Route
+              path="inventory/vendor/:vendorId/sales"
+              element={<AdminVendorSales />}
+            />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="orders/:id" element={<AdminOrderDetails />} />
             <Route path="vendors" element={<AdminVendors />} />
