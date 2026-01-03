@@ -40,7 +40,7 @@ export const getVendorOrders = async () => {
   }
 
   // We use direct 'axios' here to force the Vendor Token
-  const response = await axios.get(`${BASE_URL}/orders/vendor`, {
+  const response = await axios.get(`${BASE_URL}/orders/vendor/orders`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;

@@ -93,9 +93,20 @@ const productSlice = createSlice({
 
       // 4. Update Product
       .addCase(updateProductThunk.fulfilled, (state, action) => {
+        // 1. Get the new data from backend
         const updatedProduct = action.payload.product || action.payload;
+
+        // 2. Find the item in the list
         const index = state.items.findIndex((p) => p.id === updatedProduct.id);
+
         if (index !== -1) {
+          // 3. SAFETY: Preserve the Category Name from the old state
+          // (Because backend update usually returns 'categoryId' but not the 'Category' object)
+          if (!updatedProduct.Category && state.items[index].Category) {
+            updatedProduct.Category = state.items[index].Category;
+          }
+
+          // 4. Update the item
           state.items[index] = updatedProduct;
         }
       });

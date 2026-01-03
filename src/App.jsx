@@ -16,7 +16,6 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminProducts from "./pages/admin/AdminProducts";
-import AdminAddProduct from "./pages/admin/AdminAddProduct";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import VendorRegister from "./pages/vendor/VendorRegister";
@@ -35,6 +34,7 @@ import AdminDeliveryBoys from "./pages/admin/AdminDeliveryBoys";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminVendorSales from "./pages/admin/AdminVendorSales";
+import AdminVendorInventory from "./pages/admin/AdminVendorInventory";
 
 function App() {
   return (
@@ -53,7 +53,7 @@ function App() {
             {/* 👇 CHANGE 2: Dynamic route for specific vendor products. Reuses AdminProducts */}
             <Route
               path="inventory/vendor/:vendorId"
-              element={<AdminProducts />}
+              element={<AdminVendorInventory />}
             />
             <Route
               path="inventory/vendor/:vendorId/sales"
