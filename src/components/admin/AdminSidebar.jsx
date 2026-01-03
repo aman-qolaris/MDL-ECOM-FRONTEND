@@ -20,7 +20,7 @@ const AdminSidebar = () => {
 
   const menuItems = [
     { path: "/admin/dashboard", name: "Dashboard", icon: <FaTachometerAlt /> },
-    { path: "/admin/products", name: "Products", icon: <FaBox /> },
+    { path: "/admin/inventory", name: "Inventory", icon: <FaBox /> },
     { path: "/admin/orders", name: "Orders", icon: <FaShoppingBag /> },
     { path: "/admin/vendors", name: "Vendors", icon: <FaStore /> },
     { path: "/admin/delivery-boys", name: "Delivery Boys", icon: <FaTruck /> },

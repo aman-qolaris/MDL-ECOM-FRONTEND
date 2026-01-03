@@ -1,43 +1,59 @@
 import { useEffect, useState } from "react";
-// FIX 1: Import 'getProducts' (matches your updated service)
-import { getProducts, deleteProduct } from "../../services/productService";
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaFilter } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { getAllVendors } from "../../services/vendorService"; // 👈 ADD THIS IMPORT
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { getProducts, updateProduct } from "../../services/productService";
+import { getAllVendors } from "../../services/vendorService";
+import { FaEdit, FaSearch, FaArrowLeft, FaFilter } from "react-icons/fa";
 
 const AdminProducts = () => {
+  const { vendorId } = useParams();
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [vendorMap, setVendorMap] = useState({}); // 👈 1. ADD THIS STATE
+  // Vendor Lookup State
+  const [vendorMap, setVendorMap] = useState({});
+  const [currentVendorName, setCurrentVendorName] = useState("");
 
-  // 👇 1. ADD NEW STATE VARIABLES
+  // Filter State
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false);
 
-  // Fetch products on load
+  // Warehouse Stock Modal State
+  const [editingStockId, setEditingStockId] = useState(null);
+  const [newWarehouseStock, setNewWarehouseStock] = useState(0);
+
   useEffect(() => {
     loadData();
-  }, []);
+  }, [vendorId]);
 
-  // 👇 2. REPLACE YOUR EXISTING loadProducts FUNCTION WITH THIS:
   const loadData = async () => {
     try {
-      // Fetch both Products and Vendors at the same time
+      setLoading(true);
+      // Fetch Products and Vendors in parallel
       const [productsData, vendorsData] = await Promise.all([
         getProducts(),
         getAllVendors(),
       ]);
 
-      setProducts(productsData);
-
-      // Create a quick lookup map (ID -> Business Name)
+      // Create Vendor Lookup Map (ID -> Name)
       const lookup = {};
       vendorsData.forEach((vendor) => {
         lookup[vendor.id] = vendor.businessName;
       });
       setVendorMap(lookup);
+
+      // Filter by Vendor ID if present in URL
+      if (vendorId) {
+        const id = parseInt(vendorId);
+        const filtered = productsData.filter((p) => p.vendorId === id);
+        setProducts(filtered);
+
+        if (lookup[id]) setCurrentVendorName(lookup[id]);
+      } else {
+        setProducts(productsData);
+      }
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
@@ -45,39 +61,57 @@ const AdminProducts = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await deleteProduct(id);
-        // Remove from UI immediately so we don't need to refresh
-        setProducts(products.filter((p) => p.id !== id));
-      } catch (error) {
-        alert("Failed to delete product");
-      }
+  // Handle Warehouse Stock Update
+  const handleUpdateWarehouseStock = async () => {
+    if (!editingStockId) return;
+
+    try {
+      // API Call to update only the warehouseStock field
+      await updateProduct(editingStockId, {
+        warehouseStock: parseInt(newWarehouseStock),
+      });
+
+      // Optimistic UI Update (Update local state without refreshing)
+      setProducts(
+        products.map((p) =>
+          p.id === editingStockId
+            ? { ...p, warehouseStock: parseInt(newWarehouseStock) }
+            : p
+        )
+      );
+
+      setEditingStockId(null);
+    } catch (error) {
+      alert("Failed to update warehouse stock");
     }
   };
 
-  // 👇 2. ADD THIS DYNAMIC FILTERING LOGIC
-  // This automatically recalculates whenever search, category, or stock changes
+  const openStockModal = (product) => {
+    setEditingStockId(product.id);
+    setNewWarehouseStock(product.warehouseStock || 0);
+  };
+
+  // Filter Logic
   const filteredProducts = products.filter((product) => {
-    // A. Search by Name (Case insensitive)
+    // 1. Search Name
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
-    // B. Filter by Category
+    // 2. Filter Category
     const categoryName =
       product.Category?.name || product.category || "Uncategorized";
     const matchesCategory =
       selectedCategory === "all" || categoryName === selectedCategory;
 
-    // C. Filter by Stock
-    const matchesStock = showOutOfStockOnly ? product.stock <= 0 : true;
+    // 3. Filter Stock (Based on Available Stock)
+    const availableStock = (product.stock || 0) - (product.reservedStock || 0);
+    const matchesStock = showOutOfStockOnly ? availableStock <= 0 : true;
 
     return matchesSearch && matchesCategory && matchesStock;
   });
 
-  // Get unique categories dynamically from the loaded products
+  // Get unique categories for dropdown
   const categories = [
     "all",
     ...new Set(
@@ -85,23 +119,38 @@ const AdminProducts = () => {
     ),
   ];
 
-  if (loading) return <div className="p-6">Loading products...</div>;
+  if (loading) return <div className="p-6">Loading inventory...</div>;
 
   return (
-    <div className="animate-fadeIn">
+    <div className="animate-fadeIn relative">
+      {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Products</h2>
-        <Link
-          to="/admin/products/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
-        >
-          <FaPlus /> Add Product
-        </Link>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/admin/inventory")}
+            className="p-2 rounded-full hover:bg-gray-200 transition"
+            title="Back to Vendors"
+          >
+            <FaArrowLeft className="text-gray-600" />
+          </button>
+
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {currentVendorName
+                ? `${currentVendorName}'s Inventory`
+                : "All Inventory"}
+            </h2>
+            <p className="text-sm text-gray-500">
+              Manage Vendor & Warehouse Stock
+            </p>
+          </div>
+        </div>
+        {/* No Add Product Button for Admin */}
       </div>
 
-      {/* 👇 3. ADD THIS SEARCH AND FILTER BAR */}
+      {/* Filter Bar */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
-        {/* Left: Search Input */}
+        {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
           <FaSearch className="absolute left-3 top-3 text-gray-400" />
           <input
@@ -113,133 +162,181 @@ const AdminProducts = () => {
           />
         </div>
 
-        {/* Right: Filters */}
+        {/* Filters */}
         <div className="flex gap-4 items-center">
-          {/* Category Dropdown */}
-          <div className="relative">
-            <FaFilter className="absolute left-3 top-3 text-gray-400" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat === "all" ? "All Categories" : cat}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat === "all" ? "All Categories" : cat}
+              </option>
+            ))}
+          </select>
 
-          {/* Stock Toggle */}
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer select-none">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showOutOfStockOnly}
               onChange={(e) => setShowOutOfStockOnly(e.target.checked)}
               className="w-4 h-4 text-red-600 rounded focus:ring-red-500 border-gray-300"
             />
-            Show Out of Stock
+            <span className="text-sm font-medium text-gray-700">
+              Show Out of Stock
+            </span>
           </label>
         </div>
       </div>
 
+      {/* Data Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
-              <th className="py-3 px-6 text-left">Product</th>
-              <th className="py-3 px-6 text-left">Category</th>
-              <th className="py-3 px-6 text-left">Owner</th>
-              <th className="py-3 px-6 text-center">Price</th>
-              <th className="py-3 px-6 text-center">Stock</th>
+              <th className="py-3 px-6">Product</th>
+              <th className="py-3 px-6 text-center">Total (Vendor)</th>
+              <th className="py-3 px-6 text-center">Reserved</th>
+              <th className="py-3 px-6 text-center">Available</th>
+              <th className="py-3 px-6 text-center bg-blue-50 text-blue-700 border-b border-blue-100">
+                Warehouse
+              </th>
+              <th className="py-3 px-6 text-center">Status</th>
               <th className="py-3 px-6 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="text-gray-600 text-sm font-light">
-            {filteredProducts.map((product) => (
-              <tr
-                key={product.id}
-                className="border-b border-gray-200 hover:bg-gray-50 transition"
-              >
-                <td className="py-3 px-6 text-left whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-md overflow-hidden border border-gray-200 mr-3">
-                      <img
-                        src={
-                          product.imageUrl || "https://via.placeholder.com/150"
-                        }
-                        alt={product.name}
-                        className="w-full h-full object-contain mix-blend-multiply"
-                      />
-                    </div>
-                    <span className="font-medium">{product.name}</span>
-                  </div>
-                </td>
-                <td className="py-3 px-6 text-left">
-                  <span className="bg-blue-100 text-blue-600 py-1 px-3 rounded-full text-xs">
-                    {/* Handle nested Category object from backend */}
-                    {product.Category?.name ||
-                      product.category ||
-                      "Uncategorized"}
-                  </span>
-                </td>
-                {/* 👇 ADD THIS NEW CELL for OWNER */}
-                <td className="py-3 px-6 text-left">
-                  {product.vendorId ? (
-                    <span className="bg-purple-100 text-purple-700 py-1 px-3 rounded-full text-xs font-bold border border-purple-200">
-                      {vendorMap[product.vendorId] ||
-                        `Vendor #${product.vendorId}`}{" "}
+            {filteredProducts.map((product) => {
+              // Calculate Stocks
+              const total = product.stock || 0;
+              const reserved = product.reservedStock || 0;
+              const available = total - reserved;
+              const warehouse = product.warehouseStock || 0;
+              const isOutOfStock = available <= 0;
+
+              return (
+                <tr
+                  key={product.id}
+                  className="border-b border-gray-200 hover:bg-gray-50 transition"
+                >
+                  <td className="py-3 px-6 flex items-center gap-3">
+                    <img
+                      src={
+                        product.imageUrl || "https://via.placeholder.com/150"
+                      }
+                      alt=""
+                      className="w-10 h-10 object-contain rounded border border-gray-200 mix-blend-multiply"
+                    />
+                    <span className="font-medium text-gray-800">
+                      {product.name}
                     </span>
-                  ) : (
-                    <span className="bg-gray-800 text-white py-1 px-3 rounded-full text-xs font-bold">
-                      Admin
-                    </span>
-                  )}
-                </td>
-                <td className="py-3 px-6 text-center font-bold">
-                  ₹{product.price}
-                </td>
-                <td className="py-3 px-6 text-center">
-                  <span
-                    className={
-                      product.stock > 0
-                        ? "text-green-600 font-semibold"
-                        : "text-red-500 font-semibold"
-                    }
-                  >
-                    {product.stock > 0
-                      ? `${product.stock} in Stock`
-                      : "Out of Stock"}
-                  </span>
-                </td>
-                <td className="py-3 px-6 text-center">
-                  <div className="flex item-center justify-center gap-4">
-                    <button className="text-blue-500 hover:text-blue-700 transform hover:scale-110 transition">
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="text-red-500 hover:text-red-700 transform hover:scale-110 transition"
+                  </td>
+
+                  {/* Total Stock */}
+                  <td className="py-3 px-6 text-center font-semibold text-gray-700">
+                    {total}
+                  </td>
+
+                  {/* Reserved Stock */}
+                  <td className="py-3 px-6 text-center text-orange-600 font-medium">
+                    {reserved}
+                  </td>
+
+                  {/* Available Stock */}
+                  <td className="py-3 px-6 text-center">
+                    <span
+                      className={`font-bold ${
+                        isOutOfStock ? "text-red-600" : "text-green-600"
+                      }`}
                     >
-                      <FaTrash />
+                      {available}
+                    </span>
+                  </td>
+
+                  {/* Warehouse Stock (Editable) */}
+                  <td className="py-3 px-6 text-center bg-blue-50/50">
+                    <span className="text-blue-800 font-bold">{warehouse}</span>
+                  </td>
+
+                  {/* Status Badge */}
+                  <td className="py-3 px-6 text-center">
+                    {isOutOfStock ? (
+                      <span className="bg-red-100 text-red-700 py-1 px-3 rounded-full text-xs font-bold">
+                        Out of Stock
+                      </span>
+                    ) : (
+                      <span className="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold">
+                        In Stock
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="py-3 px-6 text-center">
+                    <button
+                      onClick={() => openStockModal(product)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mx-auto transition bg-white border border-blue-200 px-3 py-1 rounded-md shadow-sm hover:shadow"
+                      title="Edit Warehouse Stock"
+                    >
+                      <FaEdit />{" "}
+                      <span className="text-xs font-bold">Warehouse</span>
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
-        {/* Empty State Message */}
+        {/* Empty State */}
         {filteredProducts.length === 0 && (
-          <div className="p-8 text-center text-gray-500">
-            {searchTerm || selectedCategory !== "all"
-              ? "No products match your filters."
-              : "No products found."}
+          <div className="p-10 text-center text-gray-500">
+            No products found matching your filters.
           </div>
         )}
       </div>
+
+      {/* Warehouse Stock Modal */}
+      {editingStockId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-xl shadow-2xl w-96 animate-fadeIn transform transition-all scale-100">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">
+              Update Warehouse Stock
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Enter the physical quantity stored in the Admin Warehouse.
+            </p>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              value={newWarehouseStock}
+              onChange={(e) => setNewWarehouseStock(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              min="0"
+              autoFocus
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setEditingStockId(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateWarehouseStock}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-md hover:shadow-lg"
+              >
+                Update Stock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
