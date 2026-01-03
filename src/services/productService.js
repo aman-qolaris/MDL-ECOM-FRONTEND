@@ -107,6 +107,6 @@ export const getVendorProducts = async () => {
 
 // 👇 ADD THIS FUNCTION
 export const getAllCategories = async () => {
-  const response = await api.get("/categories");
+  const response = await api.get("/products/categories");
   return response.data;
 };
