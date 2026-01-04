@@ -25,8 +25,10 @@ const ProductCard = ({ product }) => {
     const currentQty = existingItem ? existingItem.quantity : 0;
 
     // 2. Check if adding 1 more exceeds stock
-    if (currentQty + 1 > product.stock) {
-      alert(`Cannot add more. Only ${product.stock} items available in stock!`);
+    if (currentQty + 1 > product.availableStock) {
+      alert(
+        `Cannot add more. Only ${product.availableStock} items available in stock!`
+      );
       return;
     }
 
@@ -80,9 +82,9 @@ const ProductCard = ({ product }) => {
           </span>
           <button
             onClick={handleAddToCart}
-            disabled={product.stock <= 0}
+            disabled={product.availableStock <= 0}
             className={`p-2 rounded-full transition ${
-              product.stock > 0
+              product.availableStock > 0
                 ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}

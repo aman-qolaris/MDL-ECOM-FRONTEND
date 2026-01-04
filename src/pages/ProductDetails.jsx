@@ -77,9 +77,9 @@ const ProductDetails = () => {
     );
     const currentQtyInCart = existingItem ? existingItem.quantity : 0;
 
-    if (currentQtyInCart + quantity > product.stock) {
+    if (currentQtyInCart + quantity > product.availableStock) {
       alert(
-        `Stock Limit Reached! You already have ${currentQtyInCart} in cart. Only ${product.stock} available in total.`
+        `Stock Limit Reached! You already have ${currentQtyInCart} in cart. Only ${product.availableStock} available in total.`
       );
       return;
     }
@@ -136,19 +136,19 @@ const ProductDetails = () => {
               </span>
               <span
                 className={`ml-4 text-sm font-medium px-2 py-1 rounded ${
-                  product.stock > 0
+                  product.availableStock > 0
                     ? "bg-green-50 text-green-600"
                     : "bg-red-50 text-red-600"
                 }`}
               >
-                {product.stock > 0
-                  ? `In Stock (${product.stock})`
+                {product.availableStock > 0
+                  ? `In Stock (${product.availableStock})`
                   : "Out of Stock"}
               </span>
             </div>
 
             <div className="border-t border-gray-200 pt-6">
-              {product.stock > 0 && (
+              {product.availableStock > 0 && (
                 <div className="flex items-center space-x-4 mb-4">
                   <label className="text-gray-700 font-medium">Quantity:</label>
                   <div className="flex items-center border border-gray-300 rounded-lg">
@@ -162,7 +162,9 @@ const ProductDetails = () => {
                     <button
                       className="px-3 py-1 hover:bg-gray-100 border-l"
                       onClick={() =>
-                        setQuantity((q) => Math.min(product.stock, q + 1))
+                        setQuantity((q) =>
+                          Math.min(product.availableStock, q + 1)
+                        )
                       }
                     >
                       +
@@ -173,15 +175,15 @@ const ProductDetails = () => {
 
               <button
                 onClick={handleAddToCart}
-                disabled={quantity === 0 || product.stock === 0}
+                disabled={quantity === 0 || product.availableStock === 0}
                 className={`w-full py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center gap-2 ${
-                  quantity === 0 || product.stock === 0
+                  quantity === 0 || product.availableStock === 0
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
                 <FaShoppingCart />{" "}
-                {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                {product.availableStock === 0 ? "Out of Stock" : "Add to Cart"}
               </button>
             </div>
           </div>

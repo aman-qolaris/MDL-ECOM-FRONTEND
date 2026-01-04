@@ -42,8 +42,7 @@ const AdminInventory = () => {
           stats[product.vendorId].count += 1;
 
           // 2. Add Stock (Check new stockDetails structure first, fallback to vendortotalstock)
-          const stockQty =
-            product.stockDetails?.total || product.vendortotalstock || 0;
+          const stockQty = product.totalStock || 0;
           stats[product.vendorId].stock += stockQty;
         }
       });

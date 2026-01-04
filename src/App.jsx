@@ -15,7 +15,6 @@ import Profile from "./pages/Profile";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRoute from "./components/auth/AdminRoute";
-import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import VendorRegister from "./pages/vendor/VendorRegister";
@@ -35,6 +34,11 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminVendorSales from "./pages/admin/AdminVendorSales";
 import AdminVendorInventory from "./pages/admin/AdminVendorInventory";
+import VendorSales from "./pages/vendor/VendorSales";
+import VendorOrderStats from "./pages/vendor/VendorOrderStats";
+import AdminSales from "./pages/admin/AdminSales";
+import AdminTodaysOrders from "./pages/admin/AdminTodaysOrders";
+import AdminPendingOrders from "./pages/admin/AdminPendingOrders";
 
 function App() {
   return (
@@ -47,6 +51,10 @@ function App() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            {/* 👇 NEW ROUTES */}
+            <Route path="sales" element={<AdminSales />} />
+            <Route path="orders/today" element={<AdminTodaysOrders />} />
+            <Route path="orders/pending" element={<AdminPendingOrders />} />
             {/* 👇 CHANGE 1: Main link now goes to Vendor List */}
             <Route path="inventory" element={<AdminInventory />} />
 
@@ -74,6 +82,8 @@ function App() {
         {/* In real app, wrap this with <VendorRoute> to protect it */}
         <Route path="/vendor" element={<VendorLayout />}>
           <Route path="dashboard" element={<VendorDashboard />} />
+          <Route path="sales" element={<VendorSales />} />
+          <Route path="order-stats" element={<VendorOrderStats />} />
           <Route path="products" element={<VendorProducts />} />
           <Route path="products/new" element={<VendorAddProduct />} />
           <Route path="orders" element={<VendorOrders />} />

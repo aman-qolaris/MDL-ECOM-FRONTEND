@@ -132,8 +132,12 @@ const Cart = () => {
                     <span className="px-3 font-medium text-sm">
                       {item.quantity}
                     </span>
+                    // ✅ New Code (Add disabled condition)
                     <button
-                      className="px-3 py-1 hover:bg-gray-100"
+                      className="px-3 py-1 hover:bg-gray-100 disabled:opacity-50"
+                      disabled={
+                        item.quantity >= (item.Product?.availableStock || 0)
+                      } // Prevents going over stock
                       onClick={() =>
                         dispatch(
                           updateItemQuantity({
