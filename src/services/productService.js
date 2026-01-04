@@ -54,15 +54,13 @@ export const createProduct = async (productData) => {
 
 // 4. Update Product (Matches: PUT /api/products/:id)
 export const updateProduct = async (id, productData) => {
+  // Ensure this matches where you actually save the token (e.g., "token")
   const token =
-    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+    localStorage.getItem("token") || localStorage.getItem("vendorToken");
 
   const response = await axios.put(`${BASE_URL}/products/${id}`, productData, {
     headers: {
-      "Content-Type":
-        productData instanceof FormData
-          ? "multipart/form-data"
-          : "application/json",
+      "Content-Type": "multipart/form-data", // axios sets boundary auto for FormData, but this forces intent
       Authorization: `Bearer ${token}`,
     },
   });

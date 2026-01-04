@@ -1,118 +1,154 @@
-import { useEffect, useState } from "react";
-import { getAdminStats } from "../../services/adminService"; // Import the new service
-import { getProducts } from "../../services/productService"; // Import product service to get count
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
-  FaShoppingCart,
-  FaUserFriends,
-  FaBoxOpen,
-  FaRupeeSign,
+  FaMoneyBillWave,
+  FaClipboardList,
+  FaUsers,
+  FaClock,
+  FaCalendarDay,
 } from "react-icons/fa";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
-    totalRevenue: 0,
+    totalSales: 0,
     totalOrders: 0,
-    totalProducts: 0,
-    activeUsers: 0,
+    totalUsers: 0,
+    todayOrders: 0,
+    pendingOrders: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchStats();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchStats = async () => {
     try {
-      setLoading(true);
-      // Fetch Admin Stats and Products in parallel
-      const [adminData, productsData] = await Promise.all([
-        getAdminStats(),
-        getProducts(),
-      ]);
+      const token =
+        localStorage.getItem("adminToken") || localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      // 1. Fetch All Orders (to calculate sales, today, pending)
+      const ordersRes = await axios.get(
+        "http://localhost:5007/api/orders/admin/all",
+        config
+      );
+      const orders = ordersRes.data;
+
+      // 2. Fetch All Users
+      const usersRes = await axios.get(
+        "http://localhost:5007/api/auth/users",
+        config
+      );
+
+      // --- CALCULATIONS ---
+
+      // A. Total Sales (Sum of Delivered orders)
+      const totalSales = orders
+        .filter((o) => o.status === "DELIVERED")
+        .reduce((acc, o) => acc + (parseFloat(o.amount) || 0), 0);
+
+      // B. Today's Orders
+      const today = new Date().toISOString().split("T")[0];
+      const todayOrders = orders.filter(
+        (o) => o.createdAt && o.createdAt.startsWith(today)
+      ).length;
+
+      // C. Pending Orders
+      const pendingOrders = orders.filter((o) =>
+        ["PENDING", "PROCESSING"].includes(o.status)
+      ).length;
 
       setStats({
-        totalRevenue: adminData.stats.totalRevenue || 0,
-        totalOrders: adminData.stats.totalOrders || 0,
-        activeUsers: adminData.stats.activeUsers || 0,
-        totalProducts: productsData.length || 0, // Calculate product count from array length
+        totalSales,
+        totalOrders: orders.length,
+        totalUsers: usersRes.data.length,
+        todayOrders,
+        pendingOrders,
       });
-    } catch (err) {
-      console.error("Dashboard data fetch failed:", err);
-      setError("Failed to load dashboard data.");
+    } catch (error) {
+      console.error("Failed to load admin stats", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const cards = [
+    {
+      title: "Total Sales",
+      value: `₹${stats.totalSales.toLocaleString()}`,
+      icon: <FaMoneyBillWave />,
+      color: "bg-green-500",
+      link: "/admin/sales",
+      desc: "View detailed reports",
+    },
+    {
+      title: "Total Orders",
+      value: stats.totalOrders,
+      icon: <FaClipboardList />,
+      color: "bg-blue-500",
+      link: "/admin/orders",
+      desc: "View all orders",
+    },
+    {
+      title: "Customers",
+      value: stats.totalUsers,
+      icon: <FaUsers />,
+      color: "bg-purple-500",
+      link: "/admin/users",
+      desc: "Manage users",
+    },
+    {
+      title: "Today's Orders",
+      value: stats.todayOrders,
+      icon: <FaCalendarDay />,
+      color: "bg-orange-500",
+      link: "/admin/orders/today",
+      desc: "Orders placed today",
+    },
+    {
+      title: "Pending Orders",
+      value: stats.pendingOrders,
+      icon: <FaClock />,
+      color: "bg-red-500",
+      link: "/admin/orders/pending",
+      desc: "Orders needing attention",
+    },
+  ];
+
   if (loading)
-    return <div className="p-8 text-center">Loading dashboard...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+    return <div className="p-8 text-center">Loading Dashboard...</div>;
 
   return (
-    <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        Dashboard Overview
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Stat Cards with Dynamic Data */}
-        {[
-          {
-            label: "Total Sales",
-            value: `₹${stats.totalRevenue.toLocaleString()}`,
-            color: "bg-green-500",
-            icon: <FaRupeeSign className="text-white opacity-80 text-3xl" />,
-          },
-          {
-            label: "Total Orders",
-            value: stats.totalOrders,
-            color: "bg-blue-500",
-            icon: <FaShoppingCart className="text-white opacity-80 text-3xl" />,
-          },
-          {
-            label: "Products",
-            value: stats.totalProducts,
-            color: "bg-purple-500",
-            icon: <FaBoxOpen className="text-white opacity-80 text-3xl" />,
-          },
-          {
-            label: "Customers",
-            value: stats.activeUsers,
-            color: "bg-orange-500",
-            icon: <FaUserFriends className="text-white opacity-80 text-3xl" />,
-          },
-        ].map((stat, idx) => (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {cards.map((card, index) => (
           <div
-            key={idx}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden flex items-center justify-between"
+            key={index}
+            onClick={() => navigate(card.link)}
+            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow group"
           >
-            <div
-              className={`absolute top-0 left-0 h-full w-1 ${stat.color}`}
-            ></div>
-
-            <div>
-              <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">
-                {stat.label}
-              </p>
-              <p className="text-2xl font-bold text-gray-800 mt-1">
-                {stat.value}
-              </p>
-            </div>
-
-            <div
-              className={`p-3 rounded-full ${stat.color.replace(
-                "bg-",
-                "bg-opacity-20 bg-"
-              )}`}
-            >
-              {/* Icon Container with matching color tint */}
-              <div className={`text-${stat.color.split("-")[1]}-600`}>
-                {/* You can render the icon passed in the object if you want to be specific, 
-                     or just use the background color logic */}
-                {stat.icon}
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${card.color}`}
+              >
+                {card.icon}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">
+                  {card.title}
+                </p>
+                <h3 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600">
+                  {card.value}
+                </h3>
               </div>
             </div>
+            <p className="text-xs text-gray-400 flex items-center justify-between">
+              {card.desc} <span>→</span>
+            </p>
           </div>
         ))}
       </div>

@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getAllVendors } from "../../services/vendorService";
-import { updateProduct } from "../../services/productService";
-import {
-  FaEdit,
-  FaSearch,
-  FaArrowLeft,
-  FaFilter,
-  FaBoxOpen,
-} from "react-icons/fa";
+import { FaEdit, FaSearch, FaArrowLeft, FaBoxOpen } from "react-icons/fa";
 
 const AdminVendorInventory = () => {
   const { vendorId } = useParams();
@@ -38,16 +31,18 @@ const AdminVendorInventory = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      // ✅ CHANGE THIS LINE
       const token =
+        localStorage.getItem("token") || // Check the standard key first!
         localStorage.getItem("adminToken") ||
         JSON.parse(localStorage.getItem("userInfo") || "{}").token;
-
       // 1. Fetch Vendors (to get the name)
       const vendorsData = await getAllVendors();
       const vendor = vendorsData.find((v) => v.id.toString() === vendorId);
       if (vendor) setCurrentVendorName(vendor.businessName);
 
       // 2. Fetch Products for THIS Vendor Only
+      // (Ensure your Backend & Gateway have the route: GET /api/products/vendor/:vendorId)
       const response = await axios.get(
         `http://localhost:5007/api/products/vendor/${vendorId}`,
         {
@@ -68,7 +63,7 @@ const AdminVendorInventory = () => {
     if (!editingProduct) return;
 
     // 1. Validation: Warehouse cannot exceed Total
-    const totalStock = editingProduct.vendortotalstock || 0;
+    const totalStock = editingProduct.totalStock || 0; // ✅ FIXED FIELD
     const warehouseVal = parseInt(newWarehouseStock);
 
     if (warehouseVal < 0) {
@@ -83,39 +78,50 @@ const AdminVendorInventory = () => {
     }
 
     try {
-      // 2. Call API
-      // Note: Ensure your backend 'updateProduct' controller handles "warehouseStock" in req.body
-      // and updates the logic accordingly.
-      const response = await updateProduct(editingProduct.id, {
-        warehouseStock: warehouseVal,
-      });
+      // Check 'token' first (standard authSlice storage), then fallbacks
+      const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("adminToken") ||
+        JSON.parse(localStorage.getItem("userInfo") || "{}").token;
+
+      console.log("DEBUG: Sending Token:", token); // 👈 Check your browser console!
+
+      // 2. Call API (Using the specific Admin Warehouse Update endpoint)
+      const response = await axios.put(
+        `http://localhost:5007/api/products/admin/inventory/update`,
+        {
+          productId: editingProduct.id,
+          warehouseStock: warehouseVal,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       // 3. Optimistic Update
-      // We assume backend returns the updated product structure
-      const updatedData = response.product || response;
+      const updatedData = response.data.product || response.data;
 
       setProducts((prev) =>
         prev.map((p) =>
-          p.id === editingProduct.id ? { ...p, ...updatedData } : p
+          p.id === editingProduct.id
+            ? // Merge the updated fields (warehouseStock) into the local state
+              { ...p, warehouseStock: updatedData.warehouseStock }
+            : p
         )
       );
 
       closeModal();
     } catch (error) {
       console.error(error);
-      setErrorMsg("Failed to update stock. Please try again.");
+      setErrorMsg(error.response?.data?.message || "Failed to update stock.");
     }
   };
 
   const openStockModal = (product) => {
     setEditingProduct(product);
 
-    // Calculate current warehouse stock from the array/object
-    const stock = product.stockDetails || {};
-    const currentWarehouse = (stock.warehouse || []).reduce(
-      (acc, w) => acc + (w.quantity || 0),
-      0
-    );
+    // ✅ FIXED: Read directly from the flat integer field
+    const currentWarehouse = product.warehouseStock || 0;
 
     setNewWarehouseStock(currentWarehouse);
     setErrorMsg("");
@@ -233,22 +239,11 @@ const AdminVendorInventory = () => {
           </thead>
           <tbody className="text-gray-600 text-sm font-light">
             {filteredProducts.map((product) => {
-              // --- STOCK CALCULATIONS ---
-              const stock = product.stockDetails || {};
-              const totalVal = stock.total || product.vendortotalstock || 0;
-              const availableVal =
-                stock.available !== undefined
-                  ? stock.available
-                  : product.availableStock || 0;
-
-              // Warehouse is sum of quantities
-              const warehouseVal = (stock.warehouse || []).reduce(
-                (acc, w) => acc + (w.quantity || 0),
-                0
-              );
-
-              // Placed/Reserved
-              const placedVal = stock.reserved || 0;
+              // --- ✅ FIXED STOCK CALCULATIONS (Use direct fields) ---
+              const totalVal = product.totalStock || 0;
+              const warehouseVal = product.warehouseStock || 0;
+              const availableVal = product.availableStock || 0;
+              const placedVal = product.reservedStock || 0;
 
               return (
                 <tr
@@ -332,7 +327,7 @@ const AdminVendorInventory = () => {
                         </span>
                       </div>
 
-                      {/* PLACED */}
+                      {/* PLACED (RESERVED) */}
                       <div className="flex flex-col items-center justify-center p-1.5 rounded bg-orange-50 border border-orange-200">
                         <span className="text-[9px] font-bold uppercase text-orange-600">
                           Placed
@@ -378,16 +373,15 @@ const AdminVendorInventory = () => {
               <p className="flex justify-between mb-1">
                 <span>Vendor Total Stock:</span>
                 <span className="font-bold">
-                  {editingProduct.vendortotalstock || 0}
+                  {/* ✅ FIXED FIELD */}
+                  {editingProduct.totalStock || 0}
                 </span>
               </p>
               <p className="flex justify-between">
                 <span>Current Warehouse:</span>
                 <span className="font-bold text-purple-700">
-                  {(editingProduct.stockDetails?.warehouse || []).reduce(
-                    (acc, w) => acc + (w.quantity || 0),
-                    0
-                  )}
+                  {/* ✅ FIXED FIELD */}
+                  {editingProduct.warehouseStock || 0}
                 </span>
               </p>
             </div>

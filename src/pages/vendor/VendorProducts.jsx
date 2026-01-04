@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import {
   fetchVendorProducts,
-  // 👇 FIX: Import the exact names from your thunk file
   deleteProductThunk,
   updateProductThunk,
 } from "../../store/thunks/productThunks";
@@ -46,7 +45,7 @@ const VendorProducts = () => {
     dispatch(fetchVendorProducts());
   }, [dispatch]);
 
-  // 2. Fetch Master Categories (Via API Gateway Port 5007)
+  // 2. Fetch Master Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -57,17 +56,13 @@ const VendorProducts = () => {
           headers: { ...(token && { Authorization: `Bearer ${token}` }) },
         };
 
-        // Ensure this hits port 5007 (Gateway)
         const response = await axios.get(
           "http://localhost:5007/api/products/categories",
           config
         );
         setAllCategories(response.data);
       } catch (err) {
-        console.error(
-          "Failed to load categories. Ensure Gateway is running on 5007.",
-          err
-        );
+        console.error("Failed to load categories.", err);
       }
     };
     fetchCategories();
@@ -81,7 +76,6 @@ const VendorProducts = () => {
 
   const confirmDelete = async () => {
     if (productToDelete) {
-      // 👇 FIX: Use the correct Thunk name
       await dispatch(deleteProductThunk(productToDelete.id));
       setIsDeleteOpen(false);
       setProductToDelete(null);
@@ -90,12 +84,11 @@ const VendorProducts = () => {
 
   // --- EDIT HANDLERS ---
   const handleEditClick = (product) => {
-    // Populate form with current values
     setEditData({
       id: product.id,
       price: product.price,
-      // Get stock from the detailed object or fallback
-      stock: product.stockDetails?.total || product.stock || 0,
+      // ✅ FIX 1: Read 'totalStock' directly
+      stock: product.totalStock || 0,
       image: null,
       previewUrl: product.imageUrl,
     });
@@ -105,7 +98,6 @@ const VendorProducts = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
 
-    // Create FormData for file upload
     const formData = new FormData();
     formData.append("price", editData.price);
     formData.append("stock", editData.stock);
@@ -113,13 +105,11 @@ const VendorProducts = () => {
       formData.append("image", editData.image);
     }
 
-    // 👇 FIX: Use the correct Thunk name
     await dispatch(
       updateProductThunk({ id: editData.id, productData: formData })
     );
 
     setIsEditOpen(false);
-    // Optional: Refresh list if Redux state didn't update automatically
     dispatch(fetchVendorProducts());
   };
 
@@ -139,13 +129,13 @@ const VendorProducts = () => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.id.toString().includes(searchTerm);
-    // Use optional chaining for Category name
+
     const matchesCategory =
       categoryFilter === "All Categories" ||
       product.Category?.name === categoryFilter;
 
-    const stock = product.stockDetails || {};
-    const availableVal = stock.available !== undefined ? stock.available : 0;
+    // ✅ FIX 2: Check 'availableStock' directly
+    const availableVal = product.availableStock || 0;
 
     let matchesStock = true;
     if (stockFilter === "out_of_stock") matchesStock = availableVal === 0;
@@ -246,15 +236,11 @@ const VendorProducts = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredItems.map((product) => {
-                const stock = product.stockDetails || {};
-                const totalVal = stock.total || 0;
-                const placedVal = stock.reserved || 0;
-                const availableVal =
-                  stock.available !== undefined ? stock.available : 0;
-                const warehouseVal = (stock.warehouse || []).reduce(
-                  (acc, w) => acc + (w.quantity || 0),
-                  0
-                );
+                // ✅ FIX 3: Read flat fields directly (matching backend model)
+                const totalVal = product.totalStock || 0;
+                const placedVal = product.reservedStock || 0;
+                const availableVal = product.availableStock || 0;
+                const warehouseVal = product.warehouseStock || 0;
 
                 return (
                   <tr

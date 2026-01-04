@@ -1,10 +1,20 @@
-import { useEffect, useState } from "react";
-import { getAllUsers, deleteUser } from "../../services/authService";
-import { FaTrash, FaUserCircle } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  FaUser,
+  FaSearch,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
@@ -12,78 +22,131 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const data = await getAllUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error("Failed to fetch users");
+      const token =
+        localStorage.getItem("adminToken") || localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5007/api/auth/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to remove this user?")) {
-      await deleteUser(id);
-      setUsers(users.filter((u) => u.id !== id));
-    }
-  };
+  // --- FILTER & PAGINATION LOGIC ---
+  const filteredUsers = users.filter(
+    (user) =>
+      (user.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+  );
 
-  if (loading) return <div className="p-6">Loading users...</div>;
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  if (loading) return <div className="p-10 text-center">Loading Users...</div>;
 
   return (
-    <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <FaUser className="text-purple-600" /> Users Management
+        </h2>
+
+        {/* SEARCH BAR */}
+        <div className="relative w-full md:w-80">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset to page 1 on search
+            }}
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
+          />
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
-              <th className="py-3 px-6">User</th>
-              <th className="py-3 px-6">Email</th>
-              <th className="py-3 px-6">Phone</th>
-              <th className="py-3 px-6">Role</th>
-              <th className="py-3 px-6 text-center">Actions</th>
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="p-4 text-sm font-bold text-gray-500 uppercase">
+                ID
+              </th>
+              <th className="p-4 text-sm font-bold text-gray-500 uppercase">
+                Name
+              </th>
+              <th className="p-4 text-sm font-bold text-gray-500 uppercase">
+                Email
+              </th>
+              <th className="p-4 text-sm font-bold text-gray-500 uppercase">
+                Phone
+              </th>
+              <th className="p-4 text-sm font-bold text-gray-500 uppercase">
+                Role
+              </th>
             </tr>
           </thead>
-          <tbody className="text-gray-600 text-sm font-light">
-            {users.map((user) => (
-              <tr
-                key={user.id}
-                className="border-b border-gray-200 hover:bg-gray-50 transition"
-              >
-                <td className="py-3 px-6 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                    <FaUserCircle />
-                  </div>
-                  <span className="font-medium text-gray-800">{user.name}</span>
-                </td>
-                <td className="py-3 px-6">{user.email}</td>
-                <td className="py-3 px-6">{user.phone}</td>
-                <td className="py-3 px-6">
+          <tbody className="divide-y divide-gray-100">
+            {currentUsers.map((user) => (
+              <tr key={user.id} className="hover:bg-gray-50">
+                <td className="p-4 text-sm text-gray-500">#{user.id}</td>
+                <td className="p-4 font-medium text-gray-800">{user.name}</td>
+                <td className="p-4 text-gray-600">{user.email}</td>
+                <td className="p-4 text-gray-600">{user.phone}</td>
+                <td className="p-4">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
                       user.role === "admin"
                         ? "bg-purple-100 text-purple-700"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-blue-50 text-blue-700"
                     }`}
                   >
                     {user.role}
                   </span>
                 </td>
-                <td className="py-3 px-6 text-center">
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition"
-                    title="Delete User"
-                    disabled={user.role === "admin"} // Prevent deleting yourself!
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
               </tr>
             ))}
+            {currentUsers.length === 0 && (
+              <tr>
+                <td colSpan="5" className="p-6 text-center text-gray-400">
+                  No users found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="p-4 flex justify-between items-center bg-gray-50 border-t">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <FaChevronLeft />
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
