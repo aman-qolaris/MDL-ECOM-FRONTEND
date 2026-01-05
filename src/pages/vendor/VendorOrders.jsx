@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
-// 👇 IMPORT THE NEW VENDOR FUNCTIONS
-import {
-  getVendorOrders,
-  updateVendorItemStatus,
-} from "../../services/orderService";
-import { FaBox, FaCheck } from "react-icons/fa";
+import { getVendorOrders } from "../../services/orderService";
+import { FaBox } from "react-icons/fa";
 
 const VendorOrders = () => {
-  const [items, setItems] = useState([]); // Stores OrderItems
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,7 +12,6 @@ const VendorOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      // 👇 USE THE VENDOR SPECIFIC FUNCTION
       const data = await getVendorOrders();
       setItems(data);
     } catch (error) {
@@ -26,91 +21,88 @@ const VendorOrders = () => {
     }
   };
 
-  const handleMarkPacked = async (itemId) => {
-    try {
-      // Optimistic UI Update
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? { ...item, status: "PACKED" } : item
-        )
-      );
-
-      // 👇 CALL THE NEW SERVICE FUNCTION
-      await updateVendorItemStatus(itemId, "PACKED");
-      alert("Item marked as packed!");
-    } catch (error) {
-      console.error("Update failed:", error);
-      alert("Failed to update status.");
-      fetchOrders(); // Revert on error
-    }
-  };
-
   if (loading) return <div className="p-6">Loading your orders...</div>;
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Manage Orders</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Orders</h2>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {items.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No pending items to fulfill.
-          </div>
+          <div className="p-8 text-center text-gray-500">No orders found.</div>
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 text-gray-600 uppercase text-sm">
                 <th className="py-3 px-6">Order Ref</th>
-                <th className="py-3 px-6">Product Item</th>
-                <th className="py-3 px-6">Qty</th>
-                <th className="py-3 px-6">Status</th>
-                <th className="py-3 px-6">Action</th>
+                <th className="py-3 px-6">Product Details</th>
+                <th className="py-3 px-6 text-right">Price</th>
+                <th className="py-3 px-6 text-center">Qty</th>
+                <th className="py-3 px-6 text-right">Total</th>
+                <th className="py-3 px-6 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="text-gray-600 text-sm">
               {items.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-6 font-mono font-bold">
+                <tr
+                  key={item.id}
+                  className="border-b hover:bg-gray-50 transition-colors"
+                >
+                  {/* Order ID */}
+                  <td className="py-3 px-6 font-mono font-bold text-gray-500">
                     #{item.orderId}
                   </td>
 
-                  <td className="py-3 px-6 flex items-center gap-2">
-                    <div className="bg-purple-100 p-2 rounded text-purple-600">
-                      <FaBox />
+                  {/* Product Name & ID */}
+                  <td className="py-3 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-purple-100 p-2 rounded text-purple-600 shrink-0">
+                        <FaBox />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-800">
+                          {item.Product?.name || "Unknown Product"}
+                        </span>
+                        <span className="text-xs text-gray-400 font-mono">
+                          ID: {item.productId}
+                        </span>
+                        {item.Product?.Category && (
+                          <span className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">
+                            {item.Product.Category.name}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {/* Handle case where Product might be null */}
-                    <span className="font-medium text-gray-800">
-                      {item.Product?.name || `Product ID: ${item.productId}`}
-                    </span>
                   </td>
 
-                  <td className="py-3 px-6 font-bold">x {item.quantity}</td>
+                  {/* Unit Price */}
+                  <td className="py-3 px-6 text-right">
+                    ₹{item.price?.toLocaleString()}
+                  </td>
 
-                  <td className="py-3 px-6">
+                  {/* Quantity */}
+                  <td className="py-3 px-6 text-center font-bold">
+                    {item.quantity}
+                  </td>
+
+                  {/* Total Price */}
+                  <td className="py-3 px-6 text-right font-bold text-gray-800">
+                    ₹{(item.price * item.quantity).toLocaleString()}
+                  </td>
+
+                  {/* Status */}
+                  <td className="py-3 px-6 text-center">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
                         item.status === "PACKED"
                           ? "bg-green-100 text-green-700"
+                          : item.status === "CANCELLED"
+                          ? "bg-red-100 text-red-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
                       {item.status || "PENDING"}
                     </span>
-                  </td>
-
-                  <td className="py-3 px-6">
-                    {item.status !== "PACKED" && item.status !== "DELIVERED" ? (
-                      <button
-                        onClick={() => handleMarkPacked(item.id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1 text-xs"
-                      >
-                        <FaCheck /> Mark Packed
-                      </button>
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">
-                        No actions
-                      </span>
-                    )}
                   </td>
                 </tr>
               ))}
