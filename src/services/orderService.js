@@ -62,9 +62,10 @@ export const getVendorOrders = async () => {
 
 // 5. Update Item Status
 export const updateVendorItemStatus = async (itemId, status) => {
-  const token = localStorage.getItem("vendorToken"); // ✅ Only check vendorToken
+  const token = localStorage.getItem("vendorToken");
+  // Update URL to match the new Gateway route
   const response = await axios.put(
-    `${BASE_URL}/orders/item/${itemId}`,
+    `${BASE_URL}/orders/vendor/item/${itemId}/status`,
     { status },
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -101,8 +102,12 @@ export const getAdminOrderDetails = async (orderId) => {
 
 // 9. UPDATE ORDER ITEM STATUS (Admin: Ready/Packed)
 // ✅ FIX: Changed URL from /orders/items/ to /orders/admin/item/
-export const updateOrderItemStatus = async (itemId, status) => {
-  const response = await api.put(`/orders/admin/item/${itemId}`, { status });
+export const updateOrderItemStatus = async (orderId, itemId, status) => {
+  // Matches Gateway Route: /api/orders/admin/:orderId/item/:itemId/status
+  const response = await api.put(
+    `/orders/admin/${orderId}/item/${itemId}/status`,
+    { status }
+  );
   return response.data;
 };
 
@@ -127,8 +132,10 @@ export const deleteDeliveryBoy = async (id) => {
 };
 
 // 11. Assign a delivery boy to an order
+// In assignDeliveryBoy function
 export const assignDeliveryBoy = async (orderId, deliveryBoyId) => {
-  const response = await api.post(`/orders/${orderId}/assign`, {
+  // Update the URL to match Gateway
+  const response = await api.post(`/orders/admin/assign-delivery/${orderId}`, {
     deliveryBoyId,
   });
   return response.data;
@@ -145,6 +152,13 @@ export const reassignDeliveryBoy = async (
     oldDeliveryBoyId,
     newDeliveryBoyId,
     reason,
+  });
+  return response.data;
+};
+
+export const getAdminVendorSales = async (vendorId, type = "monthly") => {
+  const response = await api.get(`/orders/admin/sales/vendor/${vendorId}`, {
+    params: { type },
   });
   return response.data;
 };
