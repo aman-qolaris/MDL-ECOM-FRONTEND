@@ -3,11 +3,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import AddressForm from "../components/checkout/AddressForm";
 import PaymentForm from "../components/checkout/PaymentForm";
-// 1. IMPORT THE NEW PAYMENT SERVICE
-import { clearCartThunk } from "../store/thunks/cartThunks"; // Import Thunk instead of Slice action
+// ✅ IMPORT getCartItems here
+import { clearCartThunk, getCartItems } from "../store/thunks/cartThunks";
 import { initiatePayment } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
-import { clearCart } from "../store/slices/cartSlice";
 import { getAddresses } from "../services/addressService";
 import { FaPlus } from "react-icons/fa";
 
@@ -22,6 +21,9 @@ const Checkout = () => {
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // ✅ NEW: State to track if we are fetching cart data
+  const [isInitializing, setIsInitializing] = useState(true);
+
   // --- SAVED ADDRESSES STATE ---
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -29,29 +31,59 @@ const Checkout = () => {
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
-  // --- FETCH ADDRESSES ON LOAD ---
+  // ✅ NEW: Fetch Cart & Addresses on Load
   useEffect(() => {
-    if (user) {
-      getAddresses(user.id).then((data) => {
-        setSavedAddresses(data);
-        if (data.length > 0) {
-          setSelectedAddressId(data[0].id);
-        } else {
-          setShowNewAddressForm(true);
-        }
-      });
-    }
-  }, [user]);
+    const initCheckout = async () => {
+      if (user) {
+        try {
+          // 1. Fetch Cart (Wait for this before checking items.length)
+          await dispatch(getCartItems()).unwrap();
 
+          // 2. Fetch Addresses
+          const addresses = await getAddresses(user.id);
+          setSavedAddresses(addresses);
+          if (addresses.length > 0) {
+            setSelectedAddressId(addresses[0].id);
+          } else {
+            setShowNewAddressForm(true);
+          }
+        } catch (error) {
+          console.error("Failed to initialize checkout:", error);
+        } finally {
+          // Done loading, now we can safely render or redirect
+          setIsInitializing(false);
+        }
+      } else {
+        // If no user, stop initializing (ProtectedRoute should handle this anyway)
+        setIsInitializing(false);
+      }
+    };
+
+    initCheckout();
+  }, [dispatch, user]);
+
+  // ✅ LOADING CHECK: Don't redirect while we are still fetching data
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-gray-500">
+        Loading Checkout...
+      </div>
+    );
+  }
+
+  // ✅ NOW it is safe to redirect (only if we are done loading and it's still empty)
   if (items.length === 0 && !isPaymentSuccess) {
     return <Navigate to="/shop" replace />;
   }
 
   // CALCULATION
   const subtotal = items.reduce((acc, item) => {
-    const price = item.price || 0;
+    // Robust Price Check
+    const product = item.Product || item.product || {};
+    const price = product.price || item.price || 0;
     return acc + price * item.quantity;
   }, 0);
+
   const shippingCost = subtotal > 1000 ? 0 : 50;
   const total = subtotal + shippingCost;
 
@@ -71,6 +103,8 @@ const Checkout = () => {
     }
   };
 
+  // ... existing imports
+
   const handleOrderSubmit = async (paymentData) => {
     try {
       setLoading(true);
@@ -81,23 +115,22 @@ const Checkout = () => {
           productId: item.productId,
           vendorId: item.vendorId || null,
           quantity: item.quantity,
-          price: item.price,
+          price: item.Product?.price || item.price,
         })),
         amount: total,
         address: shippingAddress,
-        paymentMethod: paymentData.method === "cod" ? "COD" : "RAZORPAY",
-        payment: paymentData.method === "razorpay" ? true : false,
       };
 
-      // 1. Handle COD
+      // --- 1. COD Flow ---
       if (paymentData.method === "cod") {
-        console.log("Creating COD Order:", payload);
-        const response = await createOrder(payload);
+        const orderPayload = {
+          ...payload,
+          paymentMethod: "COD",
+          payment: false,
+        };
+        const response = await createOrder(orderPayload);
 
-        // 👇 SET FLAG TO TRUE FIRST
         setIsPaymentSuccess(true);
-
-        // ✅ FIX: Navigate FIRST, then clear cart
         navigate("/order-success", {
           state: {
             orderId: response.orderId || response.id,
@@ -108,52 +141,50 @@ const Checkout = () => {
         return;
       }
 
-      // 2. Handle Razorpay
-      await initiatePayment(total, user, async (paymentResponse) => {
-        const razorpayPayload = {
+      // --- 2. Razorpay Flow ---
+      if (paymentData.method === "razorpay") {
+        // A. Create Order in Database FIRST (Status: PROCESSING, Payment: False)
+        const orderPayload = {
           ...payload,
-          payment: true,
+          paymentMethod: "RAZORPAY",
+          payment: false,
         };
+        const dbOrder = await createOrder(orderPayload);
 
-        console.log("Payment Success! Creating Order:", razorpayPayload);
-        const response = await createOrder(razorpayPayload);
+        // Get the real Order ID from DB response
+        const dbOrderId = dbOrder.orderId || dbOrder.id;
 
-        // 👇 SET FLAG TO TRUE FIRST
-        setIsPaymentSuccess(true);
+        // B. Now Initiate Payment using that ID
+        await initiatePayment(
+          total,
+          user,
+          dbOrderId,
+          async (paymentResponse) => {
+            // C. On Success (Backend has already verified and updated status to PAID)
+            setIsPaymentSuccess(true);
 
-        // ✅ FIX: Navigate FIRST, then clear cart
-        navigate("/order-success", {
-          state: {
-            orderId: response.orderId || response.id,
-            orderDetails: { itemCount: items.length, totalAmount: total },
-          },
-        });
-        dispatch(clearCartThunk());
-      });
+            navigate("/order-success", {
+              state: {
+                orderId: dbOrderId,
+                orderDetails: { itemCount: items.length, totalAmount: total },
+              },
+            });
+            dispatch(clearCartThunk());
+          }
+        );
+      }
     } catch (error) {
       console.error("Order Failed:", error);
-      if (error.response?.status === 400) {
-        alert(
-          "Order failed: " + (error.response.data.message || "Invalid Data")
-        );
-      } else {
-        console.warn("Backend failed, proceeding with Mock Success (Dev Mode)");
-
-        setIsPaymentSuccess(true); // <--- Add here too
-
-        // ✅ FIX: Navigate FIRST here too for the mock fallback
-        navigate("/order-success", {
-          state: {
-            orderId: "MOCK-" + Date.now(),
-            orderDetails: { itemCount: items.length, totalAmount: total },
-          },
-        });
-        dispatch(clearCartThunk());
-      }
+      alert(
+        "Order processing failed: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // ... rest of component
 
   if (loading) {
     return (
@@ -322,7 +353,7 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: SUMMARY (UPDATED) */}
+        {/* RIGHT COLUMN: SUMMARY */}
         <div className="lg:w-1/3">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
             <h2 className="text-xl font-bold mb-4 text-gray-800">
@@ -330,31 +361,38 @@ const Checkout = () => {
             </h2>
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
               {items.map((item) => {
-                // ROBUST DATA CHECK: Handle uppercase 'Product' or lowercase 'product'
+                // FIXED DATA ACCESS: Use nested Product object
                 const product = item.Product || item.product || {};
+                const price = product.price || item.price || 0;
 
                 return (
                   <div
                     key={item.id || item.cartItemId}
                     className="flex gap-4 items-center"
                   >
-                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
+                      {/* Fixed Image Access */}
                       <img
-                        src={item.image || "https://via.placeholder.com/64"}
-                        alt={item.name || "Product"}
+                        src={
+                          product.imageUrl ||
+                          item.image ||
+                          "https://via.placeholder.com/64"
+                        }
+                        alt={product.name || item.name || "Product"}
                         className="w-full h-full object-contain mix-blend-multiply"
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-800 line-clamp-1">
-                        {item.name || "Unknown Product"}
+                      {/* Fixed Name Access */}
+                      <p className="text-sm font-semibold text-gray-800 line-clamp-2">
+                        {product.name || item.name || "Unknown Product"}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-1">
                         Qty: {item.quantity}
                       </p>
                     </div>
                     <p className="text-sm font-bold text-gray-800">
-                      ₹{((item.price || 0) * item.quantity).toLocaleString()}
+                      ₹{(price * item.quantity).toLocaleString()}
                     </p>
                   </div>
                 );

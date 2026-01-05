@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -6,12 +6,12 @@ import {
   updateItemQuantity,
   removeItem,
 } from "../store/thunks/cartThunks";
-import { FaTrash, FaArrowRight } from "react-icons/fa";
+import { FaTrash, FaArrowRight, FaMinus, FaPlus } from "react-icons/fa";
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, loading, error } = useSelector((state) => state.cart);
+  const { items, loading } = useSelector((state) => state.cart);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -20,27 +20,28 @@ const Cart = () => {
     }
   }, [dispatch, isAuthenticated]);
 
-  // Calculate Total
+  // --- Calculate Totals ---
   const cartTotal = items.reduce((total, item) => {
-    // Safety check for nested Product
-    const price = item.price || item.Product?.price || 0;
+    // 1. Use Product's current price if available, otherwise use saved cart price
+    const price = item.Product?.price || item.price || 0;
     return total + price * item.quantity;
   }, 0);
 
-  // Shipping: free for orders over ₹1000, otherwise ₹50
+  // Shipping Logic: Free > ₹1000, else ₹50
   const shippingCost = cartTotal > 1000 ? 0 : 50;
-  const total = cartTotal + shippingCost;
+  const grandTotal = cartTotal + shippingCost;
 
+  // --- Early Returns ---
   if (!isAuthenticated) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold mb-4">Please Login</h2>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Please Login</h2>
         <p className="mb-6 text-gray-600">
           You need to be logged in to view your cart.
         </p>
         <Link
           to="/login"
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-8 py-3 rounded-xl shadow-lg hover:bg-blue-700 transition transform hover:scale-105"
         >
           Go to Login
         </Link>
@@ -48,75 +49,94 @@ const Cart = () => {
     );
   }
 
-  if (loading) return <div className="text-center py-20">Loading cart...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-gray-500 text-lg font-medium">
+        Loading your cart...
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+        <div className="bg-gray-100 p-6 rounded-full mb-6">
+          <FaTrash className="text-4xl text-gray-400" />
+        </div>
+        <h2 className="text-3xl font-bold mb-4 text-gray-800">
           Your Cart is Empty
         </h2>
-        <p className="text-gray-500 mb-8">
-          Looks like you haven't added anything yet.
+        <p className="text-gray-500 mb-8 max-w-md">
+          Looks like you haven't added anything yet. Explore our products and
+          find something you love!
         </p>
         <Link
           to="/shop"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold shadow-md hover:bg-blue-700 transition transform hover:-translate-y-1"
         >
-          Continue Shopping
+          Start Shopping
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Shopping Cart</h1>
+    <div className="container mx-auto px-4 py-10 max-w-6xl">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 border-b pb-4">
+        Shopping Cart ({items.length} items)
+      </h1>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Cart Items List */}
-        <div className="lg:w-2/3">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            {items.map((item) => (
+      <div className="flex flex-col lg:flex-row gap-10">
+        {/* --- Cart Items List --- */}
+        <div className="lg:w-2/3 space-y-4">
+          {items.map((item) => {
+            // Helper constants for this item
+            const product = item.Product || {};
+            const stock = product.availableStock || 0;
+            const isStockLimitReached = item.quantity >= stock;
+            const currentPrice = product.price || item.price || 0;
+
+            return (
               <div
                 key={item.cartItemId || item.id}
-                className="p-6 border-b border-gray-100 last:border-0 flex flex-col sm:flex-row items-center gap-4"
+                className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-center gap-6 transition hover:shadow-md"
               >
-                {/* Image */}
-                <div className="w-24 h-24 flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
+                {/* Product Image */}
+                <div className="w-24 h-24 flex-shrink-0 bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
                   <img
                     src={
+                      product.imageUrl ||
                       item.image ||
-                      item.Product?.imageUrl ||
                       "https://via.placeholder.com/150"
                     }
-                    alt={item.name || item.Product?.name}
-                    className="w-full h-full object-contain"
+                    alt={product.name || item.name}
+                    className="w-full h-full object-contain p-2"
                   />
                 </div>
 
-                {/* Details */}
+                {/* Product Details */}
                 <div className="flex-grow text-center sm:text-left">
                   <Link
                     to={`/product/${item.productId}`}
-                    className="text-lg font-semibold text-gray-800 hover:text-blue-600"
+                    className="text-lg font-bold text-gray-800 hover:text-blue-600 transition line-clamp-1"
                   >
-                    {item.name || item.Product?.name || "Unknown Product"}
+                    {product.name || item.name || "Product Name"}
                   </Link>
-                  {/* <p className="text-gray-500 text-sm mt-1">
-                    {item.Product?.category?.name ||
-                      item.Product?.Category?.name}
-                  </p> */}
-                  <p className="font-bold text-blue-600 mt-2">
-                    ₹{item.price || item.Product?.price}
+                  {product.Category && (
+                    <p className="text-sm text-gray-400 mt-1">
+                      Category: {product.Category.name}
+                    </p>
+                  )}
+                  <p className="text-xl font-bold text-blue-600 mt-2">
+                    ₹{currentPrice.toLocaleString()}
                   </p>
                 </div>
 
-                {/* Quantity & Actions */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex items-center border border-gray-300 rounded-lg">
+                {/* Quantity Controls */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
                     <button
-                      className="px-3 py-1 hover:bg-gray-100 disabled:opacity-50"
+                      className="px-3 py-2 hover:bg-gray-200 disabled:opacity-30 transition text-gray-600"
                       onClick={() =>
                         dispatch(
                           updateItemQuantity({
@@ -127,17 +147,17 @@ const Cart = () => {
                       }
                       disabled={item.quantity <= 1}
                     >
-                      -
+                      <FaMinus size={10} />
                     </button>
-                    <span className="px-3 font-medium text-sm">
+                    <span className="px-3 font-semibold text-gray-800 w-8 text-center">
                       {item.quantity}
                     </span>
-                    // ✅ New Code (Add disabled condition)
                     <button
-                      className="px-3 py-1 hover:bg-gray-100 disabled:opacity-50"
-                      disabled={
-                        item.quantity >= (item.Product?.availableStock || 0)
-                      } // Prevents going over stock
+                      className={`px-3 py-2 transition ${
+                        isStockLimitReached
+                          ? "opacity-30 cursor-not-allowed"
+                          : "hover:bg-gray-200 text-gray-600"
+                      }`}
                       onClick={() =>
                         dispatch(
                           updateItemQuantity({
@@ -146,62 +166,88 @@ const Cart = () => {
                           })
                         )
                       }
+                      disabled={isStockLimitReached}
                     >
-                      +
+                      <FaPlus size={10} />
                     </button>
                   </div>
 
-                  <button
-                    onClick={() =>
-                      dispatch(removeItem(item.cartItemId || item.id))
-                    }
-                    className="text-red-500 text-sm hover:underline flex items-center"
-                  >
-                    <FaTrash className="mr-1" /> Remove
-                  </button>
+                  {isStockLimitReached && (
+                    <span className="text-[10px] text-red-500 font-medium">
+                      Max Stock Reached
+                    </span>
+                  )}
                 </div>
+
+                {/* Remove Button */}
+                <button
+                  onClick={() =>
+                    dispatch(removeItem(item.cartItemId || item.id))
+                  }
+                  className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition"
+                  title="Remove Item"
+                >
+                  <FaTrash />
+                </button>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Order Summary */}
+        {/* --- Order Summary --- */}
         <div className="lg:w-1/3">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-24">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
             <h2 className="text-xl font-bold mb-6 text-gray-800">
               Order Summary
             </h2>
 
-            <div className="space-y-3 text-gray-600 mb-6 border-b border-gray-100 pb-6">
-              <div className="flex justify-between">
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>₹{cartTotal.toFixed(2)}</span>
+                <span className="font-medium">
+                  ₹{cartTotal.toLocaleString()}
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
                 {shippingCost === 0 ? (
-                  <span className="text-green-600">Free</span>
+                  <span className="text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded text-sm">
+                    Free
+                  </span>
                 ) : (
-                  <span>₹{shippingCost.toFixed(2)}</span>
+                  <span className="font-medium">
+                    ₹{shippingCost.toLocaleString()}
+                  </span>
                 )}
               </div>
-              <div className="flex justify-between">
-                <span>Tax</span>
-                <span>₹0.00</span>
+              <div className="flex justify-between text-gray-600">
+                <span>Tax (GST)</span>
+                <span className="font-medium">₹0.00</span>
               </div>
             </div>
 
-            <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
-              <span>Total</span>
-              <span>₹{total.toFixed(2)}</span>
+            <div className="border-t border-dashed border-gray-200 pt-4 mb-6">
+              <div className="flex justify-between items-end">
+                <span className="text-gray-800 font-bold">Total</span>
+                <span className="text-2xl font-extrabold text-blue-600">
+                  ₹{grandTotal.toLocaleString()}
+                </span>
+              </div>
             </div>
 
             <button
               onClick={() => navigate("/checkout")}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center justify-center"
+              className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
-              Proceed to Checkout <FaArrowRight className="ml-2" />
+              Proceed to Checkout <FaArrowRight />
             </button>
+
+            <Link
+              to="/shop"
+              className="block text-center mt-4 text-sm text-gray-500 hover:text-gray-800 font-medium transition"
+            >
+              Or Continue Shopping
+            </Link>
           </div>
         </div>
       </div>
