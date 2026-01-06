@@ -33,29 +33,16 @@ export const getOrderById = async (orderId) => {
 // 4. Get Vendor's Items to Fulfill
 export const getVendorOrders = async () => {
   const token = localStorage.getItem("vendorToken"); // ✅ Only check vendorToken
-  console.log("🔍 [getVendorOrders] vendorToken from localStorage:", token);
-
   if (!token) {
-    console.error("No vendor token found in localStorage");
     throw new Error("Please log in as a vendor");
   }
-
-  console.log(
-    "📡 Fetching vendor orders from:",
-    `${BASE_URL}/orders/vendor/orders`
-  );
 
   try {
     const response = await axios.get(`${BASE_URL}/orders/vendor/orders`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    console.log("✅ Vendor orders response:", response.data);
     return response.data;
   } catch (error) {
-    console.error(
-      "❌ Error fetching vendor orders:",
-      error.response?.data || error.message
-    );
     throw error;
   }
 };
