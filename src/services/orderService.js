@@ -15,8 +15,9 @@ export const createOrder = async (orderData) => {
 };
 
 // 2. GET MY ORDERS (Customer Profile)
-export const getMyOrders = async () => {
-  const response = await api.get("/orders");
+export const getMyOrders = async (page = 1, limit = 10) => {
+  // Pass page and limit as query parameters
+  const response = await api.get(`/orders?page=${page}&limit=${limit}`);
   return response.data;
 };
 
