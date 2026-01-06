@@ -119,6 +119,13 @@ export const deleteDeliveryBoy = async (id) => {
   return response.data;
 };
 
+// src/services/orderService.js
+export const updateDeliveryBoy = async (id, data) => {
+  // Matches api-gateway route
+  const response = await api.put(`/orders/admin/delivery-boys/${id}`, data);
+  return response.data;
+};
+
 // 11. Assign a delivery boy to an order
 // In assignDeliveryBoy function
 export const assignDeliveryBoy = async (orderId, deliveryBoyId) => {
@@ -148,5 +155,11 @@ export const getAdminVendorSales = async (vendorId, type = "monthly") => {
   const response = await api.get(`/orders/admin/sales/vendor/${vendorId}`, {
     params: { type },
   });
+  return response.data;
+};
+
+// 13. Get Delivery Locations (For Checkout Dropdown)
+export const getDeliveryLocations = async () => {
+  const response = await api.get("/orders/locations");
   return response.data;
 };

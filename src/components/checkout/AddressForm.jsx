@@ -1,15 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux"; // 🟢 CHANGED: Import Redux Hook
+import { getDeliveryLocations } from "../../services/orderService";
 
-// 1. Add 'buttonText' to the props list
 const AddressForm = ({ onSubmit, initialData, buttonText }) => {
+  // 🟢 CHANGED: Get Logged-in User Data
+  const { user } = useSelector((state) => state.auth);
+
+  // 🔒 HARDCODED DEFAULTS (As per your "Raipur" specific logic)
+  const FIXED_CITY = "Raipur";
+  const FIXED_STATE = "Chhattisgarh";
+
   const [formData, setFormData] = useState({
-    fullName: initialData?.fullName || "",
-    phone: initialData?.phone || "",
+    fullName: user?.name || "", // 🟢 CHANGED: Use user.name
+    phone: user?.phone || "", // 🟢 CHANGED: Use user.phone
     addressLine1: initialData?.addressLine1 || "",
-    city: initialData?.city || "",
-    state: initialData?.state || "",
-    zipCode: initialData?.zipCode || "",
+    city: FIXED_CITY,
+    state: FIXED_STATE,
+    area: initialData?.area || "",
   });
+
+  const [availableAreas, setAvailableAreas] = useState([]);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  // 🟢 NEW: Sync User Data if it loads after component mount
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || "",
+        phone: user.phone || "",
+      }));
+    }
+  }, [user]);
+
+  // 🟢 Fetch Delivery Areas on Component Mount
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const data = await getDeliveryLocations();
+        // Expected Backend Structure: { "Chhattisgarh": { "Raipur": ["Area1", "Area2"] } }
+        const raipurAreas = data?.[FIXED_STATE]?.[FIXED_CITY] || [];
+        setAvailableAreas(raipurAreas);
+      } catch (error) {
+        console.error("Failed to load areas", error);
+      } finally {
+        setLoadingAreas(false);
+      }
+    };
+
+    fetchAreas();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,9 +57,9 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Basic validation
-    if (!formData.fullName || !formData.addressLine1 || !formData.zipCode) {
-      alert("Please fill in all required fields");
+    // Validation
+    if (!formData.fullName || !formData.addressLine1 || !formData.area) {
+      alert("Please select a Delivery Area and fill the address.");
       return;
     }
     onSubmit(formData);
@@ -28,6 +68,7 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 animate-fadeIn">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 🔒 LOCKED: Full Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Full Name
@@ -36,11 +77,13 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
             type="text"
             name="fullName"
             value={formData.fullName}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Aman Singh"
+            readOnly
+            className="w-full border border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed rounded-lg px-4 py-2 outline-none"
+            title="Name is locked to your profile"
           />
         </div>
+
+        {/* 🔒 LOCKED: Phone Number */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Phone Number
@@ -49,15 +92,18 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
             type="tel"
             name="phone"
             value={formData.phone}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="10-digit mobile number"
+            readOnly
+            className="w-full border border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed rounded-lg px-4 py-2 outline-none"
+            title="Phone is locked to your profile"
           />
         </div>
+
+        {/* ✏️ EDITABLE: Address Line 1 */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Line 1
+            Address Line 1 <span className="text-red-500">*</span>
           </label>
+
           <input
             type="text"
             name="addressLine1"
@@ -65,8 +111,39 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
             placeholder="Flat, House no., Building, Company, Apartment"
+            required
           />
         </div>
+
+        {/* 🔽 NEW DROPDOWN: Delivery Area */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Delivery Area <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="area"
+            value={formData.area}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+            required
+          >
+            <option value="">-- Select Your Area --</option>
+            {loadingAreas ? (
+              <option disabled>Loading areas...</option>
+            ) : (
+              availableAreas.map((area, idx) => (
+                <option key={idx} value={area}>
+                  {area}
+                </option>
+              ))
+            )}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            * Select your area to help us assign the fastest delivery partner.
+          </p>
+        </div>
+
+        {/* 🔒 LOCKED: City */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             City
@@ -75,10 +152,12 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
             type="text"
             name="city"
             value={formData.city}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            readOnly
+            className="w-full border border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed rounded-lg px-4 py-2 outline-none"
           />
         </div>
+
+        {/* 🔒 LOCKED: State */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             State
@@ -87,20 +166,8 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
             type="text"
             name="state"
             value={formData.state}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            ZIP / PIN Code
-          </label>
-          <input
-            type="text"
-            name="zipCode"
-            value={formData.zipCode}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            readOnly
+            className="w-full border border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed rounded-lg px-4 py-2 outline-none"
           />
         </div>
       </div>
@@ -109,7 +176,6 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
         type="submit"
         className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-sm mt-4"
       >
-        {/* 2. Use the prop here. If no prop is passed, default to "Continue to Payment" */}
         {buttonText || "Continue to Payment"}
       </button>
     </form>

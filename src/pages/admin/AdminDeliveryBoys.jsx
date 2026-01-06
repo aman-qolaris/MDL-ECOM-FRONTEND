@@ -1,18 +1,37 @@
 import { useEffect, useState } from "react";
-import { FaTrash, FaPlus, FaUserSecret } from "react-icons/fa";
+import {
+  FaTrash,
+  FaPlus,
+  FaUserSecret,
+  FaBoxOpen,
+  FaEdit,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 import {
   getAllDeliveryBoys,
   addDeliveryBoy,
   deleteDeliveryBoy,
+  updateDeliveryBoy,
 } from "../../services/orderService";
 
 const AdminDeliveryBoys = () => {
   const [boys, setBoys] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form State
+  // --- Add Form State ---
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [city, setCity] = useState("Raipur");
+  const [state, setState] = useState("Chhattisgarh");
+  const [maxOrders, setMaxOrders] = useState(20);
+  const [assignedAreas, setAssignedAreas] = useState("");
+
+  // --- Edit State ---
+  const [editingId, setEditingId] = useState(null);
+  const [editStatus, setEditStatus] = useState(true);
+  const [editMaxOrders, setEditMaxOrders] = useState(20);
+  const [editAssignedAreas, setEditAssignedAreas] = useState(""); // 🟢 NEW: For editing areas
 
   useEffect(() => {
     fetchBoys();
@@ -31,19 +50,36 @@ const AdminDeliveryBoys = () => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-
-    // Validate phone number is exactly 10 digits
     if (!/^\d{10}$/.test(newPhone)) {
       alert("Phone number must be exactly 10 digits");
       return;
     }
 
+    const areaArray = assignedAreas
+      .split(",")
+      .map((area) => area.trim())
+      .filter((area) => area !== "");
+
+    const payload = {
+      name: newName,
+      phone: newPhone,
+      city,
+      state,
+      maxOrders: parseInt(maxOrders),
+      assignedAreas: areaArray,
+    };
+
     try {
-      const addedBoy = await addDeliveryBoy({ name: newName, phone: newPhone });
-      setBoys([...boys, addedBoy]); // Update UI
+      const addedBoy = await addDeliveryBoy(payload);
+      setBoys([...boys, addedBoy]);
+
+      // Reset Form
       setNewName("");
       setNewPhone("");
+      setAssignedAreas("");
+      setMaxOrders(20);
     } catch (error) {
+      console.error(error);
       alert("Failed to add delivery boy");
     }
   };
@@ -52,9 +88,57 @@ const AdminDeliveryBoys = () => {
     if (!window.confirm("Are you sure?")) return;
     try {
       await deleteDeliveryBoy(id);
-      setBoys(boys.filter((b) => b.id !== id)); // Update UI
+      setBoys(boys.filter((b) => b.id !== id));
     } catch (error) {
       alert("Failed to delete");
+    }
+  };
+
+  // 🟢 Load data into Edit State
+  const handleEdit = (boy) => {
+    setEditingId(boy.id);
+    setEditStatus(boy.active ?? true);
+    setEditMaxOrders(boy.maxOrders);
+    // Convert Array ["A", "B"] -> String "A, B"
+    setEditAssignedAreas(boy.assignedAreas ? boy.assignedAreas.join(", ") : "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleSaveEdit = async (id) => {
+    try {
+      // 🟢 Parse String "A, B" -> Array ["A", "B"]
+      const areaArray = editAssignedAreas
+        .split(",")
+        .map((area) => area.trim())
+        .filter((area) => area !== "");
+
+      // Send update to backend
+      await updateDeliveryBoy(id, {
+        active: editStatus,
+        maxOrders: parseInt(editMaxOrders),
+        assignedAreas: areaArray, // 🟢 Include areas in update
+      });
+
+      // Update Local UI immediately
+      setBoys(
+        boys.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                active: editStatus,
+                maxOrders: parseInt(editMaxOrders),
+                assignedAreas: areaArray,
+              }
+            : b
+        )
+      );
+      setEditingId(null);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update delivery boy");
     }
   };
 
@@ -67,70 +151,236 @@ const AdminDeliveryBoys = () => {
       </h2>
 
       {/* Add Form */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <h3 className="font-semibold mb-4">Add New Delivery Boy</h3>
-        <form onSubmit={handleAdd} className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Name"
-            required
-            className="border p-2 rounded w-1/3"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Phone Number (10 digits)"
-            required
-            maxLength="10"
-            pattern="\d{10}"
-            className="border p-2 rounded w-1/3"
-            value={newPhone}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, ""); // Remove non-digits
-              setNewPhone(value);
-            }}
-          />
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
-          >
-            <FaPlus /> Add
-          </button>
+      <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
+        <h3 className="font-semibold text-lg mb-4 text-gray-700 border-b pb-2">
+          Register New Delivery Partner
+        </h3>
+        <form
+          onSubmit={handleAdd}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Name
+            </label>
+            <input
+              type="text"
+              required
+              className="w-full border p-2 rounded mt-1"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Phone
+            </label>
+            <input
+              type="text"
+              required
+              maxLength="10"
+              pattern="\d{10}"
+              className="w-full border p-2 rounded mt-1"
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              City
+            </label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
+              value={city}
+              disabled
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              State
+            </label>
+            <input
+              type="text"
+              className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
+              value={state}
+              disabled
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Max Daily Orders
+            </label>
+            <input
+              type="number"
+              min="1"
+              className="w-full border p-2 rounded mt-1"
+              value={maxOrders}
+              onChange={(e) => setMaxOrders(e.target.value)}
+            />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-600">
+              Assigned Areas (Comma Separated)
+            </label>
+            <textarea
+              className="w-full border p-2 rounded mt-1"
+              rows="2"
+              placeholder="e.g. Vijay Nagar, Palasia..."
+              value={assignedAreas}
+              onChange={(e) => setAssignedAreas(e.target.value)}
+            />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3 flex justify-end">
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow flex items-center gap-2"
+            >
+              <FaPlus /> Register Delivery Boy
+            </button>
+          </div>
         </form>
       </div>
 
-      {/* List */}
+      {/* List Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-gray-100 text-gray-600 uppercase text-sm">
             <tr>
-              <th className="p-4">ID</th>
-              <th className="p-4">Name</th>
-              <th className="p-4">Phone</th>
-              <th className="p-4 text-center">Action</th>
+              <th className="p-4 border-b">Details</th>
+              <th className="p-4 border-b">Location</th>
+              <th className="p-4 border-b w-1/3">Coverage Areas</th>
+              <th className="p-4 border-b text-center">Status</th>
+              <th className="p-4 border-b text-center">Capacity</th>
+              <th className="p-4 border-b text-center">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200">
             {boys.map((boy) => (
-              <tr key={boy.id} className="border-t">
-                <td className="p-4">#{boy.id}</td>
-                <td className="p-4 font-medium">{boy.name}</td>
-                <td className="p-4">{boy.phone}</td>
+              <tr key={boy.id} className="hover:bg-gray-50 transition-colors">
+                <td className="p-4">
+                  <div className="font-semibold text-gray-800">{boy.name}</div>
+                  <div className="text-sm text-gray-500">{boy.phone}</div>
+                </td>
+                <td className="p-4 text-sm text-gray-600">
+                  <div>{boy.city}</div>
+                  <div className="text-xs text-gray-400">{boy.state}</div>
+                </td>
+
+                {/* 🟢 EDITABLE COVERAGE AREAS */}
+                <td className="p-4">
+                  {editingId === boy.id ? (
+                    <textarea
+                      value={editAssignedAreas}
+                      onChange={(e) => setEditAssignedAreas(e.target.value)}
+                      className="w-full border rounded p-1 text-sm h-16"
+                      placeholder="Separate with commas..."
+                    />
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {boy.assignedAreas && boy.assignedAreas.length > 0 ? (
+                        boy.assignedAreas.map((area, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                          >
+                            {area}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 text-sm italic">
+                          No specific areas
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </td>
+
+                {/* Status Column */}
                 <td className="p-4 text-center">
-                  <button
-                    onClick={() => handleDelete(boy.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <FaTrash />
-                  </button>
+                  {editingId === boy.id ? (
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value === "true")}
+                      className="border rounded px-2 py-1 text-sm bg-white"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  ) : (
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        boy.active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {boy.active ? "Active" : "Inactive"}
+                    </span>
+                  )}
+                </td>
+
+                {/* Capacity Column */}
+                <td className="p-4 text-center">
+                  {editingId === boy.id ? (
+                    <input
+                      type="number"
+                      min="1"
+                      value={editMaxOrders}
+                      onChange={(e) => setEditMaxOrders(e.target.value)}
+                      className="w-20 border rounded px-2 py-1 text-center"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center gap-1 text-gray-600">
+                      <FaBoxOpen className="text-gray-400" />
+                      <span className="font-semibold">{boy.maxOrders}</span>
+                    </div>
+                  )}
+                </td>
+
+                {/* Actions */}
+                <td className="p-4 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    {editingId === boy.id ? (
+                      <>
+                        <button
+                          onClick={() => handleSaveEdit(boy.id)}
+                          className="text-green-600 hover:text-green-700 p-2 rounded-full hover:bg-green-50"
+                        >
+                          <FaSave />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                        >
+                          <FaTimes />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(boy)}
+                          className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(boy.id)}
+                          className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50"
+                        >
+                          <FaTrash />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
             {boys.length === 0 && (
               <tr>
-                <td colSpan="4" className="p-4 text-center text-gray-500">
-                  No delivery boys found.
+                <td colSpan="6" className="p-8 text-center text-gray-500">
+                  <FaUserSecret className="mx-auto text-4xl mb-2 text-gray-300" />
+                  <p>No delivery partners registered yet.</p>
                 </td>
               </tr>
             )}

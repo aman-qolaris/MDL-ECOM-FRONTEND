@@ -17,6 +17,8 @@ import {
   FaClipboardCheck,
   FaWarehouse,
   FaLayerGroup,
+  FaUserSecret, // 🟢 Added
+  FaPhone, // 🟢 Added
 } from "react-icons/fa";
 
 const AdminOrderDetails = () => {
@@ -50,7 +52,9 @@ const AdminOrderDetails = () => {
       }
 
       // 3. Fetch Products (to get Stock Data)
-      await fetchProductData(orderData.OrderItems);
+      if (orderData?.OrderItems) {
+        await fetchProductData(orderData.OrderItems);
+      }
     } catch (err) {
       console.error("Error fetching critical order data:", err);
     } finally {
@@ -115,6 +119,10 @@ const AdminOrderDetails = () => {
 
       // 🔄 Refetch products to show updated/deducted stock immediately
       fetchProductData(order.OrderItems);
+
+      // 🔄 Refetch order to see if status/assignment changed on backend
+      // (Optional: Un-comment if backend auto-updates status immediately)
+      // fetchData();
     } catch (err) {
       console.error(err);
       alert("Failed to update status. Server might be enforcing stock limits.");
@@ -125,6 +133,20 @@ const AdminOrderDetails = () => {
   const areAllItemsReady = order?.OrderItems?.every(
     (item) => item.status === "PACKED"
   );
+
+  // 🟢 Handle Explicit "Mark as Packed" to trigger Assignment
+  const handleMarkPacked = async () => {
+    if (!areAllItemsReady) return;
+    try {
+      await updateOrderStatus(order.id, "PACKED");
+      // Refetch to get the assigned delivery boy
+      await fetchData();
+      alert("Order Marked as PACKED. Delivery Partner Assigned.");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update status");
+    }
+  };
 
   const handleDispatch = async () => {
     if (!areAllItemsReady) return;
@@ -169,6 +191,10 @@ const AdminOrderDetails = () => {
   };
 
   const priceDetails = calculatePriceDetails();
+
+  // 🟢 Extract Delivery Boy Data
+  const assignment = order?.DeliveryAssignment;
+  const deliveryBoy = assignment?.DeliveryBoy;
 
   if (loading)
     return <div className="p-8 text-center">Loading Order Details...</div>;
@@ -297,7 +323,7 @@ const AdminOrderDetails = () => {
                         }
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                           item.status === "PACKED"
-                            ? "bg-green-100 text-green-700 cursor-default" // Change style to look static
+                            ? "bg-green-100 text-green-700 cursor-default"
                             : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         } ${
                           order.status === "DELIVERED" ||
@@ -328,6 +354,17 @@ const AdminOrderDetails = () => {
               </div>
 
               <div className="flex gap-3">
+                {/* 🟢 NEW BUTTON: Explicitly Mark as Packed (Triggers Auto-Assign) */}
+                {order.status === "PROCESSING" && areAllItemsReady && (
+                  <button
+                    onClick={handleMarkPacked}
+                    className="px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+                  >
+                    <FaBox /> Complete Packing
+                  </button>
+                )}
+
+                {/* DISPATCH BUTTON */}
                 {order.status !== "OUT_FOR_DELIVERY" &&
                   order.status !== "DELIVERED" && (
                     <button
@@ -441,6 +478,56 @@ const AdminOrderDetails = () => {
             )}
           </div>
 
+          {/* 🟢 DELIVERY PARTNER CARD */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <FaUserSecret className="text-blue-600" /> Delivery Partner
+            </h3>
+
+            {deliveryBoy ? (
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-blue-50 rounded-full text-blue-600">
+                    <FaUserSecret size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800">
+                      {deliveryBoy.name}
+                    </p>
+                    <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                      <FaPhone size={12} /> {deliveryBoy.phone}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-2 border border-gray-100">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Current Status:</span>
+                    <span className="font-semibold text-blue-600">
+                      {assignment?.status || "ASSIGNED"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Max Capacity:</span>
+                    <span className="font-medium">
+                      {deliveryBoy.maxOrders} orders
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <p className="font-medium">No Partner Assigned</p>
+                {order.status === "PROCESSING" && (
+                  <p className="text-xs mt-2 text-blue-500">
+                    Partner will be auto-assigned when you click <br />
+                    <strong>"Complete Packing"</strong>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-700 mb-4">Customer Details</h3>
             <div className="text-sm text-gray-600 space-y-1">
@@ -448,9 +535,14 @@ const AdminOrderDetails = () => {
                 {order.address?.fullName || "Guest"}
               </p>
               <p>{order.address?.addressLine1}</p>
+              {/* 🟢 SHOW ASSIGNED AREA IF AVAILABLE */}
+              {order.assignedArea && (
+                <p className="font-semibold text-blue-600">
+                  Area: {order.assignedArea}
+                </p>
+              )}
               <p>
-                {order.address?.city}, {order.address?.state} -{" "}
-                {order.address?.zipCode}
+                {order.address?.city}, {order.address?.state}
               </p>
               <p className="pt-2 font-mono text-gray-500">
                 Ph: {order.address?.phone}
