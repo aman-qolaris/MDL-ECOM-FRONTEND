@@ -115,7 +115,7 @@ const VendorDashboard = () => {
       value: stats.todayOrders,
       icon: <FaCalendarDay />,
       color: "bg-orange-500",
-      link: "/vendor/orders",
+      link: "/vendor/orders?filter=today", // ✅ Added ?filter=today
       desc: "Orders received today",
     },
     {
@@ -123,7 +123,7 @@ const VendorDashboard = () => {
       value: stats.pendingOrders,
       icon: <FaClock />,
       color: "bg-red-500",
-      link: "/vendor/orders",
+      link: "/vendor/orders?filter=pending", // ✅ Added ?filter=pending
       desc: "Actions required",
     },
   ];

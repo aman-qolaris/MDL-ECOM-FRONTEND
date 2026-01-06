@@ -113,7 +113,7 @@ const Checkout = () => {
         userId: user?.id,
         items: items.map((item) => ({
           productId: item.productId,
-          vendorId: item.vendorId || null,
+          vendorId: item.Product?.vendorId || item.vendorId || null,
           quantity: item.quantity,
           price: item.Product?.price || item.price,
         })),
