@@ -8,6 +8,7 @@ import {
   FaCog,
   FaStore,
   FaTruck,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 
 const AdminSidebar = () => {
@@ -22,6 +23,11 @@ const AdminSidebar = () => {
     { path: "/admin/orders", name: "Orders", icon: <FaShoppingBag /> },
     { path: "/admin/vendors", name: "Vendors", icon: <FaStore /> },
     { path: "/admin/delivery-boys", name: "Delivery Boys", icon: <FaTruck /> },
+    {
+      path: "/admin/cod-reconciliation",
+      name: "COD Reconciliation",
+      icon: <FaMoneyBillWave />,
+    },
     { path: "/admin/users", name: "Users", icon: <FaUsers /> },
     { path: "/admin/settings", name: "Settings", icon: <FaCog /> },
   ];

@@ -163,3 +163,22 @@ export const getDeliveryLocations = async () => {
   const response = await api.get("/orders/locations");
   return response.data;
 };
+
+// ==================================================
+// 💰 COD RECONCILIATION ROUTES
+// ==================================================
+
+// 1. Get Overview (Who owes what?)
+export const getCODReconciliation = async () => {
+  const response = await api.get("/orders/admin/reconciliation/cod");
+  return response.data;
+};
+
+// 2. Settle Cash (Mark specific orders as deposited)
+export const settleCOD = async (deliveryBoyId, orderIds) => {
+  const response = await api.post("/orders/admin/reconciliation/settle", {
+    deliveryBoyId,
+    orderIds,
+  });
+  return response.data;
+};
