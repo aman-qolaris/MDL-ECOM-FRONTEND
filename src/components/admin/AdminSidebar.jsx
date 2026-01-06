@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaBox,
@@ -9,12 +9,10 @@ import {
   FaStore,
   FaTruck,
 } from "react-icons/fa";
-import { useDispatch } from "react-redux";
-import { logout } from "../../store/slices/authSlice";
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ Use hook
 
   const isActive = (path) => location.pathname === path;
 
@@ -27,6 +25,13 @@ const AdminSidebar = () => {
     { path: "/admin/users", name: "Users", icon: <FaUsers /> },
     { path: "/admin/settings", name: "Settings", icon: <FaCog /> },
   ];
+
+  // ✅ New Logout Handler
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    navigate("/admin/login");
+  };
 
   return (
     <div className="bg-gray-900 text-white w-64 min-h-screen flex flex-col transition-all duration-300">
@@ -56,7 +61,7 @@ const AdminSidebar = () => {
       {/* Logout */}
       <div className="p-4 border-t border-gray-800">
         <button
-          onClick={() => dispatch(logout())}
+          onClick={handleLogout} // ✅ Attach new handler
           className="flex items-center gap-4 px-6 py-3 text-red-400 hover:bg-gray-800 hover:text-red-300 w-full rounded-lg transition"
         >
           <FaSignOutAlt />

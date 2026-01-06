@@ -14,9 +14,20 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const token = state.auth.token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const customerToken = state.auth.token;
+    const adminToken = localStorage.getItem("adminToken");
+    const vendorToken = localStorage.getItem("vendorToken");
+
+    // 2. Intelligent Selection based on URL or Page Context
+    if (window.location.pathname.startsWith("/admin") && adminToken) {
+      // ✅ If on Admin Panel, prioritize Admin Token
+      config.headers.Authorization = `Bearer ${adminToken}`;
+    } else if (window.location.pathname.startsWith("/vendor") && vendorToken) {
+      // ✅ If on Vendor Panel, prioritize Vendor Token
+      config.headers.Authorization = `Bearer ${vendorToken}`;
+    } else if (customerToken) {
+      // ✅ Default to Customer Token for Shop
+      config.headers.Authorization = `Bearer ${customerToken}`;
     }
     return config;
   },
@@ -27,7 +38,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      store.dispatch(logout());
+      if (
+        !window.location.pathname.startsWith("/admin") &&
+        !window.location.pathname.startsWith("/vendor")
+      ) {
+        store.dispatch(logout());
+      }
     }
     return Promise.reject(error);
   }

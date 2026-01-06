@@ -1,22 +1,15 @@
-import { useSelector } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
 
 const AdminRoute = () => {
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  // ✅ 1. Read directly from LocalStorage
+  const adminToken = localStorage.getItem("adminToken");
 
-  // 1. Check if logged in
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  // ✅ 2. Simple Check: Do we have a token?
+  if (!adminToken) {
+    return <Navigate to="/admin/login" replace />;
   }
 
-  // 2. Check if role is admin
-  // (We assume your user object has a 'role' property)
-  if (user?.role !== "admin") {
-    // If they are a customer trying to access admin pages, kick them out
-    return <Navigate to="/" replace />;
-  }
-
-  // 3. If passed both checks, let them in
+  // 3. If yes, let them in
   return <Outlet />;
 };
 
