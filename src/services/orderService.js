@@ -137,17 +137,27 @@ export const assignDeliveryBoy = async (orderId, deliveryBoyId) => {
 };
 
 // 12. Reassign a delivery boy (when one is already assigned but needs changing)
+// ... existing imports and functions
+
+// 🟢 NEW: Get Reassignment Options (All boys sorted by suitability)
+export const getReassignmentOptions = async (orderId) => {
+  const response = await api.get(`/orders/admin/reassign-options/${orderId}`);
+  return response.data;
+};
+
+// src/services/orderService.js
+
 export const reassignDeliveryBoy = async (
   orderId,
   oldDeliveryBoyId,
-  newDeliveryBoyId,
-  reason
+  newDeliveryBoyId
 ) => {
-  const response = await api.put(`/orders/${orderId}/reassign`, {
-    oldDeliveryBoyId,
-    newDeliveryBoyId,
-    reason,
-  });
+  const response = await api.put(
+    `${BASE_URL}/orders/admin/reassign-delivery/${orderId}`,
+    {
+      newDeliveryBoyId,
+    }
+  );
   return response.data;
 };
 

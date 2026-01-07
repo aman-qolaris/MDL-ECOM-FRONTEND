@@ -5,6 +5,8 @@ import {
   updateOrderStatus,
   getAllVendors,
   updateOrderItemStatus,
+  getReassignmentOptions,
+  reassignDeliveryBoy,
 } from "../../services/orderService";
 import { getProductById } from "../../services/productService";
 import {
@@ -17,8 +19,11 @@ import {
   FaClipboardCheck,
   FaWarehouse,
   FaLayerGroup,
-  FaUserSecret, // 🟢 Added
-  FaPhone, // 🟢 Added
+  FaUserSecret,
+  FaPhone,
+  FaExchangeAlt,
+  FaTimes,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 
 const AdminOrderDetails = () => {
@@ -30,6 +35,12 @@ const AdminOrderDetails = () => {
   const [vendors, setVendors] = useState([]);
   const [products, setProducts] = useState({});
 
+  // 🟢 Reassignment State (Removed Reason State)
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [reassignOptions, setReassignOptions] = useState([]);
+  const [reassignLoading, setReassignLoading] = useState(false);
+  const [selectedNewBoy, setSelectedNewBoy] = useState(null);
+
   useEffect(() => {
     fetchData();
   }, [id]);
@@ -38,11 +49,9 @@ const AdminOrderDetails = () => {
     try {
       setLoading(true);
 
-      // 1. Fetch Order Data
       const orderData = await getAdminOrderDetails(id);
       setOrder(orderData);
 
-      // 2. Fetch Vendors (Safe)
       try {
         const vendorsData = await getAllVendors();
         setVendors(vendorsData);
@@ -51,7 +60,6 @@ const AdminOrderDetails = () => {
         setVendors([]);
       }
 
-      // 3. Fetch Products (to get Stock Data)
       if (orderData?.OrderItems) {
         await fetchProductData(orderData.OrderItems);
       }
@@ -62,7 +70,6 @@ const AdminOrderDetails = () => {
     }
   };
 
-  // Helper to fetch/refetch products
   const fetchProductData = async (items) => {
     const productMap = {};
     const productPromises = items.map(async (item) => {
@@ -83,21 +90,16 @@ const AdminOrderDetails = () => {
     return vendor ? vendor.businessName : `Vendor #${vendorId}`;
   };
 
-  // ✅ VALIDATION LOGIC: Check Stock Before Packing
   const toggleItemReady = async (index) => {
     const item = order.OrderItems[index];
     const product = products[item.productId];
-
-    // Determine Logic
     const newStatus = item.status === "PACKED" ? "PENDING" : "PACKED";
 
-    // 🛑 CONSTRAINT: Check Warehouse Stock
     if (newStatus === "PACKED") {
       if (!product) {
         alert("Product data not loaded yet. Please wait.");
         return;
       }
-      // If Warehouse Stock is insufficient
       if (product.warehouseStock < item.quantity) {
         alert(
           `⛔ INSUFFICIENT WAREHOUSE STOCK!\n\n` +
@@ -105,7 +107,7 @@ const AdminOrderDetails = () => {
             `Available in Warehouse: ${product.warehouseStock}\n\n` +
             `Please transfer stock to warehouse before packing.`
         );
-        return; // Stop execution
+        return;
       }
     }
 
@@ -113,20 +115,12 @@ const AdminOrderDetails = () => {
       const updatedItems = [...order.OrderItems];
       updatedItems[index].status = newStatus;
       setOrder({ ...order, OrderItems: updatedItems });
-
-      // ✅ Corrected Call: Pass order.id, then item.id
       await updateOrderItemStatus(order.id, item.id, newStatus);
-
-      // 🔄 Refetch products to show updated/deducted stock immediately
       fetchProductData(order.OrderItems);
-
-      // 🔄 Refetch order to see if status/assignment changed on backend
-      // (Optional: Un-comment if backend auto-updates status immediately)
-      // fetchData();
     } catch (err) {
       console.error(err);
       alert("Failed to update status. Server might be enforcing stock limits.");
-      fetchData(); // Revert
+      fetchData();
     }
   };
 
@@ -134,12 +128,10 @@ const AdminOrderDetails = () => {
     (item) => item.status === "PACKED"
   );
 
-  // 🟢 Handle Explicit "Mark as Packed" to trigger Assignment
   const handleMarkPacked = async () => {
     if (!areAllItemsReady) return;
     try {
       await updateOrderStatus(order.id, "PACKED");
-      // Refetch to get the assigned delivery boy
       await fetchData();
       alert("Order Marked as PACKED. Delivery Partner Assigned.");
     } catch (e) {
@@ -179,6 +171,53 @@ const AdminOrderDetails = () => {
     }
   };
 
+  const handleOpenReassign = async () => {
+    setIsReassignModalOpen(true);
+    setReassignLoading(true);
+    try {
+      const data = await getReassignmentOptions(order.id);
+      setReassignOptions(data.options || []);
+    } catch (err) {
+      console.error("Failed to load reassignment options", err);
+      alert("Could not load delivery boys. Please try again.");
+      setIsReassignModalOpen(false);
+    } finally {
+      setReassignLoading(false);
+    }
+  };
+
+  // 🟢 UPDATED: Submit Reassignment (No Reason Check)
+  const handleSubmitReassignment = async () => {
+    if (!selectedNewBoy) {
+      alert("Please select a delivery boy.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Confirm reassignment to ${selectedNewBoy.name}?\nThis will mark the current assignment as FAILED.`
+      )
+    )
+      return;
+
+    try {
+      // 🟢 CHANGE HERE: Use 'id' from params, NOT 'order.id'
+      await reassignDeliveryBoy(
+        id, // 👈 Passing the URL param directly
+        null, // oldDeliveryBoyId (Backend ignores this now, so null is fine)
+        selectedNewBoy.id
+      );
+
+      alert("Reassignment Successful!");
+      setIsReassignModalOpen(false);
+      setSelectedNewBoy(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Reassignment Failed");
+    }
+  };
+
   const calculatePriceDetails = () => {
     if (!order) return { subtotal: 0, shipping: 0, total: 0 };
     const subtotal = order.OrderItems.reduce(
@@ -191,8 +230,6 @@ const AdminOrderDetails = () => {
   };
 
   const priceDetails = calculatePriceDetails();
-
-  // 🟢 Extract Delivery Boy Data
   const assignment = order?.DeliveryAssignment;
   const deliveryBoy = assignment?.DeliveryBoy;
 
@@ -202,7 +239,7 @@ const AdminOrderDetails = () => {
     return <div className="p-8 text-center text-red-500">Order Not Found</div>;
 
   return (
-    <div className="animate-fadeIn max-w-7xl mx-auto pb-10">
+    <div className="animate-fadeIn max-w-7xl mx-auto pb-10 relative">
       <div className="flex items-center justify-between mb-6">
         <Link
           to="/admin/orders"
@@ -220,6 +257,114 @@ const AdminOrderDetails = () => {
         </div>
       </div>
 
+      {/* 🟢 UPDATED REASSIGNMENT MODAL (Blurry Background + No Reason Field) */}
+      {isReassignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* 🟢 Backdrop Blur Layer */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-md transition-all"
+            onClick={() => setIsReassignModalOpen(false)}
+          ></div>
+
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-fadeInScale">
+            {/* Modal Header */}
+            <div className="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <FaExchangeAlt className="text-blue-600" /> Reassign Partner
+              </h3>
+              <button
+                onClick={() => setIsReassignModalOpen(false)}
+                className="text-gray-500 hover:text-red-500 transition"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto">
+              <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-800">
+                <p>
+                  <strong>Target Area:</strong> {order.assignedArea}
+                </p>
+                <p className="text-xs mt-1">
+                  Delivery boys covering this area are highlighted.
+                </p>
+              </div>
+
+              {reassignLoading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Loading options...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reassignOptions.map((boy) => {
+                    const isRecommended = boy.matchType === "RECOMMENDED";
+                    const isSelected = selectedNewBoy?.id === boy.id;
+
+                    return (
+                      <div
+                        key={boy.id}
+                        onClick={() => setSelectedNewBoy(boy)}
+                        className={`p-3 rounded-lg border-2 cursor-pointer transition flex justify-between items-center ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-100 hover:border-blue-300"
+                        }`}
+                      >
+                        <div>
+                          <p className="font-bold text-gray-800 flex items-center gap-2">
+                            {boy.name}
+                            {isRecommended && (
+                              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
+                                RECOMMENDED
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {boy.phone} • {boy.city}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs">
+                          <p className="text-gray-500">Load Today</p>
+                          <p
+                            className={`font-bold ${
+                              boy.isOverloaded
+                                ? "text-red-600"
+                                : "text-gray-800"
+                            }`}
+                          >
+                            {boy.currentLoad} / {boy.maxOrders}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Reason Field Removed Here */}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-t flex justify-end gap-3">
+              <button
+                onClick={() => setIsReassignModalOpen(false)}
+                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReassignment}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition font-bold text-sm shadow-md"
+              >
+                Confirm Reassignment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-6">
@@ -284,7 +429,6 @@ const AdminOrderDetails = () => {
                           </span>
                         </p>
 
-                        {/* 🟢 STOCK DISPLAY */}
                         <div className="flex gap-3 mt-2 text-xs">
                           <div
                             className={`flex items-center gap-1 border px-2 py-0.5 rounded ${
@@ -304,7 +448,6 @@ const AdminOrderDetails = () => {
                       </div>
                     </div>
 
-                    {/* ACTIONS & PRICE */}
                     <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
                       <div className="text-right">
                         <p className="font-bold text-gray-800">₹{item.price}</p>
@@ -313,13 +456,12 @@ const AdminOrderDetails = () => {
                         </p>
                       </div>
 
-                      {/* 🔒 UPDATED BUTTON: PERMANENT PACKING */}
                       <button
                         onClick={() => toggleItemReady(idx)}
                         disabled={
                           order.status === "DELIVERED" ||
                           order.status === "CANCELLED" ||
-                          item.status === "PACKED" // 👈 DISABLED IF ALREADY PACKED
+                          item.status === "PACKED"
                         }
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                           item.status === "PACKED"
@@ -346,7 +488,6 @@ const AdminOrderDetails = () => {
               })}
             </div>
 
-            {/* ACTION FOOTER */}
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
               <div className="text-sm text-gray-500 font-medium">
                 Current Status:{" "}
@@ -354,7 +495,6 @@ const AdminOrderDetails = () => {
               </div>
 
               <div className="flex gap-3">
-                {/* 🟢 NEW BUTTON: Explicitly Mark as Packed (Triggers Auto-Assign) */}
                 {order.status === "PROCESSING" && areAllItemsReady && (
                   <button
                     onClick={handleMarkPacked}
@@ -364,7 +504,6 @@ const AdminOrderDetails = () => {
                   </button>
                 )}
 
-                {/* DISPATCH BUTTON */}
                 {order.status !== "OUT_FOR_DELIVERY" &&
                   order.status !== "DELIVERED" && (
                     <button
@@ -395,7 +534,6 @@ const AdminOrderDetails = () => {
             </div>
           </div>
 
-          {/* PRICE DETAILS */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-700 mb-4">Price Details</h3>
             <div className="space-y-3 text-sm text-gray-600">
@@ -478,11 +616,22 @@ const AdminOrderDetails = () => {
             )}
           </div>
 
-          {/* 🟢 DELIVERY PARTNER CARD */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-              <FaUserSecret className="text-blue-600" /> Delivery Partner
-            </h3>
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                <FaUserSecret className="text-blue-600" /> Delivery Partner
+              </h3>
+              {deliveryBoy &&
+                order.status !== "DELIVERED" &&
+                order.status !== "CANCELLED" && (
+                  <button
+                    onClick={handleOpenReassign}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded transition"
+                  >
+                    <FaExchangeAlt /> Reassign
+                  </button>
+                )}
+            </div>
 
             {deliveryBoy ? (
               <div className="space-y-4">
@@ -502,11 +651,17 @@ const AdminOrderDetails = () => {
 
                 <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-2 border border-gray-100">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Current Status:</span>
+                    <span className="text-gray-500">Status:</span>
                     <span className="font-semibold text-blue-600">
                       {assignment?.status || "ASSIGNED"}
                     </span>
                   </div>
+                  {assignment?.status === "REASSIGNED" && (
+                    <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-100">
+                      <FaExclamationTriangle />
+                      Previously Reassigned
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-500">Max Capacity:</span>
                     <span className="font-medium">
@@ -535,7 +690,6 @@ const AdminOrderDetails = () => {
                 {order.address?.fullName || "Guest"}
               </p>
               <p>{order.address?.addressLine1}</p>
-              {/* 🟢 SHOW ASSIGNED AREA IF AVAILABLE */}
               {order.assignedArea && (
                 <p className="font-semibold text-blue-600">
                   Area: {order.assignedArea}
