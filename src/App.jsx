@@ -40,6 +40,8 @@ import AdminSales from "./pages/admin/AdminSales";
 import AdminTodaysOrders from "./pages/admin/AdminTodaysOrders";
 import AdminPendingOrders from "./pages/admin/AdminPendingOrders";
 import AdminCODReconciliation from "./pages/admin/AdminCODReconciliation";
+import AssignedOrders from "./pages/admin/AssignedOrders";
+import AdminDeliveryBoyDetails from "./pages/admin/AdminDeliveryBoyDetails";
 
 function App() {
   return (
@@ -73,6 +75,12 @@ function App() {
             <Route path="vendors" element={<AdminVendors />} />
             {/* 👈 Add this line */}
             <Route path="users" element={<AdminUsers />} />
+            {/* 🟢 ADD THESE TWO ROUTES */}
+            <Route path="assigned-orders" element={<AssignedOrders />} />
+            <Route
+              path="assigned-orders/:id"
+              element={<AdminDeliveryBoyDetails />}
+            />
             <Route path="delivery-boys" element={<AdminDeliveryBoys />} />
             <Route
               path="cod-reconciliation"
