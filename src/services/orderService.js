@@ -195,3 +195,17 @@ export const getDeliveryBoyOrdersAdmin = async (boyId) => {
   const response = await api.get(`/orders/admin/delivery-boys/${boyId}/orders`);
   return response.data;
 };
+
+// 1. Cancel Single Item
+export const cancelOrderItem = async (orderId, itemId) => {
+  // Matches Backend: router.put("/:orderId/cancel-item/:itemId", ...)
+  const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`);
+  return response.data;
+};
+
+// 2. Cancel Full Order
+export const cancelOrder = async (orderId) => {
+  // Matches Backend: router.put("/:orderId/cancel", ...)
+  const response = await api.put(`/orders/${orderId}/cancel`);
+  return response.data;
+};
