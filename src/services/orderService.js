@@ -152,12 +152,9 @@ export const reassignDeliveryBoy = async (
   oldDeliveryBoyId,
   newDeliveryBoyId
 ) => {
-  const response = await api.put(
-    `${BASE_URL}/orders/admin/reassign-delivery/${orderId}`,
-    {
-      newDeliveryBoyId,
-    }
-  );
+  const response = await api.put(`/orders/admin/reassign-delivery/${orderId}`, {
+    newDeliveryBoyId,
+  });
   return response.data;
 };
 
@@ -190,5 +187,11 @@ export const settleCOD = async (deliveryBoyId, orderIds) => {
     deliveryBoyId,
     orderIds,
   });
+  return response.data;
+};
+
+// 🟢 ADD THIS FUNCTION
+export const getDeliveryBoyOrdersAdmin = async (boyId) => {
+  const response = await api.get(`/orders/admin/delivery-boys/${boyId}/orders`);
   return response.data;
 };
