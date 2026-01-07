@@ -11,7 +11,7 @@ const AdminSettings = () => {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("adminUser");
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
       setAdminData((prev) => ({

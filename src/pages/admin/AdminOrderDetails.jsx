@@ -24,6 +24,7 @@ import {
   FaExchangeAlt,
   FaTimes,
   FaExclamationTriangle,
+  FaBan, // Imported for Cancelled icon
 } from "react-icons/fa";
 
 const AdminOrderDetails = () => {
@@ -35,7 +36,7 @@ const AdminOrderDetails = () => {
   const [vendors, setVendors] = useState([]);
   const [products, setProducts] = useState({});
 
-  // 🟢 Reassignment State (Removed Reason State)
+  // Reassignment State
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
   const [reassignOptions, setReassignOptions] = useState([]);
   const [reassignLoading, setReassignLoading] = useState(false);
@@ -124,8 +125,10 @@ const AdminOrderDetails = () => {
     }
   };
 
+  // 🟢 UPDATED: Consider items "Ready" if they are PACKED OR CANCELLED
+  // This allows you to complete packing for the remaining items in a partially cancelled order.
   const areAllItemsReady = order?.OrderItems?.every(
-    (item) => item.status === "PACKED"
+    (item) => item.status === "PACKED" || item.status === "CANCELLED"
   );
 
   const handleMarkPacked = async () => {
@@ -186,7 +189,6 @@ const AdminOrderDetails = () => {
     }
   };
 
-  // 🟢 UPDATED: Submit Reassignment (No Reason Check)
   const handleSubmitReassignment = async () => {
     if (!selectedNewBoy) {
       alert("Please select a delivery boy.");
@@ -201,12 +203,7 @@ const AdminOrderDetails = () => {
       return;
 
     try {
-      // 🟢 CHANGE HERE: Use 'id' from params, NOT 'order.id'
-      await reassignDeliveryBoy(
-        id, // 👈 Passing the URL param directly
-        null, // oldDeliveryBoyId (Backend ignores this now, so null is fine)
-        selectedNewBoy.id
-      );
+      await reassignDeliveryBoy(id, null, selectedNewBoy.id);
 
       alert("Reassignment Successful!");
       setIsReassignModalOpen(false);
@@ -257,18 +254,14 @@ const AdminOrderDetails = () => {
         </div>
       </div>
 
-      {/* 🟢 UPDATED REASSIGNMENT MODAL (Blurry Background + No Reason Field) */}
       {isReassignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* 🟢 Backdrop Blur Layer */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-md transition-all"
             onClick={() => setIsReassignModalOpen(false)}
           ></div>
 
-          {/* Modal Content */}
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-fadeInScale">
-            {/* Modal Header */}
             <div className="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
                 <FaExchangeAlt className="text-blue-600" /> Reassign Partner
@@ -281,7 +274,6 @@ const AdminOrderDetails = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 overflow-y-auto">
               <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-800">
                 <p>
@@ -342,10 +334,8 @@ const AdminOrderDetails = () => {
                   })}
                 </div>
               )}
-              {/* Reason Field Removed Here */}
             </div>
 
-            {/* Modal Footer */}
             <div className="bg-gray-50 px-6 py-4 border-t flex justify-end gap-3">
               <button
                 onClick={() => setIsReassignModalOpen(false)}
@@ -376,12 +366,16 @@ const AdminOrderDetails = () => {
               </h3>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  areAllItemsReady
+                  order.status === "CANCELLED"
+                    ? "bg-red-100 text-red-700"
+                    : areAllItemsReady
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                {areAllItemsReady
+                {order.status === "CANCELLED"
+                  ? "Order Cancelled"
+                  : areAllItemsReady
                   ? "Ready for Dispatch"
                   : "Packing in Progress"}
               </span>
@@ -392,6 +386,7 @@ const AdminOrderDetails = () => {
                 const product = products[item.productId];
                 const isStockLow =
                   product && product.warehouseStock < item.quantity;
+                const isItemCancelled = item.status === "CANCELLED";
 
                 return (
                   <div
@@ -399,6 +394,8 @@ const AdminOrderDetails = () => {
                     className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border transition ${
                       item.status === "PACKED"
                         ? "bg-green-50 border-green-200"
+                        : isItemCancelled
+                        ? "bg-red-50 border-red-200"
                         : "bg-white border-gray-200"
                     }`}
                   >
@@ -432,7 +429,7 @@ const AdminOrderDetails = () => {
                         <div className="flex gap-3 mt-2 text-xs">
                           <div
                             className={`flex items-center gap-1 border px-2 py-0.5 rounded ${
-                              isStockLow
+                              isStockLow && !isItemCancelled
                                 ? "bg-red-50 text-red-700 border-red-200"
                                 : "bg-gray-50 text-gray-600 border-gray-200"
                             }`}
@@ -456,27 +453,38 @@ const AdminOrderDetails = () => {
                         </p>
                       </div>
 
+                      {/* 🟢 UPDATED: Item Button Logic */}
                       <button
                         onClick={() => toggleItemReady(idx)}
                         disabled={
                           order.status === "DELIVERED" ||
                           order.status === "CANCELLED" ||
-                          item.status === "PACKED"
+                          item.status === "PACKED" ||
+                          isItemCancelled // 🟢 Disable if item is cancelled
                         }
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                           item.status === "PACKED"
                             ? "bg-green-100 text-green-700 cursor-default"
+                            : isItemCancelled
+                            ? "bg-red-100 text-red-700 cursor-default"
                             : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         } ${
+                          // Opacity logic for disable state
                           order.status === "DELIVERED" ||
-                          item.status === "PACKED"
-                            ? "opacity-100"
+                          order.status === "CANCELLED" ||
+                          item.status === "PACKED" ||
+                          isItemCancelled
+                            ? "opacity-80"
                             : ""
                         }`}
                       >
                         {item.status === "PACKED" ? (
                           <>
                             <FaCheckCircle /> Packed
+                          </>
+                        ) : isItemCancelled ? (
+                          <>
+                            <FaBan /> Cancelled
                           </>
                         ) : (
                           "Mark Packed"
@@ -512,7 +520,7 @@ const AdminOrderDetails = () => {
                         !areAllItemsReady || order.status === "CANCELLED"
                       }
                       className={`px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                        !areAllItemsReady
+                        !areAllItemsReady || order.status === "CANCELLED"
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
                       }`}
@@ -595,19 +603,22 @@ const AdminOrderDetails = () => {
               </span>
             </div>
 
-            {!order.payment && order.paymentMethod === "COD" && (
-              <div className="mt-4 pt-4 border-t border-orange-200">
-                <p className="text-xs text-orange-800 mb-3">
-                  ⚠️ Confirm payment only after cash collection.
-                </p>
-                <button
-                  onClick={handleDeliver}
-                  className="w-full py-2 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700 shadow-sm transition flex justify-center items-center gap-2"
-                >
-                  <FaCheckCircle /> Confirm Payment & Delivery
-                </button>
-              </div>
-            )}
+            {/* 🟢 UPDATED: Hide Confirm Payment button if order is Cancelled */}
+            {!order.payment &&
+              order.paymentMethod === "COD" &&
+              order.status !== "CANCELLED" && (
+                <div className="mt-4 pt-4 border-t border-orange-200">
+                  <p className="text-xs text-orange-800 mb-3">
+                    ⚠️ Confirm payment only after cash collection.
+                  </p>
+                  <button
+                    onClick={handleDeliver}
+                    className="w-full py-2 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700 shadow-sm transition flex justify-center items-center gap-2"
+                  >
+                    <FaCheckCircle /> Confirm Payment & Delivery
+                  </button>
+                </div>
+              )}
 
             {order.payment && (
               <div className="mt-2 text-center text-xs font-bold text-green-700">
