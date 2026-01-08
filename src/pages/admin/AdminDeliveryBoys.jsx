@@ -7,6 +7,9 @@ import {
   FaEdit,
   FaSave,
   FaTimes,
+  FaEnvelope, // Added icon
+  FaEye, // 🟢 Add this
+  FaEyeSlash, // 🟢 Add this
 } from "react-icons/fa";
 import {
   getAllDeliveryBoys,
@@ -22,6 +25,9 @@ const AdminDeliveryBoys = () => {
   // --- Add Form State ---
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [newEmail, setNewEmail] = useState(""); // 🟢 NEW
+  const [newPassword, setNewPassword] = useState(""); // 🟢 NEW
+  const [showPassword, setShowPassword] = useState(false); // 🟢 Add this
   const [city, setCity] = useState("Raipur");
   const [state, setState] = useState("Chhattisgarh");
   const [maxOrders, setMaxOrders] = useState(20);
@@ -31,7 +37,7 @@ const AdminDeliveryBoys = () => {
   const [editingId, setEditingId] = useState(null);
   const [editStatus, setEditStatus] = useState(true);
   const [editMaxOrders, setEditMaxOrders] = useState(20);
-  const [editAssignedAreas, setEditAssignedAreas] = useState(""); // 🟢 NEW: For editing areas
+  const [editAssignedAreas, setEditAssignedAreas] = useState("");
 
   useEffect(() => {
     fetchBoys();
@@ -63,6 +69,8 @@ const AdminDeliveryBoys = () => {
     const payload = {
       name: newName,
       phone: newPhone,
+      email: newEmail, // 🟢 Include Email
+      password: newPassword, // 🟢 Include Password
       city,
       state,
       maxOrders: parseInt(maxOrders),
@@ -76,11 +84,14 @@ const AdminDeliveryBoys = () => {
       // Reset Form
       setNewName("");
       setNewPhone("");
+      setNewEmail(""); // 🟢 Reset
+      setNewPassword(""); // 🟢 Reset
       setAssignedAreas("");
       setMaxOrders(20);
+      alert("Delivery Partner Registered Successfully!");
     } catch (error) {
       console.error(error);
-      alert("Failed to add delivery boy");
+      alert("Failed to add delivery boy. Check if Email/Phone already exists.");
     }
   };
 
@@ -94,12 +105,10 @@ const AdminDeliveryBoys = () => {
     }
   };
 
-  // 🟢 Load data into Edit State
   const handleEdit = (boy) => {
     setEditingId(boy.id);
     setEditStatus(boy.active ?? true);
     setEditMaxOrders(boy.maxOrders);
-    // Convert Array ["A", "B"] -> String "A, B"
     setEditAssignedAreas(boy.assignedAreas ? boy.assignedAreas.join(", ") : "");
   };
 
@@ -109,20 +118,17 @@ const AdminDeliveryBoys = () => {
 
   const handleSaveEdit = async (id) => {
     try {
-      // 🟢 Parse String "A, B" -> Array ["A", "B"]
       const areaArray = editAssignedAreas
         .split(",")
         .map((area) => area.trim())
         .filter((area) => area !== "");
 
-      // Send update to backend
       await updateDeliveryBoy(id, {
         active: editStatus,
         maxOrders: parseInt(editMaxOrders),
-        assignedAreas: areaArray, // 🟢 Include areas in update
+        assignedAreas: areaArray,
       });
 
-      // Update Local UI immediately
       setBoys(
         boys.map((b) =>
           b.id === id
@@ -159,24 +165,68 @@ const AdminDeliveryBoys = () => {
           onSubmit={handleAdd}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
               Name
             </label>
             <input
               type="text"
+              placeholder="Name"
               required
               className="w-full border p-2 rounded mt-1"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
           </div>
+
+          {/* Email (NEW) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="Enter email"
+              required
+              className="w-full border p-2 rounded mt-1"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+            />
+          </div>
+
+          {/* Password (NEW) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Password
+            </label>
+            <div className="relative mt-1">
+              <input
+                type={showPassword ? "text" : "password"} // 🟢 Toggles type
+                required
+                className="w-full border p-2 rounded pr-10" // 🟢 Added pr-10 for space
+                placeholder="Create a password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
               Phone
             </label>
             <input
               type="text"
+              placeholder="Phone"
               required
               maxLength="10"
               pattern="\d{10}"
@@ -185,6 +235,8 @@ const AdminDeliveryBoys = () => {
               onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
             />
           </div>
+
+          {/* City */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
               City
@@ -196,17 +248,8 @@ const AdminDeliveryBoys = () => {
               disabled
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600">
-              State
-            </label>
-            <input
-              type="text"
-              className="w-full border p-2 rounded mt-1 bg-gray-100 cursor-not-allowed"
-              value={state}
-              disabled
-            />
-          </div>
+
+          {/* Max Orders */}
           <div>
             <label className="block text-sm font-medium text-gray-600">
               Max Daily Orders
@@ -219,6 +262,8 @@ const AdminDeliveryBoys = () => {
               onChange={(e) => setMaxOrders(e.target.value)}
             />
           </div>
+
+          {/* Areas */}
           <div className="md:col-span-2 lg:col-span-3">
             <label className="block text-sm font-medium text-gray-600">
               Assigned Areas (Comma Separated)
@@ -231,6 +276,7 @@ const AdminDeliveryBoys = () => {
               onChange={(e) => setAssignedAreas(e.target.value)}
             />
           </div>
+
           <div className="md:col-span-2 lg:col-span-3 flex justify-end">
             <button
               type="submit"
@@ -248,7 +294,9 @@ const AdminDeliveryBoys = () => {
           <thead className="bg-gray-100 text-gray-600 uppercase text-sm">
             <tr>
               <th className="p-4 border-b">Details</th>
-              <th className="p-4 border-b">Location</th>
+              {/* Ensure there is no {" "} or text here */}
+              <th className="p-4 border-b">Contact</th>
+              {/* Ensure there is no {" "} or text here */}
               <th className="p-4 border-b w-1/3">Coverage Areas</th>
               <th className="p-4 border-b text-center">Status</th>
               <th className="p-4 border-b text-center">Capacity</th>
@@ -260,14 +308,17 @@ const AdminDeliveryBoys = () => {
               <tr key={boy.id} className="hover:bg-gray-50 transition-colors">
                 <td className="p-4">
                   <div className="font-semibold text-gray-800">{boy.name}</div>
-                  <div className="text-sm text-gray-500">{boy.phone}</div>
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    {boy.email}
+                  </div>
                 </td>
                 <td className="p-4 text-sm text-gray-600">
-                  <div>{boy.city}</div>
-                  <div className="text-xs text-gray-400">{boy.state}</div>
+                  <div>{boy.phone}</div>
+                  <div className="text-xs text-gray-400">
+                    {boy.city}, {boy.state}
+                  </div>
                 </td>
 
-                {/* 🟢 EDITABLE COVERAGE AREAS */}
                 <td className="p-4">
                   {editingId === boy.id ? (
                     <textarea
@@ -296,7 +347,6 @@ const AdminDeliveryBoys = () => {
                   )}
                 </td>
 
-                {/* Status Column */}
                 <td className="p-4 text-center">
                   {editingId === boy.id ? (
                     <select
@@ -320,7 +370,6 @@ const AdminDeliveryBoys = () => {
                   )}
                 </td>
 
-                {/* Capacity Column */}
                 <td className="p-4 text-center">
                   {editingId === boy.id ? (
                     <input
@@ -338,7 +387,6 @@ const AdminDeliveryBoys = () => {
                   )}
                 </td>
 
-                {/* Actions */}
                 <td className="p-4 text-center">
                   <div className="flex items-center justify-center gap-2">
                     {editingId === boy.id ? (

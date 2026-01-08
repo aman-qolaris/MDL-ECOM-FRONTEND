@@ -17,6 +17,7 @@ api.interceptors.request.use(
     const customerToken = state.auth.token;
     const adminToken = localStorage.getItem("adminToken");
     const vendorToken = localStorage.getItem("vendorToken");
+    const deliveryToken = localStorage.getItem("deliveryToken");
 
     // 2. Intelligent Selection based on URL or Page Context
     if (window.location.pathname.startsWith("/admin") && adminToken) {
@@ -25,6 +26,11 @@ api.interceptors.request.use(
     } else if (window.location.pathname.startsWith("/vendor") && vendorToken) {
       // ✅ If on Vendor Panel, prioritize Vendor Token
       config.headers.Authorization = `Bearer ${vendorToken}`;
+    } else if (
+      window.location.pathname.startsWith("/delivery") &&
+      deliveryToken
+    ) {
+      config.headers.Authorization = `Bearer ${deliveryToken}`;
     } else if (customerToken) {
       // ✅ Default to Customer Token for Shop
       config.headers.Authorization = `Bearer ${customerToken}`;
