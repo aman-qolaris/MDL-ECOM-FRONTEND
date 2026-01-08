@@ -94,73 +94,88 @@ const ProductDetails = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-10">
+      {/* Back Button */}
       <Link
         to="/shop"
-        className="flex items-center text-gray-600 hover:text-blue-600 mb-6 transition"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition"
       >
-        <FaArrowLeft className="mr-2" /> Back to Shop
+        <FaArrowLeft /> Back to Shop
       </Link>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-        <div className="grid grid-cols-1 md:grid-cols-2">
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           {/* Image Section */}
-          <div className="p-8 bg-gray-50 flex items-center justify-center">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-10 flex items-center justify-center">
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="max-h-96 w-full object-contain"
+              className="max-h-[420px] w-full object-contain transition-transform duration-500 hover:scale-105"
             />
           </div>
 
           {/* Details Section */}
-          <div className="p-8 flex flex-col justify-center">
-            <div className="mb-2">
-              <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full uppercase font-semibold">
+          <div className="p-10 flex flex-col justify-between">
+            <div>
+              {/* Category */}
+              <span className="inline-block mb-3 bg-blue-50 text-blue-700 text-xs px-4 py-1 rounded-full uppercase font-semibold tracking-wide">
                 {product.Category?.name || product.category?.name || "General"}
               </span>
+
+              {/* Title */}
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-4">
+                {product.name}
+              </h1>
+
+              {/* Rating (UI placeholder – logic untouched) */}
+              <div className="flex items-center gap-1 text-yellow-400 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar key={i} />
+                ))}
+                <span className="text-sm text-gray-500 ml-2">(4.8)</span>
+              </div>
+
+              {/* Description */}
+              <p className="text-gray-600 leading-relaxed mb-6">
+                {product.description || "No description available."}
+              </p>
+
+              {/* Price + Stock */}
+              <div className="flex items-center gap-4 mb-8">
+                <span className="text-3xl font-bold text-blue-600">
+                  ₹{product.price}
+                </span>
+                <span
+                  className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                    product.availableStock > 0
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {product.availableStock > 0
+                    ? `In Stock (${product.availableStock})`
+                    : "Out of Stock"}
+                </span>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {product.name}
-            </h1>
 
-            {/* ... Rating code ... */}
-
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              {product.description || "No description available."}
-            </p>
-
-            <div className="flex items-center mb-6">
-              <span className="text-3xl font-bold text-blue-600">
-                ₹{product.price}
-              </span>
-              <span
-                className={`ml-4 text-sm font-medium px-2 py-1 rounded ${
-                  product.availableStock > 0
-                    ? "bg-green-50 text-green-600"
-                    : "bg-red-50 text-red-600"
-                }`}
-              >
-                {product.availableStock > 0
-                  ? `In Stock (${product.availableStock})`
-                  : "Out of Stock"}
-              </span>
-            </div>
-
+            {/* Actions */}
             <div className="border-t border-gray-200 pt-6">
               {product.availableStock > 0 && (
-                <div className="flex items-center space-x-4 mb-4">
-                  <label className="text-gray-700 font-medium">Quantity:</label>
-                  <div className="flex items-center border border-gray-300 rounded-lg">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="font-medium text-gray-700">Quantity</span>
+
+                  <div className="flex items-center rounded-xl border border-gray-300 overflow-hidden">
                     <button
-                      className="px-3 py-1 hover:bg-gray-100 border-r"
+                      className="px-4 py-2 text-lg hover:bg-gray-100 transition"
                       onClick={() => setQuantity((q) => Math.max(0, q - 1))}
                     >
-                      -
+                      −
                     </button>
-                    <span className="px-4 font-medium">{quantity}</span>
+                    <span className="px-6 font-semibold">{quantity}</span>
                     <button
-                      className="px-3 py-1 hover:bg-gray-100 border-l"
+                      className="px-4 py-2 text-lg hover:bg-gray-100 transition"
                       onClick={() =>
                         setQuantity((q) =>
                           Math.min(product.availableStock, q + 1)
@@ -173,16 +188,17 @@ const ProductDetails = () => {
                 </div>
               )}
 
+              {/* Add to Cart */}
               <button
                 onClick={handleAddToCart}
                 disabled={quantity === 0 || product.availableStock === 0}
-                className={`w-full py-3 rounded-lg font-bold shadow-md transition flex items-center justify-center gap-2 ${
+                className={`w-full py-4 rounded-xl text-lg font-bold transition flex items-center justify-center gap-3 shadow-lg ${
                   quantity === 0 || product.availableStock === 0
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl"
                 }`}
               >
-                <FaShoppingCart />{" "}
+                <FaShoppingCart />
                 {product.availableStock === 0 ? "Out of Stock" : "Add to Cart"}
               </button>
             </div>

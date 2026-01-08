@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
-// Added extra icons for the modern input fields
 import {
   FaStore,
   FaUser,
@@ -17,9 +16,9 @@ import {
   FaMoneyCheckAlt,
   FaBuilding,
 } from "react-icons/fa";
-import api from "../../services/api"; // ✅ Your configured API instance
+import api from "../../services/api";
 
-// === VALIDATION SCHEMA (UNCHANGED) ===
+// === VALIDATION SCHEMA ===
 const schema = yup
   .object({
     // 1. Personal Details
@@ -61,18 +60,35 @@ const schema = yup
     // 3. Legal & Banking
     pan: yup
       .string()
-      .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN format")
+      .transform((value) => value.toUpperCase())
+      .matches(
+        /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+        "Invalid PAN format (e.g., ABCDE1234F)"
+      )
       .required("PAN Number is required"),
+
+    // ✅ STRICT GST REGEX FOR INDIA
     gst: yup
       .string()
-      .min(15, "GST must be 15 characters")
-      .max(15, "GST must be 15 characters")
+      .transform((value) => value.toUpperCase())
+      .matches(
+        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+        "Invalid GST format (e.g., 22AAAAA0000A1Z5)"
+      )
       .required("GST Number is required"),
+
     bankName: yup.string().required("Bank Name is required"),
+
+    // ✅ STRICT IFSC REGEX (5th char must be 0)
     ifscCode: yup
       .string()
-      .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC Code format")
+      .transform((value) => value.toUpperCase())
+      .matches(
+        /^[A-Z]{4}0[A-Z0-9]{6}$/,
+        "Invalid IFSC Code (5th character must be '0')"
+      )
       .required("IFSC Code is required"),
+
     bankHolderName: yup.string().required("Account Holder Name is required"),
     bankAccount: yup
       .string()
@@ -91,6 +107,7 @@ const VendorRegister = () => {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(schema),
+    mode: "onTouched", // Validates immediately on blur
     defaultValues: {
       businessType: "Retail",
     },
@@ -98,33 +115,29 @@ const VendorRegister = () => {
 
   const onSubmit = async (data) => {
     try {
-      // 1. MAP FRONTEND NAMES -> BACKEND NAMES
       const payload = {
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
         aadharNumber: data.aadhar,
-        panNumber: data.pan,
-        gstNumber: data.gst,
+        panNumber: data.pan.toUpperCase(),
+        gstNumber: data.gst.toUpperCase(),
         businessName: data.businessName,
         businessType: data.businessType,
         businessAddress: data.businessAddress,
         yearsInBusiness: Number(data.yearsInBusiness),
         bankAccountHolderName: data.bankHolderName,
         bankAccountNumber: data.bankAccount,
-        bankIFSC: data.ifscCode,
+        bankIFSC: data.ifscCode.toUpperCase(),
         bankName: data.bankName,
       };
 
       console.log("Sending payload to backend:", payload);
-
       const response = await api.post("/vendor/register", payload);
 
       if (response.status === 200 || response.status === 201) {
-        alert(
-          "Application Submitted! Your account is under review (Pending Approval)."
-        );
+        alert("Application Submitted! Your account is under review.");
         navigate("/vendor/login");
       }
     } catch (error) {
@@ -136,15 +149,15 @@ const VendorRegister = () => {
     }
   };
 
+  const handleUpperCase = (e) => {
+    e.target.value = e.target.value.toUpperCase();
+  };
+
   return (
-    // Outer Container with Animation
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 animate-fadeIn flex justify-center">
-      {/* GLASS CARD */}
       <div className="max-w-4xl w-full bg-white/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden relative">
-        {/* Decorative Background Blob */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 pointer-events-none"></div>
 
-        {/* Header Section */}
         <div className="bg-white/40 border-b border-white/50 px-8 py-8 text-center relative z-10">
           <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">
             Vendor Registration
@@ -180,6 +193,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.name?.message}</p>
               </div>
+
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -196,6 +210,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.email?.message}</p>
               </div>
+
               {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -206,12 +221,17 @@ const VendorRegister = () => {
                   <input
                     type="tel"
                     {...register("phone")}
+                    maxLength={10}
+                    onInput={(e) =>
+                      (e.target.value = e.target.value.replace(/[^0-9]/g, ""))
+                    }
                     className="input-glass pl-10"
                     placeholder="9876543210"
                   />
                 </div>
                 <p className="error-text">{errors.phone?.message}</p>
               </div>
+
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -228,6 +248,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.password?.message}</p>
               </div>
+
               {/* Aadhar */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -238,6 +259,10 @@ const VendorRegister = () => {
                   <input
                     type="text"
                     {...register("aadhar")}
+                    maxLength={12}
+                    onInput={(e) =>
+                      (e.target.value = e.target.value.replace(/[^0-9]/g, ""))
+                    }
                     className="input-glass pl-10"
                     placeholder="12-digit UID"
                   />
@@ -269,6 +294,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.businessName?.message}</p>
               </div>
+
               {/* Business Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -287,6 +313,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.businessType?.message}</p>
               </div>
+
               {/* Address */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -303,6 +330,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.businessAddress?.message}</p>
               </div>
+
               {/* Years in Business */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -313,6 +341,7 @@ const VendorRegister = () => {
                   <input
                     type="number"
                     {...register("yearsInBusiness")}
+                    min="0"
                     className="input-glass pl-10"
                     placeholder="e.g. 5"
                   />
@@ -339,13 +368,16 @@ const VendorRegister = () => {
                   <input
                     type="text"
                     {...register("pan")}
+                    maxLength={10}
+                    onInput={handleUpperCase}
                     className="input-glass pl-10 uppercase"
                     placeholder="ABCDE1234F"
                   />
                 </div>
                 <p className="error-text">{errors.pan?.message}</p>
               </div>
-              {/* GST */}
+
+              {/* GST - Strict Validation added */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   GST Number *
@@ -355,12 +387,15 @@ const VendorRegister = () => {
                   <input
                     type="text"
                     {...register("gst")}
+                    maxLength={15}
+                    onInput={handleUpperCase}
                     className="input-glass pl-10 uppercase"
                     placeholder="22AAAAA0000A1Z5"
                   />
                 </div>
                 <p className="error-text">{errors.gst?.message}</p>
               </div>
+
               {/* Bank Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -377,7 +412,8 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.bankName?.message}</p>
               </div>
-              {/* IFSC */}
+
+              {/* IFSC - Strict Validation added */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
                   IFSC Code *
@@ -387,12 +423,15 @@ const VendorRegister = () => {
                   <input
                     type="text"
                     {...register("ifscCode")}
+                    maxLength={11}
+                    onInput={handleUpperCase}
                     className="input-glass pl-10 uppercase"
                     placeholder="SBIN0001234"
                   />
                 </div>
                 <p className="error-text">{errors.ifscCode?.message}</p>
               </div>
+
               {/* Holder Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -409,6 +448,7 @@ const VendorRegister = () => {
                 </div>
                 <p className="error-text">{errors.bankHolderName?.message}</p>
               </div>
+
               {/* Account Number */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -419,6 +459,7 @@ const VendorRegister = () => {
                   <input
                     type="password"
                     {...register("bankAccount")}
+                    maxLength={18}
                     className="input-glass pl-10"
                     placeholder="Account Number"
                   />
@@ -428,7 +469,6 @@ const VendorRegister = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div className="pt-4">
             <button
               type="submit"
@@ -456,8 +496,6 @@ const VendorRegister = () => {
           </Link>
         </div>
       </div>
-
-      {/* Tailwind Utility for Inputs (You can add this to your index.css or keep inline) */}
       <style>{`
         .input-glass {
           width: 100%;
