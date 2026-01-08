@@ -315,7 +315,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                 onClick={handleCancelOrder}
                 className="px-4 py-2 text-red-600 font-bold hover:bg-red-100 rounded-lg transition flex items-center gap-2"
               >
-                <FaBan /> Cancel Order
+                Cancel Order
               </button>
             )}
           </div>
