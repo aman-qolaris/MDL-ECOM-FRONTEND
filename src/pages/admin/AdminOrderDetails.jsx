@@ -12,19 +12,17 @@ import { getProductById } from "../../services/productService";
 import {
   FaArrowLeft,
   FaCheckCircle,
-  FaTruck,
   FaBox,
   FaStore,
   FaMoneyBillWave,
-  FaClipboardCheck,
   FaWarehouse,
-  FaLayerGroup,
   FaUserSecret,
   FaPhone,
   FaExchangeAlt,
   FaTimes,
-  FaExclamationTriangle,
-  FaBan, // Imported for Cancelled icon
+  FaBan,
+  FaMotorcycle,
+  FaClock,
 } from "react-icons/fa";
 
 const AdminOrderDetails = () => {
@@ -91,9 +89,14 @@ const AdminOrderDetails = () => {
     return vendor ? vendor.businessName : `Vendor #${vendorId}`;
   };
 
+  // 🟢 Toggle Item Status (Only for Packing)
   const toggleItemReady = async (index) => {
     const item = order.OrderItems[index];
     const product = products[item.productId];
+
+    // If item is already cancelled, Admin cannot change it
+    if (item.status === "CANCELLED") return;
+
     const newStatus = item.status === "PACKED" ? "PENDING" : "PACKED";
 
     if (newStatus === "PACKED") {
@@ -125,17 +128,23 @@ const AdminOrderDetails = () => {
     }
   };
 
-  // 🟢 UPDATED: Consider items "Ready" if they are PACKED OR CANCELLED
-  // This allows you to complete packing for the remaining items in a partially cancelled order.
+  // 🟢 Logic: Order is ready if all items are either PACKED or CANCELLED
   const areAllItemsReady = order?.OrderItems?.every(
     (item) => item.status === "PACKED" || item.status === "CANCELLED"
   );
 
+  // 🟢 Helper to check if order allows packing actions
+  // This is the FIX: Allow actions for PROCESSING or PARTIALLY_CANCELLED
+  const isPackingAllowed =
+    order &&
+    (order.status === "PROCESSING" || order.status === "PARTIALLY_CANCELLED");
+
+  // 🟢 Mark Order as PACKED (Triggers Delivery Boy Assignment)
   const handleMarkPacked = async () => {
     if (!areAllItemsReady) return;
     try {
       await updateOrderStatus(order.id, "PACKED");
-      await fetchData();
+      await fetchData(); // Refresh to show assignment
       alert("Order Marked as PACKED. Delivery Partner Assigned.");
     } catch (e) {
       console.error(e);
@@ -143,37 +152,7 @@ const AdminOrderDetails = () => {
     }
   };
 
-  const handleDispatch = async () => {
-    if (!areAllItemsReady) return;
-    if (window.confirm("Mark this order as OUT FOR DELIVERY?")) {
-      try {
-        await updateOrderStatus(order.id, "OUT_FOR_DELIVERY");
-        setOrder({ ...order, status: "OUT_FOR_DELIVERY" });
-        alert("Order Dispatched Successfully!");
-      } catch (e) {
-        console.error(e);
-        alert("Failed to update status");
-      }
-    }
-  };
-
-  const handleDeliver = async () => {
-    if (
-      window.confirm(
-        "Confirm Delivery? This will mark the order as PAID and DELIVERED."
-      )
-    ) {
-      try {
-        await updateOrderStatus(order.id, "DELIVERED");
-        setOrder({ ...order, status: "DELIVERED", payment: true });
-        alert("Order Delivered & Payment Recorded!");
-      } catch (e) {
-        console.error(e);
-        alert("Failed to update status");
-      }
-    }
-  };
-
+  // --- Reassignment Logic (unchanged) ---
   const handleOpenReassign = async () => {
     setIsReassignModalOpen(true);
     setReassignLoading(true);
@@ -194,17 +173,11 @@ const AdminOrderDetails = () => {
       alert("Please select a delivery boy.");
       return;
     }
-
-    if (
-      !window.confirm(
-        `Confirm reassignment to ${selectedNewBoy.name}?\nThis will mark the current assignment as FAILED.`
-      )
-    )
+    if (!window.confirm(`Confirm reassignment to ${selectedNewBoy.name}?`))
       return;
 
     try {
       await reassignDeliveryBoy(id, null, selectedNewBoy.id);
-
       alert("Reassignment Successful!");
       setIsReassignModalOpen(false);
       setSelectedNewBoy(null);
@@ -216,14 +189,18 @@ const AdminOrderDetails = () => {
   };
 
   const calculatePriceDetails = () => {
-    if (!order) return { subtotal: 0, shipping: 0, total: 0 };
-    const subtotal = order.OrderItems.reduce(
+    if (!order) return { subtotal: 0, total: 0 };
+    // Only calculate for non-cancelled items
+    const activeItems = order.OrderItems.filter(
+      (item) => item.status !== "CANCELLED"
+    );
+    const subtotal = activeItems.reduce(
       (acc, item) => acc + item.price * item.quantity,
       0
     );
-    const total = order.amount;
-    const shipping = total - subtotal;
-    return { subtotal, shipping, total };
+    // Note: order.amount from DB might still be original total unless backend updates it on cancel
+    // Ideally backend updates order.amount on cancellation, but if not, we show recalculated subtotal
+    return { subtotal, total: order.amount };
   };
 
   const priceDetails = calculatePriceDetails();
@@ -254,100 +231,48 @@ const AdminOrderDetails = () => {
         </div>
       </div>
 
+      {/* --- Reassignment Modal --- */}
       {isReassignModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-md transition-all"
+            className="absolute inset-0 bg-black/40 backdrop-blur-md"
             onClick={() => setIsReassignModalOpen(false)}
           ></div>
-
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-fadeInScale">
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div className="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
                 <FaExchangeAlt className="text-blue-600" /> Reassign Partner
               </h3>
-              <button
-                onClick={() => setIsReassignModalOpen(false)}
-                className="text-gray-500 hover:text-red-500 transition"
-              >
-                <FaTimes size={20} />
+              <button onClick={() => setIsReassignModalOpen(false)}>
+                <FaTimes />
               </button>
             </div>
-
             <div className="p-6 overflow-y-auto">
-              <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-blue-800">
-                <p>
-                  <strong>Target Area:</strong> {order.assignedArea}
-                </p>
-                <p className="text-xs mt-1">
-                  Delivery boys covering this area are highlighted.
-                </p>
-              </div>
-
               {reassignLoading ? (
-                <div className="text-center py-8 text-gray-500">
-                  Loading options...
-                </div>
+                <p>Loading...</p>
               ) : (
-                <div className="space-y-3">
-                  {reassignOptions.map((boy) => {
-                    const isRecommended = boy.matchType === "RECOMMENDED";
-                    const isSelected = selectedNewBoy?.id === boy.id;
-
-                    return (
-                      <div
-                        key={boy.id}
-                        onClick={() => setSelectedNewBoy(boy)}
-                        className={`p-3 rounded-lg border-2 cursor-pointer transition flex justify-between items-center ${
-                          isSelected
-                            ? "border-blue-600 bg-blue-50"
-                            : "border-gray-100 hover:border-blue-300"
-                        }`}
-                      >
-                        <div>
-                          <p className="font-bold text-gray-800 flex items-center gap-2">
-                            {boy.name}
-                            {isRecommended && (
-                              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
-                                RECOMMENDED
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {boy.phone} • {boy.city}
-                          </p>
-                        </div>
-                        <div className="text-right text-xs">
-                          <p className="text-gray-500">Load Today</p>
-                          <p
-                            className={`font-bold ${
-                              boy.isOverloaded
-                                ? "text-red-600"
-                                : "text-gray-800"
-                            }`}
-                          >
-                            {boy.currentLoad} / {boy.maxOrders}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                reassignOptions.map((boy) => (
+                  <div
+                    key={boy.id}
+                    onClick={() => setSelectedNewBoy(boy)}
+                    className={`p-3 border mb-2 cursor-pointer ${
+                      selectedNewBoy?.id === boy.id
+                        ? "bg-blue-50 border-blue-500"
+                        : ""
+                    }`}
+                  >
+                    <p className="font-bold">{boy.name}</p>
+                    <p className="text-xs">{boy.currentLoad} Active Orders</p>
+                  </div>
+                ))
               )}
             </div>
-
             <div className="bg-gray-50 px-6 py-4 border-t flex justify-end gap-3">
               <button
-                onClick={() => setIsReassignModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition font-medium text-sm"
-              >
-                Cancel
-              </button>
-              <button
                 onClick={handleSubmitReassignment}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition font-bold text-sm shadow-md"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
               >
-                Confirm Reassignment
+                Confirm
               </button>
             </div>
           </div>
@@ -356,28 +281,28 @@ const AdminOrderDetails = () => {
 
       {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT COLUMN */}
+        {/* LEFT COLUMN: Items & Status */}
         <div className="lg:col-span-2 space-y-6">
-          {/* ORDER ITEMS & STOCK CHECK */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                <FaBox className="text-blue-500" /> Order Items & Stock
+                <FaBox className="text-blue-500" /> Order Items & Packing
               </h3>
+              {/* Status Badge */}
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  order.status === "CANCELLED"
-                    ? "bg-red-100 text-red-700"
-                    : areAllItemsReady
+                  order.status === "PACKED"
+                    ? "bg-orange-100 text-orange-700"
+                    : order.status === "OUT_FOR_DELIVERY"
+                    ? "bg-blue-100 text-blue-700"
+                    : order.status === "DELIVERED"
                     ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
+                    : order.status === "PARTIALLY_CANCELLED"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-gray-100 text-gray-700"
                 }`}
               >
-                {order.status === "CANCELLED"
-                  ? "Order Cancelled"
-                  : areAllItemsReady
-                  ? "Ready for Dispatch"
-                  : "Packing in Progress"}
+                {order.status.replace(/_/g, " ")}
               </span>
             </div>
 
@@ -395,7 +320,7 @@ const AdminOrderDetails = () => {
                       item.status === "PACKED"
                         ? "bg-green-50 border-green-200"
                         : isItemCancelled
-                        ? "bg-red-50 border-red-200"
+                        ? "bg-red-50 border-red-200 opacity-75"
                         : "bg-white border-gray-200"
                     }`}
                   >
@@ -415,33 +340,47 @@ const AdminOrderDetails = () => {
                         )}
                       </div>
                       <div>
-                        <p className="font-bold text-gray-800 text-sm">
+                        <p
+                          className={`font-bold text-sm ${
+                            isItemCancelled
+                              ? "text-red-800 line-through"
+                              : "text-gray-800"
+                          }`}
+                        >
                           {product?.name || `Product ID: ${item.productId}`}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          <FaStore className="text-gray-400" />
-                          Source:{" "}
-                          <span className="font-semibold text-blue-600">
-                            {getVendorShopName(item.vendorId)}
-                          </span>
-                        </p>
 
-                        <div className="flex gap-3 mt-2 text-xs">
-                          <div
-                            className={`flex items-center gap-1 border px-2 py-0.5 rounded ${
-                              isStockLow && !isItemCancelled
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : "bg-gray-50 text-gray-600 border-gray-200"
-                            }`}
-                          >
-                            <FaWarehouse /> Warehouse:{" "}
-                            <strong>{product?.warehouseStock ?? "-"}</strong>
-                          </div>
-                          <div className="flex items-center gap-1 border px-2 py-0.5 rounded bg-gray-50 text-gray-600 border-gray-200">
-                            <FaLayerGroup /> Total:{" "}
-                            <strong>{product?.totalStock ?? "-"}</strong>
-                          </div>
-                        </div>
+                        {isItemCancelled && (
+                          <span className="text-xs font-bold text-red-600 flex items-center gap-1 mt-1">
+                            <FaBan size={10} /> ITEM CANCELLED
+                          </span>
+                        )}
+
+                        {!isItemCancelled && (
+                          <>
+                            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                              <FaStore className="text-gray-400" />
+                              Source:{" "}
+                              <span className="font-semibold text-blue-600">
+                                {getVendorShopName(item.vendorId)}
+                              </span>
+                            </p>
+                            <div className="flex gap-3 mt-2 text-xs">
+                              <div
+                                className={`flex items-center gap-1 border px-2 py-0.5 rounded ${
+                                  isStockLow
+                                    ? "bg-red-50 text-red-700 border-red-200"
+                                    : "bg-gray-50 text-gray-600"
+                                }`}
+                              >
+                                <FaWarehouse /> Stock:{" "}
+                                <strong>
+                                  {product?.warehouseStock ?? "-"}
+                                </strong>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -453,28 +392,20 @@ const AdminOrderDetails = () => {
                         </p>
                       </div>
 
-                      {/* 🟢 UPDATED: Item Button Logic */}
+                      {/* BUTTON Logic */}
                       <button
                         onClick={() => toggleItemReady(idx)}
-                        disabled={
-                          order.status === "DELIVERED" ||
-                          order.status === "CANCELLED" ||
-                          item.status === "PACKED" ||
-                          isItemCancelled // 🟢 Disable if item is cancelled
-                        }
+                        // ✅ FIX: Disable if Not (Processing OR Partially Cancelled), or if Item Cancelled
+                        disabled={!isPackingAllowed || isItemCancelled}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                           item.status === "PACKED"
                             ? "bg-green-100 text-green-700 cursor-default"
                             : isItemCancelled
-                            ? "bg-red-100 text-red-700 cursor-default"
+                            ? "bg-transparent text-red-500 cursor-not-allowed border border-red-200"
                             : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         } ${
-                          // Opacity logic for disable state
-                          order.status === "DELIVERED" ||
-                          order.status === "CANCELLED" ||
-                          item.status === "PACKED" ||
-                          isItemCancelled
-                            ? "opacity-80"
+                          !isPackingAllowed || isItemCancelled
+                            ? "opacity-60 cursor-not-allowed"
                             : ""
                         }`}
                       >
@@ -496,49 +427,49 @@ const AdminOrderDetails = () => {
               })}
             </div>
 
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+            {/* ACTION FOOTER */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="text-sm text-gray-500 font-medium">
-                Current Status:{" "}
-                <span className="text-gray-800 font-bold">{order.status}</span>
-              </div>
-
-              <div className="flex gap-3">
-                {order.status === "PROCESSING" && areAllItemsReady && (
-                  <button
-                    onClick={handleMarkPacked}
-                    className="px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
-                  >
-                    <FaBox /> Complete Packing
-                  </button>
-                )}
-
-                {order.status !== "OUT_FOR_DELIVERY" &&
-                  order.status !== "DELIVERED" && (
-                    <button
-                      onClick={handleDispatch}
-                      disabled={
-                        !areAllItemsReady || order.status === "CANCELLED"
-                      }
-                      className={`px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition ${
-                        !areAllItemsReady || order.status === "CANCELLED"
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-                      }`}
-                    >
-                      <FaTruck /> Dispatch Order
-                    </button>
-                  )}
-
-                {(order.status === "OUT_FOR_DELIVERY" ||
-                  order.status === "PACKED") && (
-                  <button
-                    onClick={handleDeliver}
-                    className="px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition bg-green-600 text-white hover:bg-green-700 shadow-md"
-                  >
-                    <FaClipboardCheck /> Mark Delivered
-                  </button>
+                {isPackingAllowed ? (
+                  <span>
+                    Action Required: Pack remaining valid items to proceed.
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-blue-600">
+                    <FaMotorcycle /> Logistics handled by Delivery Partner
+                  </span>
                 )}
               </div>
+
+              {/* ✅ FIX: Show "Complete Packing" if status is PROCESSING or PARTIALLY_CANCELLED */}
+              {isPackingAllowed && (
+                <button
+                  onClick={handleMarkPacked}
+                  disabled={!areAllItemsReady}
+                  className={`px-6 py-3 rounded-lg font-bold flex items-center gap-2 transition shadow-md ${
+                    areAllItemsReady
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <FaBox />
+                  {areAllItemsReady
+                    ? "Complete Packing & Assign"
+                    : "Pack Remaining Items"}
+                </button>
+              )}
+
+              {/* Informative Messages for subsequent stages */}
+              {order.status === "PACKED" && (
+                <div className="flex items-center gap-2 text-orange-600 bg-orange-50 px-4 py-2 rounded border border-orange-200 text-sm font-bold">
+                  <FaClock /> Waiting for Pickup
+                </div>
+              )}
+              {order.status === "OUT_FOR_DELIVERY" && (
+                <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2 rounded border border-blue-200 text-sm font-bold">
+                  <FaMotorcycle /> Currently Out for Delivery
+                </div>
+              )}
             </div>
           </div>
 
@@ -546,17 +477,9 @@ const AdminOrderDetails = () => {
             <h3 className="font-bold text-gray-700 mb-4">Price Details</h3>
             <div className="space-y-3 text-sm text-gray-600">
               <div className="flex justify-between">
-                <span>Product Total</span>
+                <span>Product Total (Active Items)</span>
                 <span className="font-medium">
                   ₹{priceDetails.subtotal.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping Charges</span>
-                <span className="text-green-600 font-medium">
-                  {priceDetails.shipping > 0
-                    ? `+ ₹${priceDetails.shipping}`
-                    : "Free"}
                 </span>
               </div>
               <div className="border-t pt-3 mt-2 flex justify-between font-bold text-lg text-gray-800">
@@ -567,8 +490,9 @@ const AdminOrderDetails = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
+        {/* RIGHT COLUMN: Payment & Delivery Partner */}
         <div className="space-y-6">
+          {/* Payment Card */}
           <div
             className={`bg-white rounded-xl shadow-sm border p-6 ${
               !order.payment
@@ -582,14 +506,12 @@ const AdminOrderDetails = () => {
               />{" "}
               Payment Information
             </h3>
-
             <div className="flex justify-between items-center mb-3">
               <span className="text-sm text-gray-600">Method</span>
               <span className="font-bold text-gray-800">
                 {order.paymentMethod}
               </span>
             </div>
-
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm text-gray-600">Status</span>
               <span
@@ -602,36 +524,20 @@ const AdminOrderDetails = () => {
                 {order.payment ? "PAID" : "PENDING"}
               </span>
             </div>
-
-            {/* 🟢 UPDATED: Hide Confirm Payment button if order is Cancelled */}
-            {!order.payment &&
-              order.paymentMethod === "COD" &&
-              order.status !== "CANCELLED" && (
-                <div className="mt-4 pt-4 border-t border-orange-200">
-                  <p className="text-xs text-orange-800 mb-3">
-                    ⚠️ Confirm payment only after cash collection.
-                  </p>
-                  <button
-                    onClick={handleDeliver}
-                    className="w-full py-2 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700 shadow-sm transition flex justify-center items-center gap-2"
-                  >
-                    <FaCheckCircle /> Confirm Payment & Delivery
-                  </button>
-                </div>
-              )}
-
-            {order.payment && (
-              <div className="mt-2 text-center text-xs font-bold text-green-700">
-                ✅ Order is fully paid.
-              </div>
+            {!order.payment && order.paymentMethod === "COD" && (
+              <p className="text-xs text-center text-orange-800 mt-4 border-t border-orange-200 pt-2">
+                Payment will be collected by Delivery Partner.
+              </p>
             )}
           </div>
 
+          {/* Delivery Partner Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-700 flex items-center gap-2">
                 <FaUserSecret className="text-blue-600" /> Delivery Partner
               </h3>
+              {/* Reassign allowed only if not yet delivered */}
               {deliveryBoy &&
                 order.status !== "DELIVERED" &&
                 order.status !== "CANCELLED" && (
@@ -659,24 +565,11 @@ const AdminOrderDetails = () => {
                     </p>
                   </div>
                 </div>
-
                 <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-2 border border-gray-100">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Status:</span>
+                    <span className="text-gray-500">Partner Status:</span>
                     <span className="font-semibold text-blue-600">
                       {assignment?.status || "ASSIGNED"}
-                    </span>
-                  </div>
-                  {assignment?.status === "REASSIGNED" && (
-                    <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-100">
-                      <FaExclamationTriangle />
-                      Previously Reassigned
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Max Capacity:</span>
-                    <span className="font-medium">
-                      {deliveryBoy.maxOrders} orders
                     </span>
                   </div>
                 </div>
@@ -684,7 +577,7 @@ const AdminOrderDetails = () => {
             ) : (
               <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                 <p className="font-medium">No Partner Assigned</p>
-                {order.status === "PROCESSING" && (
+                {isPackingAllowed && (
                   <p className="text-xs mt-2 text-blue-500">
                     Partner will be auto-assigned when you click <br />
                     <strong>"Complete Packing"</strong>
@@ -694,6 +587,7 @@ const AdminOrderDetails = () => {
             )}
           </div>
 
+          {/* Customer Details Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-700 mb-4">Customer Details</h3>
             <div className="text-sm text-gray-600 space-y-1">
