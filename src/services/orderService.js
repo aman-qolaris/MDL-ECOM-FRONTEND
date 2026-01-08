@@ -209,3 +209,34 @@ export const cancelOrder = async (orderId) => {
   const response = await api.put(`/orders/${orderId}/cancel`);
   return response.data;
 };
+
+// ==================================================
+// 🔐 DELIVERY BOY AUTH
+// ==================================================
+
+export const loginDeliveryBoy = async (phone, password) => {
+  // Matches the API Gateway route we added earlier
+  const response = await api.post("/orders/delivery/login", {
+    phone,
+    password,
+  });
+  return response.data;
+};
+
+// 1. Fetch Assigned Tasks
+export const getDeliveryTasks = async () => {
+  const response = await api.get("/orders/delivery/my-tasks");
+  return response.data;
+};
+
+// 2. Update Status (Picked / Delivered)
+export const updateDeliveryStatus = async (assignmentId, status) => {
+  // status should be 'PICKED' or 'DELIVERED'
+  const response = await api.put(
+    `/orders/delivery/update-status/${assignmentId}`,
+    {
+      status,
+    }
+  );
+  return response.data;
+};

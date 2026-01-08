@@ -42,6 +42,8 @@ import AdminPendingOrders from "./pages/admin/AdminPendingOrders";
 import AdminCODReconciliation from "./pages/admin/AdminCODReconciliation";
 import AssignedOrders from "./pages/admin/AssignedOrders";
 import AdminDeliveryBoyDetails from "./pages/admin/AdminDeliveryBoyDetails";
+import DeliveryLogin from "./pages/delivery/DeliveryLogin";
+import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
 
 function App() {
   return (
@@ -90,6 +92,12 @@ function App() {
             {/* Future admin routes... */}
           </Route>
         </Route>
+
+        {/* === DELIVERY ROUTES === */}
+        <Route path="/delivery/login" element={<DeliveryLogin />} />
+
+        {/* Protected Delivery Routes (You will eventually wrap these) */}
+        <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
 
         {/* === VENDOR ROUTES === */}
         {/* In real app, wrap this with <VendorRoute> to protect it */}
