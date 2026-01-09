@@ -1,30 +1,53 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux"; // 1. Import Redux Dispatch
-import { useNavigate } from "react-router-dom"; // 2. Import Router
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   FaTimes,
   FaMapMarkerAlt,
   FaCreditCard,
   FaBox,
-  FaBan,
   FaRedo,
-} from "react-icons/fa"; // Added FaRedo for icon
+} from "react-icons/fa";
 import { getProductById } from "../../services/productService";
-import { addItemToCart } from "../../store/thunks/cartThunks"; // 3. Import Cart Action
-import { cancelOrder, cancelOrderItem } from "../../services/orderService"; // Import Cancel Services
+import { addItemToCart } from "../../store/thunks/cartThunks";
+import {
+  cancelOrder,
+  cancelOrderItem,
+  getOrderById,
+} from "../../services/orderService";
+import { createPortal } from "react-dom";
 
-const OrderDetailModal = ({ order, onClose }) => {
+const OrderDetailModal = ({ order: initialOrder, onClose }) => {
+  const [order, setOrder] = useState(initialOrder);
   const [enrichedItems, setEnrichedItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(true);
-  const [addingToCart, setAddingToCart] = useState(false); // Loading state for Order Again
+  const [addingToCart, setAddingToCart] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Status Logic: Can only cancel if PROCESSING or PENDING
+  // Status Logic: Can only cancel if PROCESSING, PENDING, or PARTIALLY_CANCELLED
   const isOrderActive =
-    order.status === "PROCESSING" || order.status === "PENDING";
+    order?.status === "PROCESSING" ||
+    order?.status === "PENDING" ||
+    order?.status === "PARTIALLY_CANCELLED";
 
+  // Fetch fresh order data on mount to ensure status is up-to-date
+  useEffect(() => {
+    if (!initialOrder?.id) return;
+
+    const fetchFreshOrder = async () => {
+      try {
+        const freshData = await getOrderById(initialOrder.id);
+        setOrder(freshData);
+      } catch (error) {
+        console.error("Failed to fetch fresh order data:", error);
+      }
+    };
+    fetchFreshOrder();
+  }, [initialOrder.id]);
+
+  // Fetch product details (images, names) for items
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!order) return;
@@ -58,12 +81,10 @@ const OrderDetailModal = ({ order, onClose }) => {
     fetchProductDetails();
   }, [order]);
 
-  // 🟢 NEW: Handle Order Again
+  // Handle Order Again
   const handleOrderAgain = async () => {
     setAddingToCart(true);
     try {
-      // Loop through all items and add them to cart
-      // We use map to create an array of promises
       const addPromises = enrichedItems.map((item) =>
         dispatch(
           addItemToCart({
@@ -74,15 +95,14 @@ const OrderDetailModal = ({ order, onClose }) => {
       );
 
       await Promise.all(addPromises);
-
-      onClose(); // Close the modal
-      navigate("/checkout"); // Redirect to checkout
+      onClose();
+      navigate("/checkout");
     } catch (error) {
       console.error("Failed to add items to cart:", error);
       alert(
         "Some items could not be added to the cart (possibly out of stock)."
       );
-      navigate("/cart"); // Go to cart to see what was added
+      navigate("/cart");
     } finally {
       setAddingToCart(false);
     }
@@ -94,8 +114,9 @@ const OrderDetailModal = ({ order, onClose }) => {
       try {
         await cancelOrderItem(order.id, itemId);
         alert("Item Cancelled Successfully");
-        onClose();
-        window.location.reload();
+        // Refresh local order state
+        const updatedOrder = await getOrderById(order.id);
+        setOrder(updatedOrder);
       } catch (err) {
         alert(err.response?.data?.message || "Failed to cancel item");
       }
@@ -109,6 +130,7 @@ const OrderDetailModal = ({ order, onClose }) => {
         await cancelOrder(order.id);
         alert("Order Cancelled Successfully");
         onClose();
+        // Reload to reflect changes on the main list
         window.location.reload();
       } catch (err) {
         alert(err.response?.data?.message || "Failed to cancel order");
@@ -118,7 +140,7 @@ const OrderDetailModal = ({ order, onClose }) => {
 
   if (!order) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-opacity duration-150">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150 relative z-[10000]">
         {/* Header */}
@@ -186,7 +208,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                     <div className="w-16 h-16 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center">
                       {item.Product?.imageUrl ? (
                         <img
-                          src={item.Product.imageUrl}
+                          src={item.Product?.imageUrl}
                           alt=""
                           className="w-full h-full object-contain mix-blend-multiply"
                         />
@@ -203,11 +225,16 @@ const OrderDetailModal = ({ order, onClose }) => {
                         <p className="text-sm text-gray-500">
                           Qty: {item.quantity}
                         </p>
-                        {item.status === "CANCELLED" && (
+                        {/* Show Item Specific Status */}
+                        {item.status === "CANCELLED" ? (
                           <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold border border-red-200">
                             CANCELLED
                           </span>
-                        )}
+                        ) : item.status === "PACKED" ? (
+                          <span className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded font-bold border border-purple-200">
+                            PACKED
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -217,14 +244,16 @@ const OrderDetailModal = ({ order, onClose }) => {
                       </p>
 
                       {/* Individual Cancel Button */}
-                      {isOrderActive && item.status !== "CANCELLED" && (
-                        <button
-                          onClick={() => handleCancelItem(item.id)}
-                          className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 transition"
-                        >
-                          Cancel Item
-                        </button>
-                      )}
+                      {isOrderActive &&
+                        item.status !== "CANCELLED" &&
+                        item.status !== "PACKED" && (
+                          <button
+                            onClick={() => handleCancelItem(item.id)}
+                            className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 transition"
+                          >
+                            Cancel Item
+                          </button>
+                        )}
                     </div>
                   </div>
                 ))
@@ -242,15 +271,14 @@ const OrderDetailModal = ({ order, onClose }) => {
                 {order.address ? (
                   <>
                     <p className="font-bold text-gray-900">
-                      {order.address.fullName}
+                      {order.address?.fullName}
                     </p>
-                    <p>{order.address.addressLine1}</p>
+                    <p>{order.address?.addressLine1}</p>
                     <p>
-                      {order.address.city}, {order.address.state}{" "}
-                      {order.address.zipCode}
+                      {order.address?.city}, {order.address?.state}{" "}
                     </p>
                     <p className="mt-2 text-gray-500">
-                      📞 {order.address.phone}
+                      📞 {order.address?.phone}
                     </p>
                   </>
                 ) : (
@@ -310,6 +338,7 @@ const OrderDetailModal = ({ order, onClose }) => {
             </button>
 
             {/* 🔴 CANCEL FULL ORDER BUTTON */}
+            {/* Valid even if PARTIALLY_CANCELLED, as long as active items remain */}
             {isOrderActive && (
               <button
                 onClick={handleCancelOrder}
@@ -328,7 +357,8 @@ const OrderDetailModal = ({ order, onClose }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

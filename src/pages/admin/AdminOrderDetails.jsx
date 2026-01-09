@@ -94,10 +94,10 @@ const AdminOrderDetails = () => {
     const item = order.OrderItems[index];
     const product = products[item.productId];
 
-    // If item is already cancelled, Admin cannot change it
-    if (item.status === "CANCELLED") return;
+    // If item is already cancelled or packed, Admin cannot change it
+    if (item.status === "CANCELLED" || item.status === "PACKED") return;
 
-    const newStatus = item.status === "PACKED" ? "PENDING" : "PACKED";
+    const newStatus = "PACKED";
 
     if (newStatus === "PACKED") {
       if (!product) {
@@ -395,16 +395,22 @@ const AdminOrderDetails = () => {
                       {/* BUTTON Logic */}
                       <button
                         onClick={() => toggleItemReady(idx)}
-                        // ✅ FIX: Disable if Not (Processing OR Partially Cancelled), or if Item Cancelled
-                        disabled={!isPackingAllowed || isItemCancelled}
+                        // ✅ Disable if item is cancelled OR already packed OR order not in packing state
+                        disabled={
+                          !isPackingAllowed ||
+                          isItemCancelled ||
+                          item.status === "PACKED"
+                        }
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                           item.status === "PACKED"
-                            ? "bg-green-100 text-green-700 cursor-default"
+                            ? "bg-green-100 text-green-700 cursor-not-allowed"
                             : isItemCancelled
                             ? "bg-transparent text-red-500 cursor-not-allowed border border-red-200"
                             : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         } ${
-                          !isPackingAllowed || isItemCancelled
+                          !isPackingAllowed ||
+                          isItemCancelled ||
+                          item.status === "PACKED"
                             ? "opacity-60 cursor-not-allowed"
                             : ""
                         }`}
