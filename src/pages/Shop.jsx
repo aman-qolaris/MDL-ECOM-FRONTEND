@@ -1,15 +1,17 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllProducts } from "../store/thunks/productThunks";
 import { setFilters } from "../store/slices/filterSlice"; // Updated Import
 import ProductFilters from "../components/products/ProductFilters";
 import ProductCard from "../components/common/ProductCard";
-import { FaFilter } from "react-icons/fa";
+import { FaArrowLeft, FaFilter } from "react-icons/fa";
 import { dummyProducts } from "../data/dummyData";
 
 const Shop = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
   const { items, loading } = useSelector((state) => state.products);
   const filters = useSelector((state) => state.filters);
@@ -17,9 +19,14 @@ const Shop = () => {
   // Set initial filter from URL parameter
   useEffect(() => {
     const categoryFromURL = searchParams.get("category");
-    if (categoryFromURL) {
-      dispatch(setFilters({ category: categoryFromURL }));
-    }
+    const searchFromURL = searchParams.get("search");
+
+    dispatch(
+      setFilters({
+        category: categoryFromURL || "",
+        search: searchFromURL || "",
+      })
+    );
   }, [searchParams, dispatch]);
 
   // Fetch products whenever filters change
@@ -32,7 +39,10 @@ const Shop = () => {
     dispatch(setFilters({ sort: e.target.value }));
   };
 
-  // Logic to filter dummy data if backend is missing (for demonstration)
+  // Logic to filter items
+  // Note: We always apply client-side filtering because the backend
+  // might return all products or broader matches than we want for the strict search experience.
+  // This also handles the case where we fall back to dummyProducts.
   const displayItems = (items.length > 0 ? items : dummyProducts)
     .filter((item) => {
       // 1. Filter by Category
@@ -48,6 +58,22 @@ const Shop = () => {
       if (filters.maxPrice && item.price > parseFloat(filters.maxPrice))
         return false;
 
+      // 4. Filter by Search Term (Name, Description, Category)
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesName = item.name.toLowerCase().includes(searchLower);
+        const matchesDesc = item.description
+          ?.toLowerCase()
+          .includes(searchLower);
+        const matchesCategory = itemCategory
+          ?.toLowerCase()
+          .includes(searchLower);
+
+        if (!matchesName && !matchesDesc && !matchesCategory) {
+          return false;
+        }
+      }
+
       return true;
     })
     .sort((a, b) => {
@@ -58,6 +84,12 @@ const Shop = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <button
+        onClick={() => navigate("/")}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition cursor-pointer"
+      >
+        <FaArrowLeft className="mr-2" /> Back
+      </button>
       {/* Mobile Filter Toggle (Hidden on Desktop) */}
       <div className="md:hidden mb-4">
         <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg">
