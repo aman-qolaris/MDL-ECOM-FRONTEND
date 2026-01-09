@@ -14,7 +14,14 @@ const USE_MOCK = false;
 // 1. Get All Products (Matches: GET /api/products)
 export const getProducts = async (params = {}) => {
   if (USE_MOCK) return [];
-  const response = await api.get("/products", { params });
+
+  const response = await api.get("/products", {
+    params,
+    paramsSerializer: {
+      indexes: null,
+    },
+  });
+
   return response.data;
 };
 

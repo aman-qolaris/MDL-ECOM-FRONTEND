@@ -13,7 +13,13 @@ export const getAllProducts = createAsyncThunk(
   "products/getAll",
   async (params, { rejectWithValue }) => {
     try {
-      const data = await getProducts(params);
+      const cleanedParams = Object.fromEntries(
+        Object.entries(params || {}).filter(
+          ([_, value]) => value !== "" && value !== null && value !== undefined
+        )
+      );
+
+      const data = await getProducts(cleanedParams);
       return data;
     } catch (error) {
       return rejectWithValue(

@@ -5,7 +5,7 @@ const initialState = {
   sort: "default",
   minPrice: "",
   maxPrice: "",
-  searchQuery: "", // You can add search here later easily
+  search: "", // ✅ MUST match Shop.jsx
 };
 
 const filterSlice = createSlice({

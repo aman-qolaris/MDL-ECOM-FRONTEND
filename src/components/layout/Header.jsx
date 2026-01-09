@@ -1,14 +1,41 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaShoppingCart, FaUser, FaSearch, FaBars } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getCartItems } from "../../store/thunks/cartThunks";
+import useDebounce from "../../hooks/useDebounce";
 
 const Header = () => {
   const dispatch = useDispatch();
   const { items } = useSelector((state) => state.cart);
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Prevent navigation if search was cleared but debounce hasn't updated yet
+    if (searchTerm === "" && debouncedSearch !== "") return;
+
+    // Navigate to shop with search query after user stops typing
+    if (debouncedSearch.trim()) {
+      const query = `?search=${encodeURIComponent(debouncedSearch)}`;
+      navigate(`/shop${query}`);
+      setIsMobileMenuOpen(false);
+    } else if (location.pathname === "/shop" && location.search) {
+      // Clear search params if query is empty while on shop page
+      navigate("/shop");
+    }
+  }, [
+    debouncedSearch,
+    navigate,
+    searchTerm,
+    location.pathname,
+    location.search,
+  ]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -24,10 +51,12 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/50 shadow-sm transition-all duration-300 animate-fadeIn">
       <div className="container mx-auto px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          {/* Logo with Gradient */}
+          {/* Logo with Gradient - Using Link for proper navigation */}
+          {/* z-10 ensures it's clickable and not overlapped */}
           <Link
             to="/"
-            className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-80 transition-opacity"
+            onClick={() => setSearchTerm("")}
+            className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-80 transition-opacity relative z-10"
           >
             My E-Store
           </Link>
@@ -36,6 +65,8 @@ const Header = () => {
           <div className="hidden md:flex flex-1 mx-10 max-w-lg relative group">
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for products..."
               className="w-full bg-white/50 border border-white/60 text-gray-700 rounded-full py-2.5 px-5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm group-hover:bg-white/80"
             />
@@ -107,6 +138,8 @@ const Header = () => {
             <div className="relative mb-4">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search..."
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
               />
