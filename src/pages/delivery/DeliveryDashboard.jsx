@@ -281,7 +281,7 @@ const DeliveryDashboard = () => {
                 ) : (
                   filteredList.map((task) => {
                     const order = task.Order || {};
-                    const address = order.address || {};
+                    const address = task.address || {};
                     return (
                       <tr
                         key={task.assignmentId || task.id}
@@ -289,7 +289,10 @@ const DeliveryDashboard = () => {
                       >
                         {/* ID */}
                         <td className="px-6 py-4 font-mono font-medium text-gray-600">
-                          #{order.id ? order.id.toString().slice(-6) : "N/A"}
+                          #
+                          {task.orderId
+                            ? task.orderId.toString().slice(-6)
+                            : "N/A"}
                         </td>
 
                         {/* Date */}
@@ -337,16 +340,16 @@ const DeliveryDashboard = () => {
                         {/* Amount */}
                         <td className="px-6 py-4">
                           <span className="font-bold text-gray-800">
-                            ₹{order.amount}
+                            ₹{task.amount}
                           </span>
                           <span
                             className={`block text-[10px] font-bold px-2 py-0.5 rounded w-fit mt-1 ${
-                              order.paymentMethod === "COD"
+                              task.paymentMethod === "COD"
                                 ? "bg-orange-100 text-orange-700"
                                 : "bg-green-100 text-green-700"
                             }`}
                           >
-                            {order.paymentMethod}
+                            {task.paymentMethod}
                           </span>
                         </td>
 
