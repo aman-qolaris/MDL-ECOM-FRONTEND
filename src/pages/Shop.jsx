@@ -1,8 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllProducts } from "../store/thunks/productThunks";
-import { setFilters } from "../store/slices/filterSlice"; // Updated Import
+import { setFilters } from "../store/slices/filterSlice";
+// 1. Import optimized selectors
+import {
+  selectAllProducts,
+  selectProductLoading,
+} from "../store/slices/productSlice";
 import ProductFilters from "../components/products/ProductFilters";
 import ProductCard from "../components/common/ProductCard";
 import { FaArrowLeft, FaFilter } from "react-icons/fa";
@@ -11,9 +16,11 @@ import { dummyProducts } from "../data/dummyData";
 const Shop = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const [searchParams] = useSearchParams();
-  const { items, loading } = useSelector((state) => state.products);
+
+  // 2. Use specific selectors
+  const items = useSelector(selectAllProducts);
+  const loading = useSelector(selectProductLoading);
   const filters = useSelector((state) => state.filters);
 
   // Set initial filter from URL parameter
@@ -21,16 +28,22 @@ const Shop = () => {
     const categoryFromURL = searchParams.get("category");
     const searchFromURL = searchParams.get("search");
 
-    dispatch(
-      setFilters({
-        category: categoryFromURL || "",
-        search: searchFromURL || "",
-      })
-    );
+    // Only dispatch if URL params differ from current state to prevent loops
+    if (categoryFromURL || searchFromURL) {
+      dispatch(
+        setFilters({
+          category: categoryFromURL || "",
+          search: searchFromURL || "",
+        })
+      );
+    }
   }, [searchParams, dispatch]);
 
   // Fetch products whenever filters change
   useEffect(() => {
+    // Note: If your backend handles filtering, this is correct.
+    // If you strictly want client-side filtering, you might only need to fetch once.
+    // Keeping logic as is to preserve your original architecture.
     dispatch(getAllProducts(filters));
   }, [dispatch, filters]);
 
@@ -39,48 +52,53 @@ const Shop = () => {
     dispatch(setFilters({ sort: e.target.value }));
   };
 
-  // Logic to filter items
-  // Note: We always apply client-side filtering because the backend
-  // might return all products or broader matches than we want for the strict search experience.
-  // This also handles the case where we fall back to dummyProducts.
-  const displayItems = (items.length > 0 ? items : dummyProducts)
-    .filter((item) => {
-      // 1. Filter by Category
-      const itemCategory =
-        item.Category?.name || item.category?.name || item.category;
-      if (filters.category && itemCategory !== filters.category) return false;
+  // 3. OPTIMIZATION: Memoize the heavy filtering and sorting logic.
+  // This ensures the loop only runs when data or filters actually change,
+  // not when the component re-renders for other reasons.
+  const displayItems = useMemo(() => {
+    const sourceItems = items.length > 0 ? items : dummyProducts;
 
-      // 2. Filter by Min Price
-      if (filters.minPrice && item.price < parseFloat(filters.minPrice))
-        return false;
+    return sourceItems
+      .filter((item) => {
+        // 1. Filter by Category
+        const itemCategory =
+          item.Category?.name || item.category?.name || item.category;
+        if (filters.category && itemCategory !== filters.category) return false;
 
-      // 3. Filter by Max Price
-      if (filters.maxPrice && item.price > parseFloat(filters.maxPrice))
-        return false;
-
-      // 4. Filter by Search Term (Name, Description, Category)
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const matchesName = item.name.toLowerCase().includes(searchLower);
-        const matchesDesc = item.description
-          ?.toLowerCase()
-          .includes(searchLower);
-        const matchesCategory = itemCategory
-          ?.toLowerCase()
-          .includes(searchLower);
-
-        if (!matchesName && !matchesDesc && !matchesCategory) {
+        // 2. Filter by Min Price
+        if (filters.minPrice && item.price < parseFloat(filters.minPrice))
           return false;
-        }
-      }
 
-      return true;
-    })
-    .sort((a, b) => {
-      if (filters.sort === "price_low") return a.price - b.price;
-      if (filters.sort === "price_high") return b.price - a.price;
-      return 0;
-    });
+        // 3. Filter by Max Price
+        if (filters.maxPrice && item.price > parseFloat(filters.maxPrice))
+          return false;
+
+        // 4. Filter by Search Term (Name, Description, Category)
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          const matchesName = item.name.toLowerCase().includes(searchLower);
+          const matchesDesc = item.description
+            ?.toLowerCase()
+            .includes(searchLower);
+          const matchesCategory = itemCategory
+            ?.toLowerCase()
+            .includes(searchLower);
+
+          if (!matchesName && !matchesDesc && !matchesCategory) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (filters.sort === "price_low") return a.price - b.price;
+        if (filters.sort === "price_high") return b.price - a.price;
+        if (filters.sort === "newest")
+          return new Date(b.createdAt) - new Date(a.createdAt); // Added explicit date sort support
+        return 0;
+      });
+  }, [items, filters]); // Dependencies: Only re-run if these change
 
   return (
     <div className="container mx-auto px-4 py-8">

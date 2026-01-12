@@ -6,12 +6,18 @@ import {
   updateItemQuantity,
   removeItem,
 } from "../store/thunks/cartThunks";
+// 1. Import specific selectors
+import { selectCartItems, selectCartLoading } from "../store/slices/cartSlice";
 import { FaTrash, FaArrowRight, FaMinus, FaPlus } from "react-icons/fa";
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, loading } = useSelector((state) => state.cart);
+
+  // 2. Use specific selectors to prevent unnecessary re-renders
+  const items = useSelector(selectCartItems);
+  const loading = useSelector(selectCartLoading);
+
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -21,8 +27,9 @@ const Cart = () => {
   }, [dispatch, isAuthenticated]);
 
   // --- Calculate Totals ---
+  // We keep this calculation here to safely handle the nested
+  // "item.Product.price" vs "item.price" logic specific to your backend data.
   const cartTotal = items.reduce((total, item) => {
-    // 1. Use Product's current price if available, otherwise use saved cart price
     const price = item.Product?.price || item.price || 0;
     return total + price * item.quantity;
   }, 0);

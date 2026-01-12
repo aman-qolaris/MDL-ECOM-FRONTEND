@@ -2,14 +2,22 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getFeaturedProducts } from "../../store/thunks/productThunks";
+// 1. Import optimized selectors
+import {
+  selectFeaturedProducts,
+  selectProductLoading,
+} from "../../store/slices/productSlice";
 import ProductCard from "../common/ProductCard";
-import { FaStar, FaArrowRight } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 import { dummyProducts } from "../../data/dummyData";
 
 const FeaturedProducts = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { featured, loading, error } = useSelector((state) => state.products);
+
+  // 2. Use specific selectors to prevent re-renders on unrelated state changes
+  const featured = useSelector(selectFeaturedProducts);
+  const loading = useSelector(selectProductLoading);
 
   useEffect(() => {
     dispatch(getFeaturedProducts());

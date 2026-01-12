@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import AddressForm from "../components/checkout/AddressForm";
 import PaymentForm from "../components/checkout/PaymentForm";
-// ✅ IMPORT getCartItems here
 import { clearCartThunk, getCartItems } from "../store/thunks/cartThunks";
+// 1. Import optimized selector
+import { selectCartItems } from "../store/slices/cartSlice";
 import { initiatePayment } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
 import { getAddresses } from "../services/addressService";
@@ -14,14 +15,15 @@ const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { items } = useSelector((state) => state.cart);
+  // 2. Use specific selector for performance
+  const items = useSelector(selectCartItems);
   const { user } = useSelector((state) => state.auth);
 
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ NEW: State to track if we are fetching cart data
+  // State to track if we are fetching cart data
   const [isInitializing, setIsInitializing] = useState(true);
 
   // --- SAVED ADDRESSES STATE ---
@@ -31,12 +33,12 @@ const Checkout = () => {
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
-  // ✅ NEW: Fetch Cart & Addresses on Load
+  // Fetch Cart & Addresses on Load
   useEffect(() => {
     const initCheckout = async () => {
       if (user) {
         try {
-          // 1. Fetch Cart (Wait for this before checking items.length)
+          // 1. Fetch Cart
           await dispatch(getCartItems()).unwrap();
 
           // 2. Fetch Addresses
@@ -50,11 +52,9 @@ const Checkout = () => {
         } catch (error) {
           console.error("Failed to initialize checkout:", error);
         } finally {
-          // Done loading, now we can safely render or redirect
           setIsInitializing(false);
         }
       } else {
-        // If no user, stop initializing (ProtectedRoute should handle this anyway)
         setIsInitializing(false);
       }
     };
@@ -62,7 +62,25 @@ const Checkout = () => {
     initCheckout();
   }, [dispatch, user]);
 
-  // ✅ LOADING CHECK: Don't redirect while we are still fetching data
+  // 3. OPTIMIZATION: Memoize the calculation.
+  // This prevents recalculating the total on every keystroke when user fills the address form.
+  const { subtotal, shippingCost, total } = useMemo(() => {
+    const sub = items.reduce((acc, item) => {
+      // Robust Price Check
+      const product = item.Product || item.product || {};
+      const price = product.price || item.price || 0;
+      return acc + price * item.quantity;
+    }, 0);
+
+    const ship = sub > 1000 ? 0 : 50;
+    return {
+      subtotal: sub,
+      shippingCost: ship,
+      total: sub + ship,
+    };
+  }, [items]);
+
+  // LOADING CHECK
   if (isInitializing) {
     return (
       <div className="min-h-screen flex justify-center items-center text-gray-500">
@@ -71,21 +89,10 @@ const Checkout = () => {
     );
   }
 
-  // ✅ NOW it is safe to redirect (only if we are done loading and it's still empty)
+  // REDIRECT if empty
   if (items.length === 0 && !isPaymentSuccess) {
     return <Navigate to="/shop" replace />;
   }
-
-  // CALCULATION
-  const subtotal = items.reduce((acc, item) => {
-    // Robust Price Check
-    const product = item.Product || item.product || {};
-    const price = product.price || item.price || 0;
-    return acc + price * item.quantity;
-  }, 0);
-
-  const shippingCost = subtotal > 1000 ? 0 : 50;
-  const total = subtotal + shippingCost;
 
   // HANDLERS
   const handleNewAddressSubmit = (addressData) => {
@@ -102,8 +109,6 @@ const Checkout = () => {
       setStep(2);
     }
   };
-
-  // ... existing imports
 
   const handleOrderSubmit = async (paymentData) => {
     try {
@@ -143,7 +148,7 @@ const Checkout = () => {
 
       // --- 2. Razorpay Flow ---
       if (paymentData.method === "razorpay") {
-        // A. Create Order in Database FIRST (Status: PROCESSING, Payment: False)
+        // A. Create Order in Database FIRST
         const orderPayload = {
           ...payload,
           paymentMethod: "RAZORPAY",
@@ -154,13 +159,13 @@ const Checkout = () => {
         // Get the real Order ID from DB response
         const dbOrderId = dbOrder.orderId || dbOrder.id;
 
-        // B. Now Initiate Payment using that ID
+        // B. Now Initiate Payment
         await initiatePayment(
           total,
           user,
           dbOrderId,
           async (paymentResponse) => {
-            // C. On Success (Backend has already verified and updated status to PAID)
+            // C. On Success
             setIsPaymentSuccess(true);
 
             navigate("/order-success", {
@@ -183,8 +188,6 @@ const Checkout = () => {
       setLoading(false);
     }
   };
-
-  // ... rest of component
 
   if (loading) {
     return (
@@ -361,7 +364,6 @@ const Checkout = () => {
             </h2>
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
               {items.map((item) => {
-                // FIXED DATA ACCESS: Use nested Product object
                 const product = item.Product || item.product || {};
                 const price = product.price || item.price || 0;
 
@@ -371,7 +373,6 @@ const Checkout = () => {
                     className="flex gap-4 items-center"
                   >
                     <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
-                      {/* Fixed Image Access */}
                       <img
                         src={
                           product.imageUrl ||
@@ -383,7 +384,6 @@ const Checkout = () => {
                       />
                     </div>
                     <div className="flex-1">
-                      {/* Fixed Name Access */}
                       <p className="text-sm font-semibold text-gray-800 line-clamp-2">
                         {product.name || item.name || "Unknown Product"}
                       </p>

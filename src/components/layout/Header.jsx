@@ -3,11 +3,17 @@ import { FaShoppingCart, FaUser, FaSearch, FaBars } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getCartItems } from "../../store/thunks/cartThunks";
+// 1. Import the specific selector
+import { selectCartTotalQuantity } from "../../store/slices/cartSlice";
 import useDebounce from "../../hooks/useDebounce";
 
 const Header = () => {
   const dispatch = useDispatch();
-  const { items } = useSelector((state) => state.cart);
+
+  // 2. Optimization: Select ONLY the total quantity count
+  // This prevents the Header from re-rendering when the item list details change
+  const cartCount = useSelector(selectCartTotalQuantity);
+
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,10 +49,10 @@ const Header = () => {
     }
   }, [dispatch, isAuthenticated]);
 
-  const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  // 3. Removed the manual 'items.reduce' calculation here.
+  // It is now handled efficiently in the Redux slice.
 
   return (
-    // 1. UPDATED: More transparency (white/70) and stronger blur (blur-xl) to match new index.css
     // Added 'animate-fadeIn' so the header appears smoothly
     <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/50 shadow-sm transition-all duration-300 animate-fadeIn">
       <div className="container mx-auto px-4 py-3 sm:px-6 lg:px-8">
