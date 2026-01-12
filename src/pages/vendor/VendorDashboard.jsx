@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FaBoxOpen,
   FaClipboardList,
@@ -8,87 +7,36 @@ import {
   FaClock,
   FaCalendarDay,
 } from "react-icons/fa";
+import { getVendorDashboardStats } from "../../services/vendorService";
+import StatsCard from "../../components/common/StatsCard";
+import Skeleton from "../../components/ui/Skeleton";
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    totalOrders: 0,
-    productCount: 0,
-    todayOrders: 0,
-    pendingOrders: 0,
-  });
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      // ✅ FIX: Check 'vendorToken' first!
-      const token =
-        localStorage.getItem("vendorToken") ||
-        localStorage.getItem("token") ||
-        JSON.parse(localStorage.getItem("userInfo") || "{}").token;
-
-      if (!token) {
-        console.error("No token found. Redirecting to login.");
-        navigate("/vendor/login");
-        return;
+    const loadData = async () => {
+      try {
+        const data = await getVendorDashboardStats();
+        setStats(data);
+      } catch (error) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          navigate("/vendor/login");
+        }
+      } finally {
+        setLoading(false);
       }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      // 1. Fetch All Orders (Order Items) for this Vendor
-      const ordersRes = await axios.get(
-        "http://localhost:5007/api/orders/vendor/orders",
-        config
-      );
-      const orders = ordersRes.data;
-
-      // 2. Fetch All Products
-      const productsRes = await axios.get(
-        "http://localhost:5007/api/products/vendor/my-products",
-        config
-      );
-
-      // --- CALCULATIONS ---
-
-      const totalSales = orders
-        .filter((item) => item.status === "DELIVERED")
-        .reduce((acc, item) => acc + (parseFloat(item.price) || 0), 0);
-
-      const today = new Date().toISOString().split("T")[0];
-      const todayOrders = orders.filter(
-        (item) => item.createdAt && item.createdAt.startsWith(today)
-      ).length;
-
-      const pendingOrders = orders.filter((item) =>
-        ["PENDING", "PROCESSING"].includes(item.status)
-      ).length;
-
-      setStats({
-        totalSales,
-        totalOrders: orders.length,
-        productCount: productsRes.data.length,
-        todayOrders,
-        pendingOrders,
-      });
-    } catch (error) {
-      console.error("Dashboard fetch failed:", error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        navigate("/vendor/login");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    loadData();
+  }, [navigate]);
 
   const cards = [
     {
       title: "Total Sales",
-      value: `₹${stats.totalSales.toLocaleString()}`,
+      value: (val) => `₹${val?.toLocaleString()}`,
+      dataKey: "totalSales",
       icon: <FaRupeeSign />,
       color: "bg-green-500",
       link: "/vendor/sales",
@@ -96,7 +44,7 @@ const VendorDashboard = () => {
     },
     {
       title: "Total Orders",
-      value: stats.totalOrders,
+      dataKey: "totalOrders",
       icon: <FaClipboardList />,
       color: "bg-blue-500",
       link: "/vendor/order-stats",
@@ -104,7 +52,7 @@ const VendorDashboard = () => {
     },
     {
       title: "My Products",
-      value: stats.productCount,
+      dataKey: "productCount",
       icon: <FaBoxOpen />,
       color: "bg-purple-500",
       link: "/vendor/products",
@@ -112,63 +60,57 @@ const VendorDashboard = () => {
     },
     {
       title: "Today's Orders",
-      value: stats.todayOrders,
+      dataKey: "todayOrders",
       icon: <FaCalendarDay />,
       color: "bg-orange-500",
-      link: "/vendor/orders?filter=today", // ✅ Added ?filter=today
+      link: "/vendor/orders?filter=today",
       desc: "Orders received today",
     },
     {
       title: "Pending Orders",
-      value: stats.pendingOrders,
+      dataKey: "pendingOrders",
       icon: <FaClock />,
       color: "bg-red-500",
-      link: "/vendor/orders?filter=pending", // ✅ Added ?filter=pending
+      link: "/vendor/orders?filter=pending",
       desc: "Actions required",
     },
   ];
 
-  if (loading)
-    return <div className="p-8 text-center">Loading Dashboard...</div>;
-
   return (
-    <div>
+    <div className="animate-fadeIn">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Dashboard Overview
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-        {cards.map((stat, index) => (
-          <div
-            key={index}
-            onClick={() => navigate(stat.link)}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between cursor-pointer hover:shadow-md transition-shadow group"
-          >
-            <div className="flex items-center gap-4 mb-3">
+        {loading
+          ? Array.from({ length: 5 }).map((_, i) => (
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-xl shadow-md ${stat.color}`}
+                key={i}
+                className="h-32 bg-white rounded-xl border border-gray-200 p-6 flex gap-4"
               >
-                {stat.icon}
+                <Skeleton className="w-12 h-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-8 w-3/4" />
+                </div>
               </div>
-              <div>
-                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                  {stat.title}
-                </p>
-                <h3 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-                  {stat.value}
-                </h3>
-              </div>
-            </div>
-            <div className="border-t pt-3 mt-1">
-              <p className="text-xs text-gray-400 flex justify-between items-center">
-                {stat.desc}
-                <span className="text-gray-300 group-hover:text-blue-500">
-                  →
-                </span>
-              </p>
-            </div>
-          </div>
-        ))}
+            ))
+          : cards.map((card, index) => (
+              <StatsCard
+                key={index}
+                title={card.title}
+                value={
+                  card.value
+                    ? card.value(stats[card.dataKey])
+                    : stats[card.dataKey]
+                }
+                icon={card.icon}
+                color={card.color}
+                link={card.link}
+                desc={card.desc}
+              />
+            ))}
       </div>
 
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center">
