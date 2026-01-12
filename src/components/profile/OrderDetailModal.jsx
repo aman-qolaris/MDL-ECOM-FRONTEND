@@ -15,13 +15,16 @@ import {
   cancelOrderItem,
   getOrderById,
 } from "../../services/orderService";
+
 import { createPortal } from "react-dom";
+import ReturnRequestModal from "./ReturnRequestModal";
 
 const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const [order, setOrder] = useState(initialOrder);
   const [enrichedItems, setEnrichedItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [selectedReturnItem, setSelectedReturnItem] = useState(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -136,6 +139,18 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         alert(err.response?.data?.message || "Failed to cancel order");
       }
     }
+  };
+
+  const isReturnable = (item) => {
+    if (item.status !== "DELIVERED") return false;
+    if (item.returnStatus !== "NONE") return false; // Already requested
+
+    const deliveryDate = new Date(item.updatedAt);
+    const now = new Date();
+    const diffTime = Math.abs(now - deliveryDate);
+    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+
+    return diffHours <= 48; // 48 Hours Policy
   };
 
   if (!order) return null;
@@ -254,6 +269,24 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                             Cancel Item
                           </button>
                         )}
+
+                      {/* ✅ ADD THIS BLOCK: Return Button & Status */}
+                      {isReturnable(item) ? (
+                        <button
+                          onClick={() => setSelectedReturnItem(item)}
+                          className="text-xs px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-gray-700 transition"
+                        >
+                          Return Item
+                        </button>
+                      ) : (
+                        /* Show status if a return is already active */
+                        item.returnStatus &&
+                        item.returnStatus !== "NONE" && (
+                          <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200">
+                            RETURN: {item.returnStatus}
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
                 ))
@@ -346,6 +379,24 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
               >
                 Cancel Order
               </button>
+            )}
+
+            {/* ✅ ADD THIS BLOCK: Render the Return Modal */}
+            {selectedReturnItem && (
+              <ReturnRequestModal
+                orderId={order.id}
+                item={selectedReturnItem}
+                onClose={() => setSelectedReturnItem(null)}
+                onSuccess={async () => {
+                  // Refresh order data to show "RETURN: REQUESTED" immediately
+                  try {
+                    const freshData = await getOrderById(order.id);
+                    setOrder(freshData);
+                  } catch (err) {
+                    console.error("Failed to refresh order", err);
+                  }
+                }}
+              />
             )}
           </div>
 

@@ -10,6 +10,7 @@ import {
   FaTruck,
   FaMoneyBillWave,
   FaClipboardList,
+  FaUndo,
 } from "react-icons/fa";
 
 const AdminSidebar = () => {
@@ -27,6 +28,7 @@ const AdminSidebar = () => {
       name: "Assigned Orders",
       icon: <FaClipboardList />,
     },
+    { path: "/admin/returns", name: "Return Requests", icon: <FaUndo /> },
     { path: "/admin/vendors", name: "Vendors", icon: <FaStore /> },
     { path: "/admin/delivery-boys", name: "Delivery Boys", icon: <FaTruck /> },
     {
