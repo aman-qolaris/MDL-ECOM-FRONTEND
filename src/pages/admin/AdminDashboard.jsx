@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import {
   FaMoneyBillWave,
   FaClipboardList,
@@ -8,77 +6,33 @@ import {
   FaClock,
   FaCalendarDay,
 } from "react-icons/fa";
+import { getDashboardStats } from "../../services/adminService";
+import StatsCard from "../../components/admin/common/StatsCard";
+import Skeleton from "../../components/ui/Skeleton";
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    totalOrders: 0,
-    totalUsers: 0,
-    todayOrders: 0,
-    pendingOrders: 0,
-  });
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    const loadStats = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        // Handle error (toast, etc.)
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStats();
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const token =
-        localStorage.getItem("adminToken") || localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
-      // 1. Fetch All Orders (to calculate sales, today, pending)
-      const ordersRes = await axios.get(
-        "http://localhost:5007/api/orders/admin/all",
-        config
-      );
-      const orders = ordersRes.data;
-
-      // 2. Fetch All Users
-      const usersRes = await axios.get(
-        "http://localhost:5007/api/auth/users",
-        config
-      );
-
-      // --- CALCULATIONS ---
-
-      // A. Total Sales (Sum of Delivered orders)
-      const totalSales = orders
-        .filter((o) => o.status === "DELIVERED")
-        .reduce((acc, o) => acc + (parseFloat(o.amount) || 0), 0);
-
-      // B. Today's Orders
-      const today = new Date().toISOString().split("T")[0];
-      const todayOrders = orders.filter(
-        (o) => o.createdAt && o.createdAt.startsWith(today)
-      ).length;
-
-      // C. Pending Orders
-      const pendingOrders = orders.filter((o) =>
-        ["PENDING", "PROCESSING"].includes(o.status)
-      ).length;
-
-      setStats({
-        totalSales,
-        totalOrders: orders.length,
-        totalUsers: usersRes.data.length,
-        todayOrders,
-        pendingOrders,
-      });
-    } catch (error) {
-      console.error("Failed to load admin stats", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cards = [
+  const cardConfig = [
     {
       title: "Total Sales",
-      value: `₹${stats.totalSales.toLocaleString()}`,
+      key: "totalSales",
+      formatter: (val) => `₹${val?.toLocaleString()}`,
       icon: <FaMoneyBillWave />,
       color: "bg-green-500",
       link: "/admin/sales",
@@ -86,7 +40,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Total Orders",
-      value: stats.totalOrders,
+      key: "totalOrders",
       icon: <FaClipboardList />,
       color: "bg-blue-500",
       link: "/admin/orders",
@@ -94,7 +48,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Customers",
-      value: stats.totalUsers,
+      key: "totalUsers",
       icon: <FaUsers />,
       color: "bg-purple-500",
       link: "/admin/users",
@@ -102,7 +56,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Today's Orders",
-      value: stats.todayOrders,
+      key: "todayOrders",
       icon: <FaCalendarDay />,
       color: "bg-orange-500",
       link: "/admin/orders/today",
@@ -110,7 +64,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Pending Orders",
-      value: stats.pendingOrders,
+      key: "pendingOrders",
       icon: <FaClock />,
       color: "bg-red-500",
       link: "/admin/orders/pending",
@@ -118,39 +72,43 @@ const AdminDashboard = () => {
     },
   ];
 
-  if (loading)
-    return <div className="p-8 text-center">Loading Dashboard...</div>;
-
   return (
-    <div className="p-6">
+    <div className="p-6 animate-fadeIn">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            onClick={() => navigate(card.link)}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow group"
-          >
-            <div className="flex items-center gap-4 mb-4">
+        {loading
+          ? // Loading Skeletons
+            Array.from({ length: 5 }).map((_, i) => (
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${card.color}`}
+                key={i}
+                className="bg-white p-6 rounded-xl border border-gray-100 h-32 flex flex-col justify-between"
               >
-                {card.icon}
+                <div className="flex gap-4">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-6 w-3/4" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">
-                  {card.title}
-                </p>
-                <h3 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600">
-                  {card.value}
-                </h3>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 flex items-center justify-between">
-              {card.desc} <span>→</span>
-            </p>
-          </div>
-        ))}
+            ))
+          : // Actual Cards
+            cardConfig.map((card, index) => (
+              <StatsCard
+                key={index}
+                title={card.title}
+                value={
+                  card.formatter
+                    ? card.formatter(stats[card.key])
+                    : stats[card.key]
+                }
+                icon={card.icon}
+                color={card.color}
+                link={card.link}
+                desc={card.desc}
+              />
+            ))}
       </div>
     </div>
   );
