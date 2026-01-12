@@ -6,6 +6,7 @@ import {
   FaRupeeSign,
   FaClock,
   FaCalendarDay,
+  FaFilter,
 } from "react-icons/fa";
 import { getVendorDashboardStats } from "../../services/vendorService";
 import StatsCard from "../../components/common/StatsCard";
@@ -16,21 +17,48 @@ const VendorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // --- FILTER STATE ---
+  const [filterType, setFilterType] = useState("all");
+  const [dateRange, setDateRange] = useState({
+    start: new Date().toISOString().split("T")[0],
+    end: new Date().toISOString().split("T")[0],
+  });
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await getVendorDashboardStats();
-        setStats(data);
-      } catch (error) {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          navigate("/vendor/login");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
-  }, [navigate]);
+  }, [filterType, dateRange]); // ❌ navigate removed (not needed)
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      let start = null;
+      let end = null;
+      const today = new Date();
+
+      if (filterType === "today") {
+        start = today.toISOString().split("T")[0];
+        end = today.toISOString().split("T")[0];
+      } else if (filterType === "week") {
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 7);
+        start = lastWeek.toISOString().split("T")[0];
+        end = today.toISOString().split("T")[0];
+      } else if (filterType === "range") {
+        start = dateRange.start;
+        end = dateRange.end;
+      }
+
+      const filterObj = start && end ? { start, end } : null;
+      const data = await getVendorDashboardStats(filterObj);
+      setStats(data);
+    } catch (error) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        navigate("/vendor/login");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cards = [
     {
@@ -40,7 +68,8 @@ const VendorDashboard = () => {
       icon: <FaRupeeSign />,
       color: "bg-green-500",
       link: "/vendor/sales",
-      desc: "View Sales Reports",
+      desc:
+        filterType === "all" ? "All time revenue" : "Revenue in selected range",
     },
     {
       title: "Total Orders",
@@ -48,7 +77,7 @@ const VendorDashboard = () => {
       icon: <FaClipboardList />,
       color: "bg-blue-500",
       link: "/vendor/order-stats",
-      desc: "View Order Stats",
+      desc: "Orders in selected range",
     },
     {
       title: "My Products",
@@ -78,10 +107,69 @@ const VendorDashboard = () => {
 
   return (
     <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Dashboard Overview
-      </h2>
+      {/* Header + Filters */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
 
+        <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-gray-500 text-sm font-bold uppercase tracking-wider px-2">
+            <FaFilter /> Filters:
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="flex bg-gray-100 rounded-md p-1">
+            {["all", "today", "week"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilterType(f)}
+                className={`cursor-pointer px-3 py-1.5 rounded text-xs font-bold uppercase transition-all ${
+                  filterType === f
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setFilterType("range")}
+              className={`cursor-pointer px-3 py-1.5 rounded text-xs font-bold uppercase transition-all ${
+                filterType === "range"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Custom Range
+            </button>
+          </div>
+
+          {/* Date Range Inputs */}
+          {filterType === "range" && (
+            <div className="flex items-center gap-2 animate-fadeIn">
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) =>
+                  setDateRange({ ...dateRange, start: e.target.value })
+                }
+                className="cursor-pointer bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-2 py-1.5 focus:outline-blue-500"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) =>
+                  setDateRange({ ...dateRange, end: e.target.value })
+                }
+                className="cursor-pointer bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-2 py-1.5 focus:outline-blue-500"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
@@ -113,6 +201,7 @@ const VendorDashboard = () => {
             ))}
       </div>
 
+      {/* Footer */}
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center">
         <h3 className="text-lg font-bold text-gray-800 mb-2">
           Welcome back to your Vendor Portal

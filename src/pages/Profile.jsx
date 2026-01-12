@@ -66,7 +66,7 @@ const Profile = () => {
             <nav className="flex flex-col p-2 space-y-1">
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
                   activeTab === "profile"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -82,7 +82,7 @@ const Profile = () => {
 
               <button
                 onClick={() => setActiveTab("orders")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
                   activeTab === "orders"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -98,7 +98,7 @@ const Profile = () => {
 
               <button
                 onClick={() => setActiveTab("security")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
                   activeTab === "security"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -115,7 +115,7 @@ const Profile = () => {
               <div className="pt-2 mt-2 border-t border-gray-100">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition text-sm font-medium"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition text-sm font-medium cursor-pointer"
                 >
                   <FaSignOutAlt /> Logout
                 </button>

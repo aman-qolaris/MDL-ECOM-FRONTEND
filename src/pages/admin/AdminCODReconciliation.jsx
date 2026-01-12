@@ -117,7 +117,7 @@ const AdminCODReconciliation = () => {
 
                 <button
                   onClick={() => setSelectedBoy(boy)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   Review & Settle <FaArrowRight />
                 </button>
@@ -187,7 +187,7 @@ const AdminCODReconciliation = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setSelectedBoy(null)}
-                  className="flex-1 px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>

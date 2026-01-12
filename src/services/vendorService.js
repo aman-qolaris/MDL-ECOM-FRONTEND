@@ -24,11 +24,20 @@ export const rejectVendor = async (vendorId) => {
   return response.data;
 };
 
-// --- NEW VENDOR DASHBOARD FUNCTIONS ---
+// Helper to check if a date is within range
+const isWithinRange = (dateString, start, end) => {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const startDate = new Date(start);
+  startDate.setHours(0, 0, 0, 0);
+  const endDate = new Date(end);
+  endDate.setHours(23, 59, 59, 999);
 
-export const getVendorDashboardStats = async () => {
-  // Using direct URL structure matching your previous code
-  // Note: Optimally, backend should have a single /stats endpoint
+  return date >= startDate && date <= endDate;
+};
+
+// --- UPDATED VENDOR DASHBOARD FUNCTION ---
+export const getVendorDashboardStats = async (dateFilter = null) => {
   try {
     const config = { headers: getAuthHeaders() };
 
@@ -41,17 +50,30 @@ export const getVendorDashboardStats = async () => {
       ),
     ]);
 
-    const orders = ordersRes.data;
+    let orders = ordersRes.data;
     const products = productsRes.data;
 
-    // Calculations
+    // --- APPLY DATE FILTER IF PROVIDED ---
+    if (dateFilter && dateFilter.start && dateFilter.end) {
+      orders = orders.filter((item) =>
+        isWithinRange(item.createdAt, dateFilter.start, dateFilter.end)
+      );
+    }
+
+    // Calculations (on potentially filtered orders)
     const totalSales = orders
       .filter((item) => item.status === "DELIVERED")
       .reduce((acc, item) => acc + (parseFloat(item.price) || 0), 0);
 
-    const today = new Date().toISOString().split("T")[0];
+    // Recalculate specific "Today" metrics based on the filtered set
+    // (Or keep absolute "Today" if you prefer. Usually "Today" changes to "Today within filtered range" which is just the filtered range itself, but for specific "Today" stats inside a range view, we often just count the filtered list)
+
+    // Logic: If filtering by range, "todayOrders" usually just means "orders in this view" or strictly "today".
+    // To match the Admin Dashboard pattern, we usually recalculate "Today" strictly from current date,
+    // BUT since we filtered the main list 'orders' above, if the range excludes today, this will be 0.
+    const todayStr = new Date().toISOString().split("T")[0];
     const todayOrders = orders.filter(
-      (item) => item.createdAt && item.createdAt.startsWith(today)
+      (item) => item.createdAt && item.createdAt.startsWith(todayStr)
     ).length;
 
     const pendingOrders = orders.filter((item) =>
@@ -61,7 +83,7 @@ export const getVendorDashboardStats = async () => {
     return {
       totalSales,
       totalOrders: orders.length,
-      productCount: products.length,
+      productCount: products.length, // Inventory count usually remains global
       todayOrders,
       pendingOrders,
     };

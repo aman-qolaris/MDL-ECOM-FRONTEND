@@ -156,14 +156,14 @@ const AdminVendors = () => {
                     <div className="flex justify-center gap-2">
                       <button
                         onClick={() => handleAction(vendor.id, "approve")}
-                        className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                        className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200 cursor-pointer"
                         title="Approve"
                       >
                         <FaCheck />
                       </button>
                       <button
                         onClick={() => handleAction(vendor.id, "reject")}
-                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 cursor-pointer"
                         title="Reject"
                       >
                         <FaTimes />
