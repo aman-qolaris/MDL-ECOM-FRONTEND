@@ -55,8 +55,11 @@ const AdminReturnRequests = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {returns.map((req) => (
-              <tr key={req.itemId} className="hover:bg-gray-50 transition">
+            {returns.map((req, index) => (
+              <tr
+                key={`${req.itemId}-${index}`}
+                className="hover:bg-gray-50 transition"
+              >
                 <td className="p-4">
                   <div className="font-medium text-gray-900">
                     Order #{req.orderId}

@@ -166,8 +166,11 @@ const AdminCODReconciliation = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedBoy.orders.map((order) => (
-                      <tr key={order.orderId} className="border-t">
+                    {selectedBoy.orders.map((order, index) => (
+                      <tr
+                        key={`${order.orderId}-${index}`}
+                        className="border-t"
+                      >
                         <td className="p-2 font-mono">#{order.orderId}</td>
                         <td className="p-2 text-gray-500">
                           {new Date(order.deliveredAt).toLocaleDateString()}
