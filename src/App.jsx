@@ -44,6 +44,7 @@ import AssignedOrders from "./pages/admin/AssignedOrders";
 import AdminDeliveryBoyDetails from "./pages/admin/AdminDeliveryBoyDetails";
 import DeliveryLogin from "./pages/delivery/DeliveryLogin";
 import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
+import AdminReturnRequests from "./pages/admin/AdminReturnRequests";
 
 function App() {
   return (
@@ -74,6 +75,7 @@ function App() {
             />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="orders/:id" element={<AdminOrderDetails />} />
+            <Route path="returns" element={<AdminReturnRequests />} />
             <Route path="vendors" element={<AdminVendors />} />
             {/* 👈 Add this line */}
             <Route path="users" element={<AdminUsers />} />
