@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
 import {
   getCartItems,
   addItemToCart,
@@ -7,35 +7,39 @@ import {
   clearCartThunk,
 } from "../thunks/cartThunks";
 
+// --- HELPER: Centralized Calculation Logic ---
+// We use this to avoid repeating the reduce logic 3 times.
+const updateCartTotals = (state) => {
+  state.totalQuantity = state.items.reduce(
+    (acc, item) => acc + item.quantity,
+    0
+  );
+  state.totalAmount = state.items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+};
+
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
     items: [],
-    totalQuantity: 0, // ✅ Added for Navbar badge
-    totalAmount: 0, // ✅ Added for Checkout summary
+    totalQuantity: 0,
+    totalAmount: 0,
     loading: false,
     error: null,
   },
   reducers: {
-    // ✅ SYNC ACTION: Called after successful payment
     clearCart: (state) => {
       state.items = [];
       state.totalQuantity = 0;
       state.totalAmount = 0;
       state.error = null;
-      // ✅ CRITICAL: Clear browser storage too
       localStorage.removeItem("cartItems");
     },
-    // ✅ OPTIONAL: Helper to calculate totals manually if needed
-    calculateTotals: (state) => {
-      state.totalQuantity = state.items.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + item.price * item.quantity,
-        0
-      );
+    // Useful if you modify state items manually and need a recalc
+    recalculateCart: (state) => {
+      updateCartTotals(state);
     },
   },
   extraReducers: (builder) => {
@@ -47,19 +51,9 @@ const cartSlice = createSlice({
       })
       .addCase(getCartItems.fulfilled, (state, action) => {
         state.loading = false;
-        // Handle different backend response structures
-        const fetchedItems = action.payload.items || action.payload || [];
-        state.items = fetchedItems;
-
-        // Auto-calculate totals when cart loads
-        state.totalQuantity = fetchedItems.reduce(
-          (acc, item) => acc + item.quantity,
-          0
-        );
-        state.totalAmount = fetchedItems.reduce(
-          (acc, item) => acc + item.price * item.quantity,
-          0
-        );
+        state.items = action.payload.items || action.payload || [];
+        // Optimized: Use helper
+        updateCartTotals(state);
       })
       .addCase(getCartItems.rejected, (state, action) => {
         state.loading = false;
@@ -72,8 +66,6 @@ const cartSlice = createSlice({
       })
       .addCase(addItemToCart.fulfilled, (state) => {
         state.loading = false;
-        // We don't update items here because usually, we refetch the cart immediately
-        // after adding to ensure backend calculation (taxes, stock) is correct.
       })
       .addCase(addItemToCart.rejected, (state, action) => {
         state.loading = false;
@@ -88,15 +80,8 @@ const cartSlice = createSlice({
         if (item) {
           item.quantity = action.payload.quantity;
         }
-        // Recalculate totals immediately for UI responsiveness
-        state.totalQuantity = state.items.reduce(
-          (acc, item) => acc + item.quantity,
-          0
-        );
-        state.totalAmount = state.items.reduce(
-          (acc, item) => acc + item.price * item.quantity,
-          0
-        );
+        // Optimized: Use helper
+        updateCartTotals(state);
       })
 
       // --- REMOVE ITEM ---
@@ -104,18 +89,11 @@ const cartSlice = createSlice({
         state.items = state.items.filter(
           (item) => (item.cartItemId || item.id) !== action.payload
         );
-        // Recalculate totals
-        state.totalQuantity = state.items.reduce(
-          (acc, item) => acc + item.quantity,
-          0
-        );
-        state.totalAmount = state.items.reduce(
-          (acc, item) => acc + item.price * item.quantity,
-          0
-        );
+        // Optimized: Use helper
+        updateCartTotals(state);
       })
 
-      // --- CLEAR CART (ASYNC FROM BACKEND) ---
+      // --- CLEAR CART (ASYNC) ---
       .addCase(clearCartThunk.fulfilled, (state) => {
         state.items = [];
         state.totalQuantity = 0;
@@ -125,5 +103,31 @@ const cartSlice = createSlice({
   },
 });
 
-export const { clearCart, calculateTotals } = cartSlice.actions;
+export const { clearCart, recalculateCart } = cartSlice.actions;
 export default cartSlice.reducer;
+
+// --- MEMOIZED SELECTORS (Performance Boost) ---
+// Use these in your components instead of raw state access.
+// Example: const cartTotal = useSelector(selectCartTotalAmount);
+
+const selectCartState = (state) => state.cart;
+
+export const selectCartItems = createSelector(
+  [selectCartState],
+  (cart) => cart.items
+);
+
+export const selectCartTotalQuantity = createSelector(
+  [selectCartState],
+  (cart) => cart.totalQuantity
+);
+
+export const selectCartTotalAmount = createSelector(
+  [selectCartState],
+  (cart) => cart.totalAmount
+);
+
+export const selectCartLoading = createSelector(
+  [selectCartState],
+  (cart) => cart.loading
+);
