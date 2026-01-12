@@ -119,7 +119,7 @@ const AdminSettings = () => {
 
           <button
             type="submit"
-            className="mt-4 px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition flex items-center gap-2"
+            className="mt-4 px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer"
           >
             <FaSave /> Update Password
           </button>

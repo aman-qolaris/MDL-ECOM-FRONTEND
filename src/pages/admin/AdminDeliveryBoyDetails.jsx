@@ -73,7 +73,7 @@ const AdminDeliveryBoyDetails = () => {
                 >
                   <td className="p-4 font-bold text-gray-700">#{order.id}</td>
                   <td className="p-4 text-sm text-gray-600 max-w-xs truncate">
-                    {order.address?.street}, {order.address?.city}
+                    {order.address?.addressLine1}, {order.address?.city}
                     <div className="text-xs text-blue-600 font-semibold">
                       {order.assignedArea}
                     </div>

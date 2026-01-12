@@ -8,7 +8,13 @@ import {
 } from "../store/thunks/cartThunks";
 // 1. Import specific selectors
 import { selectCartItems, selectCartLoading } from "../store/slices/cartSlice";
-import { FaTrash, FaArrowRight, FaMinus, FaPlus } from "react-icons/fa";
+import {
+  FaTrash,
+  FaArrowRight,
+  FaMinus,
+  FaPlus,
+  FaArrowLeft,
+} from "react-icons/fa";
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -89,6 +95,12 @@ const Cart = () => {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl">
+      <button
+        onClick={() => navigate(-1)} //
+        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-6 transition-colors font-medium"
+      >
+        <FaArrowLeft /> Back
+      </button>
       <h1 className="text-3xl font-bold mb-8 text-gray-800 border-b pb-4">
         Shopping Cart ({items.length} items)
       </h1>

@@ -280,7 +280,7 @@ const AdminDeliveryBoys = () => {
           <div className="md:col-span-2 lg:col-span-3 flex justify-end">
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow flex items-center gap-2 cursor-pointer"
             >
               <FaPlus /> Register Delivery Boy
             </button>
@@ -408,13 +408,13 @@ const AdminDeliveryBoys = () => {
                       <>
                         <button
                           onClick={() => handleEdit(boy)}
-                          className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50"
+                          className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 cursor-pointer"
                         >
                           <FaEdit />
                         </button>
                         <button
                           onClick={() => handleDelete(boy.id)}
-                          className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50"
+                          className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 cursor-pointer"
                         >
                           <FaTrash />
                         </button>
