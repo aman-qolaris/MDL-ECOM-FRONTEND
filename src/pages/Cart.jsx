@@ -124,6 +124,8 @@ const Cart = () => {
                 <div className="w-24 h-24 flex-shrink-0 bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
                   <img
                     src={
+                      // 🔴 FIXED: Check product.images[0] first
+                      product.images?.[0] ||
                       product.imageUrl ||
                       item.image ||
                       "https://via.placeholder.com/150"

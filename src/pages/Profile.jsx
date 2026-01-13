@@ -2,12 +2,20 @@ import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../store/slices/authSlice";
-import { FaUser, FaBoxOpen, FaSignOutAlt, FaLock } from "react-icons/fa";
+// 🟢 1. Import Icon
+import {
+  FaUser,
+  FaBoxOpen,
+  FaSignOutAlt,
+  FaLock,
+  FaUniversity,
+} from "react-icons/fa";
 
-// ✅ Import all your modular components
 import ProfileTab from "../components/profile/ProfileTab";
 import OrdersTab from "../components/profile/OrdersTab";
 import SecurityTab from "../components/profile/SecurityTab";
+// 🟢 2. Import New Component
+import BankDetailsTab from "../components/profile/BankDetailsTab";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -15,7 +23,6 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
-  // Set active tab (default to profile)
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || "profile"
   );
@@ -39,7 +46,7 @@ const Profile = () => {
         {/* === SIDEBAR NAVIGATION === */}
         <div className="md:w-1/4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
-            {/* User Mini Profile in Sidebar */}
+            {/* User Mini Profile */}
             <div className="p-6 border-b border-gray-100 flex flex-col items-center bg-gray-50/50">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md mb-3 bg-blue-100 flex items-center justify-center">
                 {user.profilePic ? (
@@ -78,6 +85,23 @@ const Profile = () => {
                   }
                 />
                 Profile Details
+              </button>
+
+              {/* 🟢 3. NEW: Bank Details Button */}
+              <button
+                onClick={() => setActiveTab("bank")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                  activeTab === "bank"
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <FaUniversity
+                  className={
+                    activeTab === "bank" ? "text-blue-500" : "text-gray-400"
+                  }
+                />
+                Bank Details
               </button>
 
               <button
@@ -127,6 +151,8 @@ const Profile = () => {
         {/* === MAIN CONTENT AREA === */}
         <div className="md:w-3/4">
           {activeTab === "profile" && <ProfileTab user={user} />}
+          {/* 🟢 4. Render Bank Tab */}
+          {activeTab === "bank" && <BankDetailsTab user={user} />}
           {activeTab === "orders" && <OrdersTab />}
           {activeTab === "security" && <SecurityTab userId={user.id} />}
         </div>

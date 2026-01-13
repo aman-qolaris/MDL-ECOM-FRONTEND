@@ -33,8 +33,8 @@ const VendorProducts = () => {
     id: "",
     price: "",
     stock: "",
-    image: null,
-    previewUrl: "",
+    images: [],
+    previewUrl: [],
   });
 
   // 1. Fetch Data
@@ -96,7 +96,7 @@ const VendorProducts = () => {
       id: product.id,
       price: product.price,
       stock: product.totalStock || 0,
-      image: null,
+      images: [],
       previewUrl: product.imageUrl,
     });
     setIsEditOpen(true);
@@ -107,7 +107,13 @@ const VendorProducts = () => {
     const formData = new FormData();
     formData.append("price", editData.price);
     formData.append("stock", editData.stock);
-    if (editData.image) formData.append("image", editData.image);
+
+    // 🔴 CHANGED: Loop through 'images' array and append with key "images"
+    if (editData.images && editData.images.length > 0) {
+      editData.images.forEach((file) => {
+        formData.append("images", file); // Key MUST be "images" (plural)
+      });
+    }
 
     await dispatch(
       updateProductThunk({ id: editData.id, productData: formData })
@@ -117,12 +123,15 @@ const VendorProducts = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Create previews for all selected files
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+
       setEditData({
         ...editData,
-        image: file,
-        previewUrl: URL.createObjectURL(file),
+        images: files, // Store array of files
+        previewUrl: newPreviews, // Store array of preview URLs
       });
     }
   };

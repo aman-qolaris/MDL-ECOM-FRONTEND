@@ -375,6 +375,8 @@ const Checkout = () => {
                     <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
                       <img
                         src={
+                          // 🔴 FIXED: Check product.images[0] first
+                          product.images?.[0] ||
                           product.imageUrl ||
                           item.image ||
                           "https://via.placeholder.com/64"

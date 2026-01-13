@@ -2,7 +2,7 @@ import api from "./api";
 import axios from "axios";
 
 // Ensure this matches your running Backend Port (usually 5000 or 5001)
-const API_URL = "http://localhost:5007/api"; 
+const API_URL = "http://localhost:5007/api";
 
 // ==========================================
 // CONFIGURATION: REAL BACKEND CONNECTION
@@ -18,7 +18,7 @@ export const registerUser = async (userData) => {
 };
 
 export const loginUser = async ({ phone, password }) => {
-  if (USE_MOCK) return; 
+  if (USE_MOCK) return;
 
   // 1. Login to get Token
   // Backend: POST /auth/login
@@ -54,19 +54,14 @@ export const getProfile = async () => {
   return response.data;
 };
 
-// Handle Profile Update with Image Upload (FormData)
 export const updateUserProfile = async (userId, formData) => {
-  // Note: We use raw axios here to ensure headers are handled correctly for FormData.
-  // Axios automatically sets 'Content-Type': 'multipart/form-data' with boundary when passing FormData.
-  const response = await axios.put(
-    `${API_URL}/auth/profile`, 
-    formData, 
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    }
-  );
+  // We use 'api' (not axios) so the Interceptor handles the Token/Auth headers automatically.
+  // We MUST override Content-Type to allow file uploads (multipart/form-data).
+  const response = await api.put("/auth/profile", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data.user;
 };
 
@@ -74,8 +69,8 @@ export const updateUserProfile = async (userId, formData) => {
 export const changePassword = async (userId, currentPassword, newPassword) => {
   // Backend expects 'oldPassword' and 'newPassword'
   const response = await api.post(`/auth/change-password`, {
-    oldPassword: currentPassword, 
-    newPassword: newPassword, 
+    oldPassword: currentPassword,
+    newPassword: newPassword,
   });
   return response.data;
 };

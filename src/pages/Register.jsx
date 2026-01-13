@@ -5,32 +5,57 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { authStart, authSuccess, authFailure } from "../store/slices/authSlice";
 import { registerUser } from "../services/authService";
-// Added icons for modern UI
-import { FaUser, FaEnvelope, FaPhoneAlt, FaLock } from "react-icons/fa";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhoneAlt,
+  FaLock,
+  FaUniversity,
+  FaMoneyCheckAlt,
+  FaCode,
+} from "react-icons/fa";
 
-// Updated Schema: Password min 8 chars + Complexity Format
+// 🔴 UPDATED SCHEMA: Strict Limits
 const schema = yup
   .object({
-    name: yup.string().required("Full name is required"),
-    email: yup // <--- ADDED THIS AS REQUESTED
+    name: yup
       .string()
-      .email("Invalid email format")
-      .required("Email is required"),
+      .required("Full name is required")
+      .min(4, "Name must be at least 4 characters") // ✅ Min 4
+      .max(20, "Name cannot exceed 20 characters"), // ✅ Max 20
+
+    email: yup.string().email("Invalid email format").notRequired(), // (Kept Optional as per previous request)
+
     phone: yup
       .string()
-      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
-      .required("Phone is required"),
+      .required("Phone is required")
+      .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits"), // ✅ Strict 10 digits
+
     password: yup
       .string()
-      .min(8, "Password must be at least 8 characters")
+      .required("Password is required")
+      .min(8, "Password must be 8-16 characters") // ✅ Min 8
+      .max(16, "Password must be 8-16 characters") // ✅ Max 16
       .matches(/[a-z]/, "Password must contain at least one lowercase letter")
       .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
       .matches(/[0-9]/, "Password must contain at least one number")
       .matches(
         /[!@#$%^&*(),.?":{}|<>]/,
         "Password must contain at least one special character"
-      )
-      .required("Password is required"),
+      ),
+
+    // Bank Details
+    bankName: yup.string().required("Bank Name is required"),
+
+    accountNumber: yup
+      .string()
+      .required("Account Number is required")
+      .matches(/^\d{9,18}$/, "Account Number must be 9-18 digits"), // ✅ Range 9-18
+
+    ifscCode: yup
+      .string()
+      .required("IFSC Code is required")
+      .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC Code (11 chars)"), // ✅ Strict Format
   })
   .required();
 
@@ -50,9 +75,7 @@ const Register = () => {
   const onSubmit = async (data) => {
     dispatch(authStart());
     try {
-      // Send data directly (name, email, phone, password)
       const result = await registerUser(data);
-
       dispatch(authSuccess(result));
       navigate("/");
     } catch (err) {
@@ -63,11 +86,8 @@ const Register = () => {
   };
 
   return (
-    // Outer Container: Centered with animation
     <div className="flex justify-center items-center min-h-[85vh] animate-fadeIn p-4">
-      {/* GLASS CARD */}
-      <div className="bg-white/70 backdrop-blur-2xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50 relative overflow-hidden">
-        {/* Decorative Background Blobs */}
+      <div className="bg-white/70 backdrop-blur-2xl p-8 rounded-2xl shadow-2xl w-full max-w-lg border border-white/50 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-500"></div>
 
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 mt-2 relative z-10">
@@ -87,7 +107,7 @@ const Register = () => {
           {/* Name Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
-              Full Name
+              Full Name <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaUser className="absolute top-3.5 left-3 text-gray-400" />
@@ -95,6 +115,7 @@ const Register = () => {
                 {...register("name")}
                 type="text"
                 placeholder="John Doe"
+                maxLength={20} // 🔴 Stop typing after 20 chars
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
             </div>
@@ -103,10 +124,13 @@ const Register = () => {
             </p>
           </div>
 
-          {/* Email Field */}
+          {/* Email Field (Optional) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
-              Email Address
+              Email Address{" "}
+              <span className="text-xs text-gray-400 font-normal">
+                (Optional)
+              </span>
             </label>
             <div className="relative">
               <FaEnvelope className="absolute top-3.5 left-3 text-gray-400" />
@@ -125,7 +149,7 @@ const Register = () => {
           {/* Phone Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
-              Phone Number
+              Phone Number <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaPhoneAlt className="absolute top-3.5 left-3 text-gray-400" />
@@ -133,6 +157,10 @@ const Register = () => {
                 {...register("phone")}
                 type="tel"
                 placeholder="9876543210"
+                maxLength={10} // 🔴 Stop typing after 10 digits
+                onInput={(e) =>
+                  (e.target.value = e.target.value.replace(/[^0-9]/g, ""))
+                } // Only allow numbers
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
             </div>
@@ -144,7 +172,7 @@ const Register = () => {
           {/* Password Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
-              Password
+              Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
@@ -152,6 +180,7 @@ const Register = () => {
                 {...register("password")}
                 type="password"
                 placeholder="••••••••"
+                maxLength={16} // 🔴 Stop typing after 16 chars
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
             </div>
@@ -160,10 +189,81 @@ const Register = () => {
             </p>
           </div>
 
+          {/* Bank Details Section */}
+          <div className="border-t border-gray-200 pt-4 mt-2">
+            <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase tracking-wide">
+              Bank Details
+            </h3>
+
+            <div className="grid grid-cols-1 gap-4">
+              {/* Bank Name */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 pl-1">
+                  Bank Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaUniversity className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    {...register("bankName")}
+                    type="text"
+                    placeholder="e.g. HDFC Bank"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-red-500 text-xs mt-1 pl-1">
+                  {errors.bankName?.message}
+                </p>
+              </div>
+
+              {/* Account Number */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 pl-1">
+                  Account Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaMoneyCheckAlt className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    {...register("accountNumber")}
+                    type="text"
+                    placeholder="Account Number"
+                    maxLength={18} // 🔴 Stop typing after 18 digits
+                    onInput={(e) =>
+                      (e.target.value = e.target.value.replace(/[^0-9]/g, ""))
+                    } // Only numbers
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-red-500 text-xs mt-1 pl-1">
+                  {errors.accountNumber?.message}
+                </p>
+              </div>
+
+              {/* IFSC Code */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 pl-1">
+                  IFSC Code <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaCode className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    {...register("ifscCode")}
+                    type="text"
+                    placeholder="e.g. HDFC0001234"
+                    maxLength={11} // 🔴 Stop typing after 11 chars
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-inner uppercase"
+                  />
+                </div>
+                <p className="text-red-500 text-xs mt-1 pl-1">
+                  {errors.ifscCode?.message}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? "Registering..." : "Sign Up"}
           </button>

@@ -240,3 +240,14 @@ export const updateDeliveryStatus = async (assignmentId, status) => {
   );
   return response.data;
 };
+
+// 🟢 ADD THIS FUNCTION AT THE END
+export const requestReturn = async (orderId, itemId, data) => {
+  // Matches Backend: POST /orders/:orderId/items/:itemId/return
+  // Body: { reason: "...", categoryName: "..." }
+  const response = await api.post(
+    `/orders/${orderId}/items/${itemId}/return`,
+    data
+  );
+  return response.data;
+};
