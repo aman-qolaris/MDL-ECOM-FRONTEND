@@ -47,7 +47,10 @@ const ProductTable = ({ items, onEdit, onDelete }) => {
                     <div className="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
                       <img
                         src={
-                          product.imageUrl || "https://via.placeholder.com/150"
+                          product.images && product.images.length > 0
+                            ? product.images[0]
+                            : product.imageUrl ||
+                              "https://via.placeholder.com/50"
                         }
                         alt={product.name}
                         className="w-full h-full object-cover"

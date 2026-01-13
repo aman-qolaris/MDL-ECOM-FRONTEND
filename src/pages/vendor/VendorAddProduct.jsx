@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState } from "react";
 import { getAllCategories } from "../../services/productService";
+import { FaTimes, FaPlus, FaCloudUploadAlt } from "react-icons/fa"; // Icons for UI
 
 // Schema Validation
 const schema = yup
@@ -24,10 +25,10 @@ const schema = yup
       .number()
       .typeError("Category ID must be a number")
       .required("Category ID is required"),
-    // Image validation (check if file list has length)
+    // Validation checks if the array has items
     image: yup
       .mixed()
-      .test("required", "Product image is required", (value) => {
+      .test("required", "At least one product image is required", (value) => {
         return value && value.length > 0;
       }),
   })
@@ -37,17 +38,22 @@ const VendorAddProduct = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.products);
-  const [categories, setCategories] = useState([]); // 👈 State for categories
+  const [categories, setCategories] = useState([]);
+
+  // Custom State for Image Management
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   const {
     register,
     handleSubmit,
+    setValue, // Needed to manually update the form value
+    trigger, // Needed to trigger validation manually
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
   });
 
-  // 👇 Fetch Categories on Load
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -60,18 +66,49 @@ const VendorAddProduct = () => {
     fetchCategories();
   }, []);
 
+  // 🟢 1. Handle adding a SINGLE file via the "+" button
+  const handleAddImage = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // 1. Add to local state
+      const newFiles = [...selectedFiles, file];
+      setSelectedFiles(newFiles);
+      setPreviews([...previews, URL.createObjectURL(file)]);
+
+      // 2. Sync with React Hook Form
+      setValue("image", newFiles);
+      trigger("image"); // Manually trigger validation to clear errors
+    }
+    // Reset input so the same file can be selected again if needed
+    e.target.value = "";
+  };
+
+  // 🔴 2. Handle removing an image
+  const handleRemoveImage = (index) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+
+    setSelectedFiles(newFiles);
+    setPreviews(newPreviews);
+
+    // Sync with React Hook Form
+    setValue("image", newFiles);
+    trigger("image");
+  };
+
   const onSubmit = async (data) => {
-    // 1. Create FormData object for file upload
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("price", data.price);
     formData.append("description", data.description);
     formData.append("stock", data.stock);
     formData.append("categoryId", data.categoryId);
-    // Append the file (data.image is a FileList)
-    formData.append("image", data.image[0]);
 
-    // 2. Dispatch
+    // Append all selected files
+    selectedFiles.forEach((file) => {
+      formData.append("images", file); // Key must be "images" for backend
+    });
+
     const resultAction = await dispatch(createProductThunk(formData));
 
     if (createProductThunk.fulfilled.match(resultAction)) {
@@ -129,7 +166,7 @@ const VendorAddProduct = () => {
           </div>
         </div>
 
-        {/* 👇 UPDATED: Category Dropdown */}
+        {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Category
@@ -165,18 +202,54 @@ const VendorAddProduct = () => {
           </p>
         </div>
 
-        {/* Image Upload */}
+        {/* 🖼️ NEW: Image Upload UI with + Sign */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Product Image
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Product Images (Max 5)
           </label>
-          <input
-            {...register("image")}
-            type="file"
-            accept="image/*"
-            className="w-full border border-gray-300 rounded-lg p-2"
-          />
-          <p className="text-red-500 text-xs mt-1">{errors.image?.message}</p>
+
+          <div className="flex flex-wrap gap-4">
+            {/* 1. Render Previews of selected images */}
+            {previews.map((src, index) => (
+              <div
+                key={index}
+                className="relative w-24 h-24 border border-gray-200 rounded-lg overflow-hidden group"
+              >
+                <img
+                  src={src}
+                  alt={`Preview ${index}`}
+                  className="w-full h-full object-cover"
+                />
+                {/* Delete Button (visible on hover) */}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <FaTimes size={10} />
+                </button>
+              </div>
+            ))}
+
+            {/* 2. The "+" Button (Only show if less than 5 images) */}
+            {selectedFiles.length < 5 && (
+              <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                <FaPlus className="text-gray-400 mb-1" />
+                <span className="text-xs text-gray-500">Add Photo</span>
+
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAddImage}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Error Message */}
+          <p className="text-red-500 text-xs mt-2">{errors.image?.message}</p>
         </div>
 
         <button

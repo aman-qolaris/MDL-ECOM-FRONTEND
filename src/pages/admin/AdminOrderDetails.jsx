@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import {
   getAdminOrderDetails,
@@ -20,6 +20,7 @@ import OrderDeliveryPartner from "../../components/admin/orders/details/OrderDel
 import OrderCustomerInfo from "../../components/admin/orders/details/OrderCustomerInfo";
 
 const AdminOrderDetails = () => {
+  const navigate = useNavigate(); // 🟢 Hook for navigation
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,12 +193,12 @@ const AdminOrderDetails = () => {
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto pb-10 relative">
       <div className="flex items-center justify-between mb-6">
-        <Link
-          to="/admin/orders"
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition font-medium"
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors font-medium"
         >
           <FaArrowLeft /> Back to List
-        </Link>
+        </button>
         <div className="text-right">
           <h1 className="text-2xl font-bold text-gray-800">
             Order #{order.id}

@@ -11,6 +11,15 @@ const EditProductModal = ({
 }) => {
   if (!isOpen) return null;
 
+  // Helper to safely get an array of previews (handles both single string and array)
+  const getPreviews = () => {
+    if (Array.isArray(editData.previewUrl)) return editData.previewUrl;
+    if (typeof editData.previewUrl === "string") return [editData.previewUrl];
+    return [];
+  };
+
+  const previews = getPreviews();
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all animate-fadeIn">
@@ -25,19 +34,35 @@ const EditProductModal = ({
         </div>
         <form onSubmit={onSubmit} className="p-6 space-y-5">
           <div className="flex flex-col items-center mb-4">
-            <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 mb-3 relative group">
-              <img
-                src={editData.previewUrl || "https://via.placeholder.com/150"}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
+            {/* Show existing/new images in a grid */}
+            <div className="flex gap-2 mb-3 overflow-x-auto w-full justify-center">
+              {previews.length > 0 ? (
+                previews.map((url, index) => (
+                  <div
+                    key={index}
+                    className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0"
+                  >
+                    <img
+                      src={url}
+                      alt={`Preview ${index}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                  No Img
+                </div>
+              )}
             </div>
+
             <label className="cursor-pointer text-blue-600 text-sm font-medium hover:underline flex items-center gap-1">
               <FaCloudUploadAlt /> Change Image
               <input
                 type="file"
                 className="hidden"
                 accept="image/*"
+                multiple // 🟢 ADD THIS
                 onChange={handleFileChange}
               />
             </label>

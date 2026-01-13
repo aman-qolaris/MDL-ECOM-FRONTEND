@@ -41,10 +41,7 @@ export const getDashboardStats = async (dateFilter = null) => {
     // Total Orders (Based on filtered orders)
     const totalOrders = orders.length;
 
-    // --- SNAPSHOT METRICS (Usually kept absolute, but you can filter them too if preferred) ---
-    // We will recalculate "Today" and "Pending" based on the FILTERED list
-    // so they reflect the selected range (e.g. "Pending orders in this date range").
-
+    // --- SNAPSHOT METRICS ---
     const todayStr = new Date().toISOString().split("T")[0];
 
     const todayOrders = orders.filter(
@@ -58,7 +55,7 @@ export const getDashboardStats = async (dateFilter = null) => {
     return {
       totalSales,
       totalOrders,
-      totalUsers: users.length, // Users usually remain "All Time" count
+      totalUsers: users.length,
       todayOrders,
       pendingOrders,
     };
@@ -66,4 +63,21 @@ export const getDashboardStats = async (dateFilter = null) => {
     console.error("Error calculating admin stats:", error);
     throw error;
   }
+};
+
+// ✅ Fetch all return requests
+export const getAllReturnRequests = async () => {
+  // Matches: app.get("/api/orders/admin/returns/all")
+  const response = await api.get("/orders/admin/returns/all");
+  return response.data;
+};
+
+// ✅ Update status (Approve, Reject, Refunded)
+export const updateReturnStatus = async (orderId, itemId, status) => {
+  // Matches: app.put("/api/orders/admin/:orderId/items/:itemId/return-status")
+  const response = await api.put(
+    `/orders/admin/${orderId}/items/${itemId}/return-status`,
+    { status }
+  );
+  return response.data;
 };

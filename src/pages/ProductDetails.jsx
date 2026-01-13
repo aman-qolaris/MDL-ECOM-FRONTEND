@@ -4,7 +4,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { clearCurrentProduct } from "../store/slices/productSlice";
 import { getProduct } from "../store/thunks/productThunks";
 import { dummyProducts } from "../data/dummyData";
-import { FaShoppingCart, FaArrowLeft, FaStar } from "react-icons/fa";
+import {
+  FaShoppingCart,
+  FaArrowLeft,
+  FaStar,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
 import { addItemToCart, getCartItems } from "../store/thunks/cartThunks";
 
 const ProductDetails = () => {
@@ -17,6 +23,7 @@ const ProductDetails = () => {
   const { items: cartItems } = useSelector((state) => state.cart);
 
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     dispatch(getProduct(id));
@@ -45,7 +52,7 @@ const ProductDetails = () => {
           id: product.id,
           name: product.name,
           price: product.price,
-          image: product.imageUrl || product.image, // Handle different naming conventions
+          image: product.images?.[0] || product.imageUrl || product.image,
         };
 
         // 4. Save back to local storage (Limit to 8 items)
@@ -107,12 +114,81 @@ const ProductDetails = () => {
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           {/* Image Section */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-10 flex items-center justify-center">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="max-h-[420px] w-full object-contain transition-transform duration-500 hover:scale-105"
-            />
+          {/* Image Section (Updated with Carousel) */}
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 flex flex-col items-center justify-center">
+            {(() => {
+              // Helper: Get all valid images or fallback to single
+              const images =
+                product?.images?.length > 0
+                  ? product.images
+                  : [product.imageUrl || "https://via.placeholder.com/400"];
+
+              return (
+                <div className="w-full h-full flex flex-col gap-4">
+                  {/* 1. Main Image Area */}
+                  {/* 🔴 FIX: Set a FIXED height (e.g., h-[400px]) so the box never resizes */}
+                  <div className="relative w-full h-[400px] flex items-center justify-center group overflow-hidden">
+                    <img
+                      src={images[currentImageIndex]}
+                      alt={product.name}
+                      // 🔴 FIX: Use 'h-full' and 'object-contain' to make the image fit inside the fixed box
+                      className="w-full h-full object-contain p-2 transition-transform duration-500 hover:scale-105 mix-blend-multiply"
+                    />
+
+                    {/* Left Arrow */}
+                    {images.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setCurrentImageIndex((prev) =>
+                            prev === 0 ? images.length - 1 : prev - 1
+                          )
+                        }
+                        className="absolute left-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
+                      >
+                        <FaChevronLeft size={20} />
+                      </button>
+                    )}
+
+                    {/* Right Arrow */}
+                    {images.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setCurrentImageIndex((prev) =>
+                            prev === images.length - 1 ? 0 : prev + 1
+                          )
+                        }
+                        className="absolute right-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
+                      >
+                        <FaChevronRight size={20} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 2. Thumbnails Row (Only if > 1 image) */}
+                  {images.length > 1 && (
+                    <div className="flex justify-center gap-2 overflow-x-auto pb-2">
+                      {images.map((img, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
+                            currentImageIndex === index
+                              ? "border-blue-600 ring-2 ring-blue-100"
+                              : "border-gray-300 opacity-60 hover:opacity-100"
+                          }`}
+                        >
+                          <img
+                            src={img}
+                            alt={`Thumb ${index}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Details Section */}

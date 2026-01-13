@@ -7,6 +7,7 @@ import {
   FaCreditCard,
   FaBox,
   FaRedo,
+  FaUndo,
 } from "react-icons/fa";
 import { getProductById } from "../../services/productService";
 import { addItemToCart } from "../../store/thunks/cartThunks";
@@ -14,6 +15,7 @@ import {
   cancelOrder,
   cancelOrderItem,
   getOrderById,
+  requestReturn, // ✅ Import this
 } from "../../services/orderService";
 
 import { createPortal } from "react-dom";
@@ -25,20 +27,20 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const [loadingItems, setLoadingItems] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedReturnItem, setSelectedReturnItem] = useState(null);
+  const [returningOrder, setReturningOrder] = useState(false); // ✅ Loading state for Return Order
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Status Logic: Can only cancel if PROCESSING, PENDING, or PARTIALLY_CANCELLED
+  // Status Logic
   const isOrderActive =
     order?.status === "PROCESSING" ||
     order?.status === "PENDING" ||
     order?.status === "PARTIALLY_CANCELLED";
 
-  // Fetch fresh order data on mount to ensure status is up-to-date
+  // Fetch fresh order data
   useEffect(() => {
     if (!initialOrder?.id) return;
-
     const fetchFreshOrder = async () => {
       try {
         const freshData = await getOrderById(initialOrder.id);
@@ -50,17 +52,21 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     fetchFreshOrder();
   }, [initialOrder.id]);
 
-  // Fetch product details (images, names) for items
+  // Fetch product details
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!order) return;
-
       const rawItems = order.OrderItems || order.items || [];
       setLoadingItems(true);
 
       try {
         const itemPromises = rawItems.map(async (item) => {
-          if (!item.Product || !item.Product.imageUrl) {
+          // ✅ FIX: Check both 'imageUrl' AND the new 'images' array
+          if (
+            !item.Product ||
+            (!item.Product.imageUrl &&
+              (!item.Product.images || item.Product.images.length === 0))
+          ) {
             try {
               const productData = await getProductById(item.productId);
               return { ...item, Product: productData };
@@ -80,44 +86,95 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         setLoadingItems(false);
       }
     };
-
     fetchProductDetails();
   }, [order]);
 
-  // Handle Order Again
+  // Helper: Check if item is returnable (48 hours policy)
+  const isReturnable = (item) => {
+    if (item.status !== "DELIVERED") return false;
+    if (item.returnStatus !== "NONE") return false;
+
+    const deliveryDate = new Date(item.updatedAt);
+    const now = new Date();
+    const diffTime = Math.abs(now - deliveryDate);
+    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+
+    return diffHours <= 48;
+  };
+
+  // ✅ Helper: Check if ANY item in the order is returnable
+  const canReturnOrder = enrichedItems.some((item) => isReturnable(item));
+
+  // ✅ HANDLER: Return Entire Order
+  const handleReturnOrder = async () => {
+    const returnableItems = enrichedItems.filter(isReturnable);
+
+    if (returnableItems.length === 0) {
+      alert("No returnable items available in this order.");
+      return;
+    }
+
+    // Simple prompt for reason (you can replace with a modal if preferred)
+    const reason = prompt(
+      `Returning ${returnableItems.length} items. Please enter a reason for the return:`
+    );
+
+    if (!reason) return; // User cancelled
+
+    if (
+      !window.confirm(
+        `Are you sure you want to return ${returnableItems.length} items?`
+      )
+    )
+      return;
+
+    try {
+      setReturningOrder(true);
+      // Loop through all returnable items and send request
+      await Promise.all(
+        returnableItems.map((item) =>
+          requestReturn(order.id, item.id, { reason })
+        )
+      );
+
+      alert("Return request submitted for all eligible items.");
+
+      // Refresh Order Data
+      const freshData = await getOrderById(order.id);
+      setOrder(freshData);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit return request. Please try again.");
+    } finally {
+      setReturningOrder(false);
+    }
+  };
+
   const handleOrderAgain = async () => {
     setAddingToCart(true);
     try {
       const addPromises = enrichedItems.map((item) =>
         dispatch(
-          addItemToCart({
-            productId: item.productId,
-            quantity: item.quantity,
-          })
+          addItemToCart({ productId: item.productId, quantity: item.quantity })
         ).unwrap()
       );
-
       await Promise.all(addPromises);
       onClose();
       navigate("/checkout");
     } catch (error) {
       console.error("Failed to add items to cart:", error);
-      alert(
-        "Some items could not be added to the cart (possibly out of stock)."
-      );
+      alert("Some items could not be added (possibly out of stock).");
       navigate("/cart");
     } finally {
       setAddingToCart(false);
     }
   };
 
-  // Handler: Cancel Single Item
   const handleCancelItem = async (itemId) => {
     if (window.confirm("Are you sure you want to cancel this specific item?")) {
       try {
         await cancelOrderItem(order.id, itemId);
         alert("Item Cancelled Successfully");
-        // Refresh local order state
         const updatedOrder = await getOrderById(order.id);
         setOrder(updatedOrder);
       } catch (err) {
@@ -126,31 +183,17 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     }
   };
 
-  // Handler: Cancel Full Order
   const handleCancelOrder = async () => {
     if (window.confirm("Are you sure you want to cancel the ENTIRE order?")) {
       try {
         await cancelOrder(order.id);
         alert("Order Cancelled Successfully");
         onClose();
-        // Reload to reflect changes on the main list
         window.location.reload();
       } catch (err) {
         alert(err.response?.data?.message || "Failed to cancel order");
       }
     }
-  };
-
-  const isReturnable = (item) => {
-    if (item.status !== "DELIVERED") return false;
-    if (item.returnStatus !== "NONE") return false; // Already requested
-
-    const deliveryDate = new Date(item.updatedAt);
-    const now = new Date();
-    const diffTime = Math.abs(now - deliveryDate);
-    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-
-    return diffHours <= 48; // 48 Hours Policy
   };
 
   if (!order) return null;
@@ -219,12 +262,15 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                     key={idx}
                     className="flex gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition items-center"
                   >
-                    {/* Image */}
+                    {/* Image Display Fix */}
                     <div className="w-16 h-16 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center">
-                      {item.Product?.imageUrl ? (
+                      {item.Product?.images?.length > 0 ||
+                      item.Product?.imageUrl ? (
                         <img
-                          src={item.Product?.imageUrl}
-                          alt=""
+                          src={
+                            item.Product?.images?.[0] || item.Product?.imageUrl
+                          }
+                          alt={item.Product?.name || "Product"}
                           className="w-full h-full object-contain mix-blend-multiply"
                         />
                       ) : (
@@ -240,16 +286,16 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                         <p className="text-sm text-gray-500">
                           Qty: {item.quantity}
                         </p>
-                        {/* Show Item Specific Status */}
-                        {item.status === "CANCELLED" ? (
+                        {item.status === "CANCELLED" && (
                           <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold border border-red-200">
                             CANCELLED
                           </span>
-                        ) : item.status === "PACKED" ? (
+                        )}
+                        {item.status === "PACKED" && (
                           <span className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded font-bold border border-purple-200">
                             PACKED
                           </span>
-                        ) : null}
+                        )}
                       </div>
                     </div>
 
@@ -258,7 +304,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                         ₹{(item.price * item.quantity).toLocaleString()}
                       </p>
 
-                      {/* Individual Cancel Button */}
+                      {/* Cancel Item Button */}
                       {isOrderActive &&
                         item.status !== "CANCELLED" &&
                         item.status !== "PACKED" && (
@@ -270,7 +316,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                           </button>
                         )}
 
-                      {/* ✅ ADD THIS BLOCK: Return Button & Status */}
+                      {/* Return Item Button */}
                       {isReturnable(item) ? (
                         <button
                           onClick={() => setSelectedReturnItem(item)}
@@ -279,7 +325,6 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                           Return Item
                         </button>
                       ) : (
-                        /* Show status if a return is already active */
                         item.returnStatus &&
                         item.returnStatus !== "NONE" && (
                           <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200">
@@ -294,7 +339,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
             </div>
           </div>
 
-          {/* Address & Payment Info */}
+          {/* Address & Payment Info (Kept same) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -308,7 +353,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
                     </p>
                     <p>{order.address?.addressLine1}</p>
                     <p>
-                      {order.address?.city}, {order.address?.state}{" "}
+                      {order.address?.city}, {order.address?.state}
                     </p>
                     <p className="mt-2 text-gray-500">
                       📞 {order.address?.phone}
@@ -353,9 +398,9 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center rounded-b-xl">
-          <div className="flex gap-3">
-            {/* 🟢 ORDER AGAIN BUTTON */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center rounded-b-xl gap-2">
+          <div className="flex flex-wrap gap-3">
+            {/* Order Again */}
             <button
               onClick={handleOrderAgain}
               disabled={addingToCart}
@@ -370,8 +415,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
               )}
             </button>
 
-            {/* 🔴 CANCEL FULL ORDER BUTTON */}
-            {/* Valid even if PARTIALLY_CANCELLED, as long as active items remain */}
+            {/* Cancel Order */}
             {isOrderActive && (
               <button
                 onClick={handleCancelOrder}
@@ -381,14 +425,30 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
               </button>
             )}
 
-            {/* ✅ ADD THIS BLOCK: Render the Return Modal */}
+            {/* ✅ RETURN ORDER BUTTON (New) */}
+            {canReturnOrder && (
+              <button
+                onClick={handleReturnOrder}
+                disabled={returningOrder}
+                className="px-4 py-2 bg-orange-100 text-orange-700 font-bold border border-orange-200 rounded-lg hover:bg-orange-200 transition flex items-center gap-2 disabled:opacity-50"
+              >
+                {returningOrder ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    <FaUndo /> Return Order
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Return Modal (Single Item) */}
             {selectedReturnItem && (
               <ReturnRequestModal
                 orderId={order.id}
                 item={selectedReturnItem}
                 onClose={() => setSelectedReturnItem(null)}
                 onSuccess={async () => {
-                  // Refresh order data to show "RETURN: REQUESTED" immediately
                   try {
                     const freshData = await getOrderById(order.id);
                     setOrder(freshData);

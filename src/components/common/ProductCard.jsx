@@ -55,12 +55,13 @@ const ProductCard = ({ product }) => {
         to={`/product/${product.id}`}
         className="relative h-[180px] overflow-hidden bg-gray-50 block"
       >
-        {product.imageUrl ? (
+        {/* 🔴 FIXED LOGIC: Check 'images' array first, then fallback to 'imageUrl' */}
+        {product.images?.length > 0 || product.imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={product.images?.[0] || product.imageUrl}
             alt={product.name}
             className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-            loading="lazy" // Performance: Lazy load off-screen images
+            loading="lazy"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">

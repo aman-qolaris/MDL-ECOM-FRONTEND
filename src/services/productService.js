@@ -48,7 +48,9 @@ const getAuthHeaders = () => {
 export const createProduct = async (productData) => {
   // We use direct axios here to ensure we can control the token priority
   const token =
-    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+    localStorage.getItem("vendorToken") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("token");
 
   const response = await axios.post(`${BASE_URL}/products`, productData, {
     headers: {
@@ -62,8 +64,10 @@ export const createProduct = async (productData) => {
 // 4. Update Product (Matches: PUT /api/products/:id)
 export const updateProduct = async (id, productData) => {
   // Ensure this matches where you actually save the token (e.g., "token")
-  const token = localStorage.getItem("vendorToken");
-
+  const token =
+    localStorage.getItem("vendorToken") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("token");
   const response = await axios.put(`${BASE_URL}/products/${id}`, productData, {
     headers: {
       "Content-Type": "multipart/form-data", // axios sets boundary auto for FormData, but this forces intent
@@ -76,7 +80,9 @@ export const updateProduct = async (id, productData) => {
 // 5. Delete Product (Matches: DELETE /api/products/:id)
 export const deleteProduct = async (id) => {
   const token =
-    localStorage.getItem("vendorToken") || localStorage.getItem("token");
+    localStorage.getItem("vendorToken") ||
+    localStorage.getItem("adminToken") ||
+    localStorage.getItem("token");
 
   const response = await axios.delete(`${BASE_URL}/products/${id}`, {
     headers: {
