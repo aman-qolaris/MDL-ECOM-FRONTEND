@@ -29,14 +29,14 @@ const Shop = () => {
     const categoryFromURL = searchParams.get("category");
     const searchFromURL = searchParams.get("search");
 
-    if (categoryFromURL || searchFromURL) {
-      dispatch(
-        setFilters({
-          category: categoryFromURL || "",
-          search: searchFromURL || "",
-        })
-      );
-    }
+    // Keep Redux filters in sync with the URL, including when params are cleared.
+    // This ensures clearing the search term shows all products again.
+    dispatch(
+      setFilters({
+        category: categoryFromURL || "",
+        search: searchFromURL || "",
+      })
+    );
   }, [searchParams, dispatch]);
 
   // 3. Data Fetching

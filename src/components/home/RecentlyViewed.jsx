@@ -20,55 +20,77 @@ const RecentlyViewed = () => {
     setRecentProducts([]);
   };
 
-  if (recentProducts.length === 0) return null;
-
   return (
-    <section className="py-12 border-t border-gray-100 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <span className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-              <FaHistory />
-            </span>
-            Recently Viewed
-          </h2>
-          <button
-            onClick={clearHistory}
-            className="text-sm text-red-500 hover:bg-red-50 px-3 py-1 rounded-full transition-colors flex items-center gap-2"
-          >
-            <FaTrash /> Clear History
-          </button>
-        </div>
+    <section className="py-5 sm:py-6">
+      <div className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 lg:p-6 shadow-sm border border-gray-100 transition-shadow duration-300 hover:shadow-md">
+          <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+                <FaHistory />
+              </span>
+              Recently Viewed
+            </h2>
 
-        {/* Improved Horizontal Scroll */}
-        <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-indigo-500 scrollbar-track-transparent p-1">
-          {recentProducts.map((product) => (
-            <div
-              key={product.id}
-              onClick={() => navigate(`/product/${product.id}`)}
-              className="min-w-[200px] bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group"
-            >
-              <div className="h-40 w-full bg-gray-100 relative overflow-hidden">
-                <img
-                  src={
-                    product.image ||
-                    product.imageUrl ||
-                    "https://via.placeholder.com/150"
-                  }
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-800 truncate text-sm mb-1">
-                  {product.name}
-                </h3>
-                <p className="text-indigo-600 font-bold text-sm">
-                  ₹{product.price}
+            {recentProducts.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="text-xs sm:text-sm text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-2 font-medium"
+              >
+                <FaTrash /> Clear
+              </button>
+            )}
+          </div>
+
+          {recentProducts.length === 0 ? (
+            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-sm sm:text-base font-semibold text-gray-900">
+                  No recently viewed items yet
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Open any product to start building your history.
                 </p>
               </div>
+              <button
+                onClick={() => navigate("/shop")}
+                className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                Browse Products
+              </button>
             </div>
-          ))}
+          ) : (
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2">
+              {recentProducts.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => navigate(`/product/${product.id}`)}
+                  className="min-w-[150px] sm:min-w-[170px] bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group"
+                >
+                  <div className="h-28 sm:h-32 w-full bg-gray-50 relative overflow-hidden">
+                    <img
+                      src={
+                        product.image ||
+                        product.imageUrl ||
+                        "https://via.placeholder.com/300"
+                      }
+                      alt={product.name}
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-semibold text-gray-900 truncate text-sm mb-1">
+                      {product.name}
+                    </h3>
+                    <p className="text-indigo-600 font-extrabold text-sm">
+                      ₹{product.price}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

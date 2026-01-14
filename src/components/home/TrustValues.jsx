@@ -13,22 +13,22 @@ const features = [
 
 const TrustValues = () => {
   return (
-    <section className="py-12 bg-white border-t border-gray-100">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    <section className="py-5 sm:py-6 bg-white border-t border-gray-100">
+      <div className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {features.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-4 p-6 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center text-2xl text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+              <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-xl text-indigo-600 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                 {item.icon}
               </div>
               <div>
-                <h3 className="font-bold text-gray-800 text-base">
+                <h3 className="font-bold text-gray-800 text-sm">
                   {item.title}
                 </h3>
-                <p className="text-sm text-gray-500">{item.desc}</p>
+                <p className="text-xs text-gray-500">{item.desc}</p>
               </div>
             </div>
           ))}

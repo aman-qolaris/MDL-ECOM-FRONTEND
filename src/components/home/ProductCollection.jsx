@@ -10,39 +10,40 @@ const ProductCollection = ({
 }) => {
   const navigate = useNavigate();
 
-  // If no products provided, show nothing or skeleton
   if (!products || products.length === 0) return null;
 
   return (
-    <section className="py-16 md:py-20 bg-white">
-      <div className="container mx-auto px-4">
-        {/* Header Section (Matches CategoryShowcase Style) */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
-          <div>
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="text-gray-500 mt-2 text-lg font-light">
-                {subtitle}
-              </p>
-            )}
+    <section className="py-3 sm:py-4">
+      <div className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl p-3 sm:p-5 lg:p-6 shadow-sm border border-gray-100 transition-shadow duration-300 hover:shadow-md">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-3 gap-3 border-b border-gray-100 pb-2">
+            <div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="text-gray-500 mt-1 text-xs sm:text-sm md:text-base font-medium">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={() => navigate(link)}
+              className="flex items-center gap-2 text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors group motion-safe:duration-300"
+            >
+              See All{" "}
+              <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
-          <button
-            onClick={() => navigate(link)}
-            className="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-900 hover:text-white hover:border-transparent transition-all duration-300 group"
-          >
-            See All{" "}
-            <FaArrowRight className="text-sm group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products.slice(0, 4).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {/* Product Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+            {products.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
