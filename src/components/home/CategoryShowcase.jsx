@@ -36,37 +36,37 @@ const CategoryShowcase = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="py-5 sm:py-6 bg-white">
+      <div className="w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-3">
           <div>
-            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-2 block">
+            <span className="text-indigo-600 font-bold tracking-wider uppercase text-xs mb-1.5 block">
               Collections
             </span>
-            <h2 className="text-3xl font-extrabold text-gray-900">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
               Shop by Category
             </h2>
-            <p className="text-gray-500 mt-2 text-lg">
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">
               Explore our widest range of collections
             </p>
           </div>
 
           <button
             onClick={() => navigate("/shop")}
-            className="flex items-center gap-2 px-6 py-2 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-900 hover:text-white hover:border-transparent transition-all duration-300"
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-900 hover:text-white hover:border-transparent transition-all duration-300"
           >
             View All Categories <FaArrowRight className="text-sm" />
           </button>
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {categories.map((cat) => (
             <div
               key={cat.id}
               onClick={() => navigate(`/shop?category=${cat.name}`)}
-              className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 border border-gray-100"
+              className="group relative h-44 sm:h-52 lg:h-56 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100"
             >
               {/* Image with Zoom Effect */}
               <img
@@ -76,12 +76,12 @@ const CategoryShowcase = () => {
               />
 
               {/* Modern Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8 opacity-90 group-hover:opacity-100 transition-opacity">
-                <h3 className="text-white text-2xl font-bold translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 sm:p-5 opacity-90 group-hover:opacity-100 transition-opacity">
+                <h3 className="text-white text-xl sm:text-2xl font-bold translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                   {cat.name}
                 </h3>
-                <div className="h-0 group-hover:h-6 overflow-hidden transition-all duration-500">
-                  <span className="text-indigo-200 text-sm font-medium flex items-center gap-2 mt-2">
+                <div className="h-0 group-hover:h-5 overflow-hidden transition-all duration-500">
+                  <span className="text-indigo-200 text-xs sm:text-sm font-medium flex items-center gap-2 mt-2">
                     Explore Collection <FaArrowRight className="text-xs" />
                   </span>
                 </div>

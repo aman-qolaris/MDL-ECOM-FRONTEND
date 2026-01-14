@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaCalendarAlt, FaHashtag } from "react-icons/fa";
 import {
   getAdminOrderDetails,
   updateOrderStatus,
@@ -185,69 +185,135 @@ const AdminOrderDetails = () => {
 
   const priceDetails = calculatePriceDetails();
 
+  // Helper for Status Badge Color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "DELIVERED":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "PACKED":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      case "CANCELLED":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "PROCESSING":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
   if (loading)
-    return <div className="p-8 text-center">Loading Order Details...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-medium">
+        Loading Order Details...
+      </div>
+    );
   if (!order)
-    return <div className="p-8 text-center text-red-500">Order Not Found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-red-500 font-bold">
+        Order Not Found
+      </div>
+    );
 
   return (
-    <div className="animate-fadeIn max-w-7xl mx-auto pb-10 relative">
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-6 transition-colors font-medium"
-        >
-          <FaArrowLeft /> Back to List
-        </button>
-        <div className="text-right">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Order #{order.id}
-          </h1>
-          <span className="text-sm text-gray-500">
-            Placed on {new Date(order.createdAt).toLocaleString()}
-          </span>
+    <div className="min-h-screen bg-gray-50/50 pb-12 animate-fadeIn">
+      {/* Top Header Bar */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Left: Back Button & Title */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-600 transition-all shadow-sm group"
+                title="Go Back"
+              >
+                <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+              </button>
+
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <FaHashtag className="text-gray-300 text-lg" />
+                  Order #{order.id}
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                  <FaCalendarAlt className="text-gray-400" />
+                  {new Date(order.createdAt).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Status Badge */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Status:
+              </span>
+              <span
+                className={`px-4 py-1.5 rounded-full text-sm font-bold border shadow-sm ${getStatusColor(
+                  order.status
+                )}`}
+              >
+                {order.status}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* --- Reassignment Modal --- */}
-      <ReassignmentModal
-        isOpen={isReassignModalOpen}
-        onClose={() => setIsReassignModalOpen(false)}
-        loading={reassignLoading}
-        options={reassignOptions}
-        selectedBoy={selectedNewBoy}
-        onSelectBoy={setSelectedNewBoy}
-        onConfirm={handleSubmitReassignment}
-      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* --- Reassignment Modal --- */}
+        <ReassignmentModal
+          isOpen={isReassignModalOpen}
+          onClose={() => setIsReassignModalOpen(false)}
+          loading={reassignLoading}
+          options={reassignOptions}
+          selectedBoy={selectedNewBoy}
+          onSelectBoy={setSelectedNewBoy}
+          onConfirm={handleSubmitReassignment}
+        />
 
-      {/* Main Grid Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT COLUMN: Items & Status */}
-        <div className="lg:col-span-2 space-y-6">
-          <OrderItemsSection
-            order={order}
-            products={products}
-            vendors={vendors}
-            onToggleItemReady={toggleItemReady}
-            onMarkPacked={handleMarkPacked}
-            isPackingAllowed={isPackingAllowed}
-            areAllItemsReady={areAllItemsReady}
-          />
+        {/* Main Grid Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* LEFT COLUMN: Items & Status (Takes 2/3 width) */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Passed props exactly as logic requires */}
+              <OrderItemsSection
+                order={order}
+                products={products}
+                vendors={vendors}
+                onToggleItemReady={toggleItemReady}
+                onMarkPacked={handleMarkPacked}
+                isPackingAllowed={isPackingAllowed}
+                areAllItemsReady={areAllItemsReady}
+              />
+            </div>
 
-          <OrderPriceDetails priceDetails={priceDetails} />
-        </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <OrderPriceDetails priceDetails={priceDetails} />
+            </div>
+          </div>
 
-        {/* RIGHT COLUMN: Payment & Delivery Partner */}
-        <div className="space-y-6">
-          <OrderPaymentInfo order={order} />
+          {/* RIGHT COLUMN: Payment, Delivery, Customer (Takes 1/3 width) */}
+          <div className="space-y-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-1">
+              <OrderPaymentInfo order={order} />
+            </div>
 
-          <OrderDeliveryPartner
-            order={order}
-            onReassign={handleOpenReassign}
-            isPackingAllowed={isPackingAllowed}
-          />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-1">
+              <OrderDeliveryPartner
+                order={order}
+                onReassign={handleOpenReassign}
+                isPackingAllowed={isPackingAllowed}
+              />
+            </div>
 
-          <OrderCustomerInfo order={order} />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-1">
+              <OrderCustomerInfo order={order} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

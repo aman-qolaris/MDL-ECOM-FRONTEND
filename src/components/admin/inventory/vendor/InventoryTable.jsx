@@ -32,7 +32,9 @@ const InventoryTable = ({ products, onEdit }) => {
                     <div className="w-10 h-10 rounded border border-gray-200 overflow-hidden bg-gray-50 flex-shrink-0">
                       <img
                         src={
-                          product.imageUrl || "https://via.placeholder.com/150"
+                          product.images?.[0] ||
+                          product.imageUrl ||
+                          "https://via.placeholder.com/150"
                         }
                         alt=""
                         className="w-full h-full object-cover"
