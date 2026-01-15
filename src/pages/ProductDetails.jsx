@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { clearCurrentProduct } from "../store/slices/productSlice";
 import { getProduct, getFeaturedProducts } from "../store/thunks/productThunks";
 import { selectFeaturedProducts } from "../store/slices/productSlice";
+import useDeferredRender from "../hooks/useDeferredRender";
+import useIsAuthenticated from "../hooks/useIsAuthenticated";
+import useCartQuantity from "../hooks/useCartQuantity";
 import { dummyProducts } from "../data/dummyData";
 import {
   FaShoppingCart,
@@ -16,6 +19,12 @@ import { addItemToCart, getCartItems } from "../store/thunks/cartThunks";
 import api from "../services/api"; // Import API for local fetching
 import ProductCard from "../components/common/ProductCard"; // Reusable Card Component
 
+const SectionHeader = ({ title }) => (
+  <div className="flex items-center justify-between mb-8 mt-16 border-b pb-4 border-gray-200">
+    <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+  </div>
+);
+
 const ProductDetails = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -23,13 +32,16 @@ const ProductDetails = () => {
 
   // --- Redux State ---
   const { currentProduct, loading } = useSelector((state) => state.products);
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const { items: cartItems } = useSelector((state) => state.cart);
+  const isAuthenticated = useIsAuthenticated();
   const featuredProducts = useSelector(selectFeaturedProducts);
 
   // --- Local State ---
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Defer below-the-fold sections (related/similar/trending/featured grids)
+  // to keep initial product render fast.
+  const renderBelowFold = useDeferredRender({ deps: [id] });
 
   // Lists for bottom sections
   const [relatedProducts, setRelatedProducts] = useState([]); // Same Category
@@ -56,73 +68,101 @@ const ProductDetails = () => {
   const product =
     currentProduct || dummyProducts.find((p) => p.id === parseInt(id));
 
-  // 2. Fetch Side Lists (Related, Similar, Trending)
+  const productId = useMemo(() => {
+    const resolved = product?.id ?? parseInt(id);
+    return Number.isNaN(resolved) ? product?.id : resolved;
+  }, [product?.id, id]);
+
+  const qtyInCart = useCartQuantity(productId);
+
+  // 2a. Update Recently Viewed (cheap; do it immediately)
   useEffect(() => {
-    if (product) {
-      const fetchSideLists = async () => {
-        try {
-          // A. Category Related
-          const categoryName = product.Category?.name || product.category?.name;
-          if (categoryName) {
-            const relatedRes = await api.get(
-              `/products?category=${categoryName}`
-            );
-            // ✅ FIX: STRICTLY FILTER to ensure category matches exactly
-            const filteredRelated = relatedRes.data
-              .filter((p) => p.id !== product.id) // Exclude current product
-              .filter((p) => {
-                // Check if the fetched product's category matches the current product's category
-                const pCat = p.Category?.name || p.category?.name;
-                return pCat === categoryName;
-              })
-              .slice(0, 4);
-            setRelatedProducts(filteredRelated);
-          }
-
-          // B. Name Related (Similar)
-          // Use the first 2 words of the name as a search term
-          const searchTerm = product.name.split(" ").slice(0, 2).join(" ");
-          if (searchTerm) {
-            const similarRes = await api.get(`/products?search=${searchTerm}`);
-            const filteredSimilar = similarRes.data
-              .filter((p) => p.id !== product.id)
-              // Optional: Exclude if it appears in category list to avoid dupes
-              .filter((p) => p.Category?.name !== categoryName)
-              .slice(0, 4);
-            setSimilarProducts(filteredSimilar);
-          }
-
-          // C. Trending (Simulated by Price High for now)
-          const trendingRes = await api.get(`/products?sort=price_high`);
-          const filteredTrending = trendingRes.data
-            .filter((p) => p.id !== product.id)
-            .slice(0, 4);
-          setTrendingProducts(filteredTrending);
-        } catch (error) {
-          console.error("Error fetching related/trending:", error);
-        }
+    if (!product) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+      const filtered = existing.filter((item) => item.id !== product.id);
+      const newItem = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images?.[0] || product.imageUrl || product.image,
       };
-
-      fetchSideLists();
-
-      // Update Recently Viewed
-      try {
-        const existing =
-          JSON.parse(localStorage.getItem("recentlyViewed")) || [];
-        const filtered = existing.filter((item) => item.id !== product.id);
-        const newItem = {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.images?.[0] || product.imageUrl || product.image,
-        };
-        const updatedList = [newItem, ...filtered].slice(0, 8);
-        localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
-      } catch (err) {
-        console.error("Failed to save recent view:", err);
-      }
+      const updatedList = [newItem, ...filtered].slice(0, 8);
+      localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
+    } catch (err) {
+      console.error("Failed to save recent view:", err);
     }
   }, [product]);
+
+  // 2b. Fetch Side Lists (Related, Similar, Trending) - deferred
+  useEffect(() => {
+    if (!product || !renderBelowFold) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const fetchSideLists = async () => {
+      try {
+        const categoryName = product.Category?.name || product.category?.name;
+        const searchTerm = product.name.split(" ").slice(0, 2).join(" ");
+
+        const relatedReq = categoryName
+          ? api.get(`/products?category=${encodeURIComponent(categoryName)}`, {
+              signal,
+            })
+          : Promise.resolve({ data: [] });
+
+        const similarReq = searchTerm
+          ? api.get(`/products?search=${encodeURIComponent(searchTerm)}`, {
+              signal,
+            })
+          : Promise.resolve({ data: [] });
+
+        const trendingReq = api.get(`/products?sort=price_high`, { signal });
+
+        const [relatedRes, similarRes, trendingRes] = await Promise.all([
+          relatedReq,
+          similarReq,
+          trendingReq,
+        ]);
+
+        if (signal.aborted) return;
+
+        if (categoryName) {
+          const filteredRelated = (relatedRes.data || [])
+            .filter((p) => p.id !== product.id)
+            .filter((p) => {
+              const pCat = p.Category?.name || p.category?.name;
+              return pCat === categoryName;
+            })
+            .slice(0, 4);
+          setRelatedProducts(filteredRelated);
+        }
+
+        if (searchTerm) {
+          const filteredSimilar = (similarRes.data || [])
+            .filter((p) => p.id !== product.id)
+            .filter((p) => p.Category?.name !== categoryName)
+            .slice(0, 4);
+          setSimilarProducts(filteredSimilar);
+        }
+
+        const filteredTrending = (trendingRes.data || [])
+          .filter((p) => p.id !== product.id)
+          .slice(0, 4);
+        setTrendingProducts(filteredTrending);
+      } catch (error) {
+        // Ignore abort errors; log the rest.
+        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
+          return;
+        }
+        console.error("Error fetching related/trending:", error);
+      }
+    };
+
+    fetchSideLists();
+    return () => controller.abort();
+  }, [product, renderBelowFold]);
 
   if (loading)
     return <div className="text-center py-20 text-xl">Loading...</div>;
@@ -138,10 +178,7 @@ const ProductDetails = () => {
       return;
     }
 
-    const existingItem = cartItems.find(
-      (item) => item.productId === product.id
-    );
-    const currentQtyInCart = existingItem ? existingItem.quantity : 0;
+    const currentQtyInCart = qtyInCart;
 
     if (currentQtyInCart + quantity > product.availableStock) {
       alert(
@@ -151,20 +188,17 @@ const ProductDetails = () => {
     }
 
     if (quantity > 0) {
-      await dispatch(
+      const res = await dispatch(
         addItemToCart({ productId: product.id, quantity })
       ).unwrap();
-      await dispatch(getCartItems()).unwrap();
+
+      const nextItems = res?.items || res?.cart?.items || res?.data?.items;
+      if (!Array.isArray(nextItems)) {
+        await dispatch(getCartItems()).unwrap();
+      }
       alert(`${product.name} added to cart!`);
     }
   };
-
-  // Helper for Section Titles
-  const SectionHeader = ({ title }) => (
-    <div className="flex items-center justify-between mb-8 mt-16 border-b pb-4 border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-    </div>
-  );
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -332,7 +366,7 @@ const ProductDetails = () => {
       </div>
 
       {/* --- 2. RELATED PRODUCTS (Same Category) --- */}
-      {relatedProducts.length > 0 && (
+      {renderBelowFold && relatedProducts.length > 0 && (
         <section className="animate-fade-in-up">
           <SectionHeader title="Related Products" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -344,7 +378,7 @@ const ProductDetails = () => {
       )}
 
       {/* --- 3. SIMILAR PRODUCTS (Name Based) --- */}
-      {similarProducts.length > 0 && (
+      {renderBelowFold && similarProducts.length > 0 && (
         <section className="animate-fade-in-up delay-75">
           {/* Dynamic title based on the first word of the product name */}
           <SectionHeader title={`More like "${product.name.split(" ")[0]}"`} />
@@ -357,7 +391,7 @@ const ProductDetails = () => {
       )}
 
       {/* --- 4. TRENDING PRODUCTS --- */}
-      {trendingProducts.length > 0 && (
+      {renderBelowFold && trendingProducts.length > 0 && (
         <section className="animate-fade-in-up delay-100">
           <SectionHeader title="Trending Now" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -369,7 +403,7 @@ const ProductDetails = () => {
       )}
 
       {/* --- 5. FEATURED COLLECTION --- */}
-      {featuredProducts.length > 0 && (
+      {renderBelowFold && featuredProducts.length > 0 && (
         <section className="animate-fade-in-up delay-200">
           <SectionHeader title="Featured Collection" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

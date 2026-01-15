@@ -45,6 +45,10 @@ const schema = yup
       ),
 
     // Bank Details
+    bankAccountHolderName: yup
+      .string()
+      .required("Account Holder Name is required"), // <--- ADD THIS
+
     bankName: yup.string().required("Bank Name is required"),
 
     accountNumber: yup
@@ -196,6 +200,25 @@ const Register = () => {
             </h3>
 
             <div className="grid grid-cols-1 gap-4">
+              {/* --- ADD THIS BLOCK FOR ACCOUNT HOLDER NAME --- */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 pl-1">
+                  Account Holder Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaUser className="absolute top-3.5 left-3 text-gray-400" />
+                  <input
+                    {...register("bankAccountHolderName")}
+                    type="text"
+                    placeholder="Name as per Bank Records"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-red-500 text-xs mt-1 pl-1">
+                  {errors.bankAccountHolderName?.message}
+                </p>
+              </div>
+              {/* ---------------------------------------------- */}
               {/* Bank Name */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1 pl-1">

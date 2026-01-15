@@ -16,7 +16,13 @@ export function useCheckoutInitialization({ user, dispatch }) {
       }
 
       try {
-        await dispatch(getCartItems()).unwrap();
+        const cartAction = await dispatch(getCartItems());
+        // If getCartItems was skipped due to thunk `condition` (dedupe), treat it as a no-op.
+        if (getCartItems.rejected.match(cartAction)) {
+          if (cartAction.error?.name !== "ConditionError") {
+            throw cartAction;
+          }
+        }
 
         const addresses = await getAddresses(user.id);
         setSavedAddresses(addresses);
