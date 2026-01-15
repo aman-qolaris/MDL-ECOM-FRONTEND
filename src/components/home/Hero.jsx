@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
+import SmartImage from "../common/SmartImage";
 
 const Hero = () => {
   return (
@@ -44,10 +45,12 @@ const Hero = () => {
           {/* IMAGE SECTION */}
           <div className="md:w-1/2 flex justify-center perspective-[1000px] relative">
             <div className="relative transform md:rotate-3 hover:rotate-0 transition-all duration-700 ease-out z-10">
-              <img
+              <SmartImage
                 src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80"
                 alt="Hero Product"
                 className="w-full max-w-xs sm:max-w-sm rounded-3xl shadow-2xl border-4 border-white/10"
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Floating Badge */}

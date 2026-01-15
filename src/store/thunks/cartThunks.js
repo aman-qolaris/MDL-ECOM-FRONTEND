@@ -25,6 +25,14 @@ export const getCartItems = createAsyncThunk(
         error.response?.data?.message || "Failed to load cart"
       );
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState();
+      // Skip if we already have a request in flight.
+      if (state?.cart?.loading) return false;
+      return true;
+    },
   }
 );
 

@@ -5,6 +5,7 @@ import {
   FaLinkedinIn,
 } from "react-icons/fa";
 import { Link } from "react-router-dom"; // Use Link for internal navigation if needed
+import { memo } from "react";
 
 const Footer = () => {
   return (
@@ -76,13 +77,13 @@ const Footer = () => {
 };
 
 // Helper Component for Social Icons to reduce repetition
-const SocialIcon = ({ icon, color }) => (
+const SocialIcon = memo(({ icon, color }) => (
   <a
     href="#"
     className={`w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 transition-all duration-300 ${color} hover:text-white hover:-translate-y-1 hover:shadow-lg hover:shadow-purple-500/20`}
   >
     {icon}
   </a>
-);
+));
 
-export default Footer;
+export default memo(Footer);

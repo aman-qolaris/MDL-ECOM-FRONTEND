@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaArrowLeft, FaFilter } from "react-icons/fa";
+import useDebounce from "../hooks/useDebounce";
 
 // Thunks & Actions
 import { getAllProducts } from "../store/thunks/productThunks";
@@ -13,6 +14,7 @@ import { selectFilteredProducts } from "../store/selectors/productSelectors";
 import ProductFilters from "../components/products/ProductFilters";
 import ProductCard from "../components/common/ProductCard";
 import ProductCardSkeleton from "../components/placeholders/ProductCardSkeleton";
+import VirtualizedProductGrid from "../components/common/VirtualizedProductGrid";
 
 const Shop = () => {
   const dispatch = useDispatch();
@@ -23,6 +25,7 @@ const Shop = () => {
   const displayItems = useSelector(selectFilteredProducts);
   const loading = useSelector(selectProductLoading);
   const filters = useSelector((state) => state.filters);
+  const debouncedFilters = useDebounce(filters, 250);
 
   // 2. URL Params Sync (Keep existing logic)
   useEffect(() => {
@@ -41,8 +44,8 @@ const Shop = () => {
 
   // 3. Data Fetching
   useEffect(() => {
-    dispatch(getAllProducts(filters));
-  }, [dispatch, filters]);
+    dispatch(getAllProducts(debouncedFilters));
+  }, [dispatch, debouncedFilters]);
 
   const handleSortChange = (e) => {
     dispatch(setFilters({ sort: e.target.value }));
@@ -106,28 +109,39 @@ const Shop = () => {
           </div>
 
           {/* Product Grid with Shimmer */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              // Show 6 Skeletons while loading
-              Array.from({ length: 6 }).map((_, i) => (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
                 <ProductCardSkeleton key={i} />
-              ))
-            ) : displayItems.length > 0 ? (
-              displayItems.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
+              ))}
+            </div>
+          ) : displayItems.length > 0 ? (
+            // Virtualize only when list is large to avoid changing UX for small sets.
+            displayItems.length >= 30 ? (
+              <VirtualizedProductGrid
+                items={displayItems}
+                renderItem={(product) => (
+                  <ProductCard key={product.id} product={product} />
+                )}
+              />
             ) : (
-              <div className="col-span-full py-20 text-center">
-                <div className="text-gray-400 mb-4 text-6xl">🔍</div>
-                <h3 className="text-xl font-medium text-gray-900">
-                  No products found
-                </h3>
-                <p className="text-gray-500">
-                  Try adjusting your search or filters.
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayItems.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
               </div>
-            )}
-          </div>
+            )
+          ) : (
+            <div className="py-20 text-center">
+              <div className="text-gray-400 mb-4 text-6xl">🔍</div>
+              <h3 className="text-xl font-medium text-gray-900">
+                No products found
+              </h3>
+              <p className="text-gray-500">
+                Try adjusting your search or filters.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

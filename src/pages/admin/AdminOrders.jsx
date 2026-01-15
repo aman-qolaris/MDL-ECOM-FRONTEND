@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaSearch, FaFilter, FaEye, FaBoxOpen } from "react-icons/fa";
 import { getAllOrders } from "../../services/orderService";
@@ -9,6 +9,7 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [scrollTop, setScrollTop] = useState(0);
 
   useEffect(() => {
     fetchOrders();
@@ -41,6 +42,25 @@ const AdminOrders = () => {
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchTerm, statusFilter]);
+
+  // Lightweight table windowing to avoid rendering huge <tbody>.
+  const ROW_HEIGHT_PX = 72;
+  const VIEWPORT_HEIGHT_PX = 560;
+  const OVERSCAN = 8;
+  const virtual = useMemo(() => {
+    const total = filteredOrders.length;
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT_PX) - OVERSCAN);
+    const visibleCount = Math.ceil(VIEWPORT_HEIGHT_PX / ROW_HEIGHT_PX);
+    const end = Math.min(total, start + visibleCount + OVERSCAN * 2);
+    const paddingTop = start * ROW_HEIGHT_PX;
+    const paddingBottom = Math.max(0, (total - end) * ROW_HEIGHT_PX);
+    return { start, end, paddingTop, paddingBottom };
+  }, [filteredOrders.length, scrollTop]);
+
+  const visibleOrders = useMemo(
+    () => filteredOrders.slice(virtual.start, virtual.end),
+    [filteredOrders, virtual.start, virtual.end]
+  );
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -94,7 +114,11 @@ const AdminOrders = () => {
         <AdminTableSkeleton rows={8} columns={6} />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto overflow-y-auto"
+            style={{ maxHeight: VIEWPORT_HEIGHT_PX }}
+            onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+          >
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-gray-50 text-gray-600 uppercase text-xs font-bold tracking-wider">
@@ -108,54 +132,75 @@ const AdminOrders = () => {
               </thead>
               <tbody className="text-gray-700 text-sm">
                 {filteredOrders.length > 0 ? (
-                  filteredOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="border-b hover:bg-gray-50 transition duration-150"
-                    >
-                      <td className="py-4 px-6 font-mono font-bold text-blue-600">
-                        #{order.id}
-                      </td>
-                      <td className="py-4 px-6 font-medium">
-                        {order.address?.fullName || "Guest"}
-                      </td>
+                  <>
+                    {virtual.paddingTop > 0 && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          style={{ height: virtual.paddingTop }}
+                        />
+                      </tr>
+                    )}
 
-                      <td className="py-4 px-6 text-center">
-                        <span
-                          className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${
-                            order.paymentMethod === "COD"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {order.paymentMethod === "COD" ? "COD" : "Online"}
-                        </span>
-                      </td>
+                    {visibleOrders.map((order) => (
+                      <tr
+                        key={order.id}
+                        className="border-b hover:bg-gray-50 transition duration-150"
+                        style={{ height: ROW_HEIGHT_PX }}
+                      >
+                        <td className="py-4 px-6 font-mono font-bold text-blue-600">
+                          #{order.id}
+                        </td>
+                        <td className="py-4 px-6 font-medium">
+                          {order.address?.fullName || "Guest"}
+                        </td>
 
-                      <td className="py-4 px-6 text-center">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
+                        <td className="py-4 px-6 text-center">
+                          <span
+                            className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${
+                              order.paymentMethod === "COD"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {order.paymentMethod === "COD" ? "COD" : "Online"}
+                          </span>
+                        </td>
 
-                      <td className="py-4 px-6 text-center font-bold text-gray-500">
-                        {order.OrderItems?.length || 0}
-                      </td>
+                        <td className="py-4 px-6 text-center">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(
+                              order.status
+                            )}`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
 
-                      <td className="py-4 px-6 text-right">
-                        <Link
-                          to={`/admin/orders/${order.id}`}
-                          className="inline-flex items-center gap-2 bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition shadow-sm"
-                        >
-                          <FaEye /> Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                        <td className="py-4 px-6 text-center font-bold text-gray-500">
+                          {order.OrderItems?.length || 0}
+                        </td>
+
+                        <td className="py-4 px-6 text-right">
+                          <Link
+                            to={`/admin/orders/${order.id}`}
+                            className="inline-flex items-center gap-2 bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition shadow-sm"
+                          >
+                            <FaEye /> Details
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {virtual.paddingBottom > 0 && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          style={{ height: virtual.paddingBottom }}
+                        />
+                      </tr>
+                    )}
+                  </>
                 ) : (
                   <tr>
                     <td colSpan="6" className="p-10 text-center text-gray-400">

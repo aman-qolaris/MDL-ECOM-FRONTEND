@@ -15,7 +15,7 @@ export const getAllProducts = createAsyncThunk(
     try {
       const cleanedParams = Object.fromEntries(
         Object.entries(params || {}).filter(
-          ([_, value]) => value !== "" && value !== null && value !== undefined
+          ([, value]) => value !== "" && value !== null && value !== undefined
         )
       );
 
@@ -26,6 +26,27 @@ export const getAllProducts = createAsyncThunk(
         error.response?.data?.message || "Failed to fetch products"
       );
     }
+  },
+  {
+    condition: (params, { getState }) => {
+      const state = getState();
+      const isLoading = state?.products?.loading;
+      const hasItems = (state?.products?.items?.length || 0) > 0;
+
+      if (isLoading) return false;
+
+      const cleanedParams = Object.fromEntries(
+        Object.entries(params || {}).filter(
+          ([, value]) => value !== "" && value !== null && value !== undefined
+        )
+      );
+
+      // If caller didn't pass any filters, and we already have items,
+      // avoid refetching just to rerender the same data.
+      if (Object.keys(cleanedParams).length === 0 && hasItems) return false;
+
+      return true;
+    },
   }
 );
 
@@ -43,6 +64,14 @@ export const getFeaturedProducts = createAsyncThunk(
         error.response?.data?.message || "Failed to fetch products"
       );
     }
+  },
+  {
+    condition: (_arg, { getState }) => {
+      const state = getState();
+      const hasFeatured = (state?.products?.featured?.length || 0) > 0;
+      if (hasFeatured) return false;
+      return true;
+    },
   }
 );
 

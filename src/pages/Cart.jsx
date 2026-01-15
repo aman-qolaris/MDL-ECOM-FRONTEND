@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import useDeferredRender from "../hooks/useDeferredRender";
 import {
   getCartItems,
   updateItemQuantity,
@@ -26,6 +27,9 @@ const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Defer recommendation sections (and their network calls) so cart UI paints fast.
+  const renderBelowFold = useDeferredRender();
+
   // --- Selectors ---
   const items = useSelector(selectCartItems);
   const loading = useSelector(selectCartLoading);
@@ -44,6 +48,8 @@ const Cart = () => {
 
   // --- 2. Fetch Featured & Trending Data ---
   useEffect(() => {
+    if (!renderBelowFold) return;
+
     // A. Featured (Redux)
     dispatch(getFeaturedProducts());
 
@@ -57,7 +63,7 @@ const Cart = () => {
       }
     };
     fetchTrending();
-  }, [dispatch]);
+  }, [dispatch, renderBelowFold]);
 
   // --- Calculate Totals ---
   const cartTotal = useMemo(() => {
@@ -161,7 +167,7 @@ const Cart = () => {
       )}
 
       {/* --- 3. TRENDING PRODUCTS --- */}
-      {trendingProducts.length > 0 && (
+      {renderBelowFold && trendingProducts.length > 0 && (
         <section className="animate-fade-in-up mt-12">
           <CartSectionHeader title="Trending Now" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -173,7 +179,7 @@ const Cart = () => {
       )}
 
       {/* --- 4. FEATURED PRODUCTS --- */}
-      {featuredProducts.length > 0 && (
+      {renderBelowFold && featuredProducts.length > 0 && (
         <section className="animate-fade-in-up mt-8 delay-100">
           <CartSectionHeader title="You May Also Like" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

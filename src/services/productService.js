@@ -1,6 +1,19 @@
 import api from "./api";
 import axios from "axios"; // Import axios directly to bypass default interceptors
 
+const PRODUCTS_CACHE_TTL_MS = 15_000;
+const productsListCache = new Map();
+const productsListInFlight = new Map();
+const productByIdCache = new Map();
+const productByIdInFlight = new Map();
+
+const stableParamsKey = (params = {}) => {
+  const entries = Object.entries(params)
+    .filter(([, v]) => v !== "" && v !== null && v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return JSON.stringify(entries);
+};
+
 // Helper to get the base URL consistent with api.js
 const BASE_URL = "http://localhost:5007/api";
 
@@ -15,21 +28,65 @@ const USE_MOCK = false;
 export const getProducts = async (params = {}) => {
   if (USE_MOCK) return [];
 
-  const response = await api.get("/products", {
-    params,
-    paramsSerializer: {
-      indexes: null,
-    },
-  });
+  const key = stableParamsKey(params);
+  const cached = productsListCache.get(key);
+  const now = Date.now();
+  if (cached && now - cached.ts < PRODUCTS_CACHE_TTL_MS) return cached.data;
 
-  return response.data;
+  const inFlight = productsListInFlight.get(key);
+  if (inFlight) return inFlight;
+
+  const promise = api
+    .get("/products", {
+      params,
+      paramsSerializer: {
+        indexes: null,
+      },
+    })
+    .then((response) => {
+      productsListCache.set(key, { ts: Date.now(), data: response.data });
+      return response.data;
+    })
+    .finally(() => {
+      productsListInFlight.delete(key);
+    });
+
+  productsListInFlight.set(key, promise);
+  return promise;
 };
 
 // 2. Get Single Product (Matches: GET /api/products/:id)
 export const getProductById = async (id) => {
   if (USE_MOCK) return null;
-  const response = await api.get(`/products/${id}`);
-  return response.data;
+
+  const key = String(id);
+  const cached = productByIdCache.get(key);
+  const now = Date.now();
+  if (cached && now - cached.ts < PRODUCTS_CACHE_TTL_MS) return cached.data;
+
+  const inFlight = productByIdInFlight.get(key);
+  if (inFlight) return inFlight;
+
+  const promise = api
+    .get(`/products/${id}`)
+    .then((response) => {
+      productByIdCache.set(key, { ts: Date.now(), data: response.data });
+      return response.data;
+    })
+    .finally(() => {
+      productByIdInFlight.delete(key);
+    });
+
+  productByIdInFlight.set(key, promise);
+  return promise;
+};
+
+export const prefetchProductById = async (id) => {
+  try {
+    await getProductById(id);
+  } catch {
+    // best-effort only
+  }
 };
 
 // --- VENDOR & ADMIN ROUTES ---

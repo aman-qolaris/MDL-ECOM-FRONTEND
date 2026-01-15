@@ -33,25 +33,41 @@ const DeliveryDashboard = () => {
 
   // --- Effects ---
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    let isMounted = true;
 
-  const fetchTasks = async () => {
-    setLoading(true);
-    try {
-      const data = await getDeliveryTasks();
-      if (Array.isArray(data)) {
-        setTasks({ active: data, history: [] });
-      } else {
-        setTasks(data);
+    const fetchTasks = async ({ showLoading } = { showLoading: true }) => {
+      if (showLoading) setLoading(true);
+      try {
+        const data = await getDeliveryTasks();
+        if (!isMounted) return;
+
+        if (Array.isArray(data)) {
+          setTasks({ active: data, history: [] });
+        } else {
+          setTasks(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tasks", error);
+        if (error.response?.status === 401) handleLogout();
+      } finally {
+        if (showLoading && isMounted) setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-      if (error.response?.status === 401) handleLogout();
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    // Initial blocking load
+    fetchTasks({ showLoading: true });
+
+    // Background refresh so newly assigned orders show up quickly.
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      fetchTasks({ showLoading: false });
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("deliveryToken");
@@ -66,7 +82,14 @@ const DeliveryDashboard = () => {
 
     try {
       await updateDeliveryStatus(assignmentId, newStatus);
-      fetchTasks();
+      // Refresh without blocking the UI behind a full-screen spinner.
+      setLoading(false);
+      const data = await getDeliveryTasks();
+      if (Array.isArray(data)) {
+        setTasks({ active: data, history: [] });
+      } else {
+        setTasks(data);
+      }
     } catch (error) {
       console.error(error);
       alert("Failed to update status");

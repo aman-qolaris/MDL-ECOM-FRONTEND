@@ -2,13 +2,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaShoppingCart, FaEye } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addItemToCart, getCartItems } from "../../store/thunks/cartThunks";
+import { selectCartQuantityByProductId } from "../../store/slices/cartSlice";
+import useIsAuthenticated from "../../hooks/useIsAuthenticated";
 import { toast } from "react-toastify";
+import SmartImage from "./SmartImage";
+import { prefetchProductById } from "../../services/productService";
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const cartItems = useSelector((state) => state.cart.items);
+  const isAuthenticated = useIsAuthenticated();
+  const currentQty = useSelector((state) =>
+    selectCartQuantityByProductId(state, product?.id)
+  );
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -18,21 +24,20 @@ const ProductCard = ({ product }) => {
       return;
     }
 
-    const existingItem = cartItems.find(
-      (item) => item.productId === product.id
-    );
-    const currentQty = existingItem?.quantity || 0;
-
     if (currentQty + 1 > product.availableStock) {
       toast.error(`Only ${product.availableStock} items available in stock!`);
       return;
     }
 
     try {
-      await dispatch(
+      const res = await dispatch(
         addItemToCart({ productId: product.id, quantity: 1 })
       ).unwrap();
-      dispatch(getCartItems());
+
+      const nextItems = res?.items || res?.cart?.items || res?.data?.items;
+      if (!Array.isArray(nextItems)) {
+        dispatch(getCartItems());
+      }
       toast.success("Item added to cart!");
     } catch (error) {
       console.error("Failed to add to cart", error);
@@ -52,15 +57,18 @@ const ProductCard = ({ product }) => {
       <Link
         to={`/product/${product.id}`}
         className="relative h-[160px] overflow-hidden bg-gray-50 block"
+        onMouseEnter={() => prefetchProductById(product?.id)}
+        onFocus={() => prefetchProductById(product?.id)}
       >
         {/* Logic: Check 'images' array first, then fallback to 'imageUrl' */}
         {product.images?.length > 0 || product.imageUrl ? (
-          <img
+          <SmartImage
             src={product.images?.[0] || product.imageUrl}
             alt={product.name}
             // Kept your UI preference: object-cover
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">

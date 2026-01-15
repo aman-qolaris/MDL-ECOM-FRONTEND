@@ -64,8 +64,19 @@ const cartSlice = createSlice({
       .addCase(addItemToCart.pending, (state) => {
         state.loading = true;
       })
-      .addCase(addItemToCart.fulfilled, (state) => {
+      .addCase(addItemToCart.fulfilled, (state, action) => {
         state.loading = false;
+
+        const nextItems =
+          action.payload?.items ||
+          action.payload?.cart?.items ||
+          action.payload?.data?.items ||
+          null;
+
+        if (Array.isArray(nextItems)) {
+          state.items = nextItems;
+          updateCartTotals(state);
+        }
       })
       .addCase(addItemToCart.rejected, (state, action) => {
         state.loading = false;
@@ -130,4 +141,23 @@ export const selectCartTotalAmount = createSelector(
 export const selectCartLoading = createSelector(
   [selectCartState],
   (cart) => cart.loading
+);
+
+// --- PARAMETERIZED SELECTORS ---
+// Use: useSelector((state) => selectCartQuantityByProductId(state, productId))
+export const selectCartQuantityByProductId = createSelector(
+  [selectCartItems, (_state, productId) => productId],
+  (items, productId) => {
+    if (productId === null || productId === undefined) return 0;
+    const productIdStr = String(productId);
+
+    const match = items.find((item) => {
+      const itemProductId =
+        item.productId ?? item.Product?.id ?? item.product?.id ?? null;
+      if (itemProductId === null || itemProductId === undefined) return false;
+      return String(itemProductId) === productIdStr;
+    });
+
+    return match?.quantity ?? 0;
+  }
 );
