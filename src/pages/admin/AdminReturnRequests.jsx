@@ -14,12 +14,20 @@ import {
   FaClipboardCheck,
 } from "react-icons/fa";
 import RefundModal from "../../components/admin/returns/RefundModal";
+import ReassignmentModal from "../../components/admin/orders/details/ReassignmentModal";
 
 const AdminReturnRequests = () => {
   const navigate = useNavigate();
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedForRefund, setSelectedForRefund] = useState(null);
+
+  // --- Reassignment State ---
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [reassignOptions, setReassignOptions] = useState([]);
+  const [reassignLoading, setReassignLoading] = useState(false);
+  const [targetReturn, setTargetReturn] = useState(null);
+  const [selectedNewBoy, setSelectedNewBoy] = useState(null);
 
   const fetchReturns = async () => {
     try {
@@ -36,6 +44,52 @@ const AdminReturnRequests = () => {
     fetchReturns();
   }, []);
 
+  // --- Reassignment Handlers ---
+  const handleOpenReassign = async (req) => {
+    setTargetReturn(req);
+    setReassignModalOpen(true);
+    setReassignLoading(true);
+    setSelectedNewBoy(null);
+
+    try {
+      const { data } = await api.get(
+        `/orders/admin/reassign-options/${req.orderId}`
+      );
+      setReassignOptions(data.options);
+    } catch (err) {
+      toast.error("Failed to load delivery boys");
+      setReassignModalOpen(false);
+    } finally {
+      setReassignLoading(false);
+    }
+  };
+
+  const handleConfirmReassign = async () => {
+    if (!selectedNewBoy) return toast.warning("Please select a partner");
+
+    try {
+      await api.put(`/orders/admin/reassign-delivery/${targetReturn.orderId}`, {
+        newDeliveryBoyId: selectedNewBoy.id,
+      });
+
+      toast.success("Delivery Partner Reassigned");
+
+      // Dynamic Update: Immediately update the pickupBoy name in the table
+      setReturns((prevReturns) =>
+        prevReturns.map((item) =>
+          item.orderId === targetReturn.orderId
+            ? { ...item, pickupBoy: selectedNewBoy.name }
+            : item
+        )
+      );
+
+      setReassignModalOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Reassignment Failed");
+    }
+  };
+
+  // --- Standard Action Handler ---
   const handleAction = async (orderId, itemId, status) => {
     if (
       status === "REJECTED" &&
@@ -206,15 +260,13 @@ const AdminReturnRequests = () => {
                     </div>
                   )}
 
-                  {/* Step 2: Manual Confirm (Fallback if Delivery Boy doesn't update) */}
-                  {req.status === "APPROVED" && (
+                  {/* Step 2: Reassign Option (Instead of Confirm Received) */}
+                  {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
                     <button
-                      onClick={() =>
-                        handleAction(req.orderId, req.itemId, "RETURNED")
-                      }
-                      className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-xs font-bold shadow-md ml-auto"
+                      onClick={() => handleOpenReassign(req)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-bold shadow-md ml-auto"
                     >
-                      <FaWarehouse /> Confirm Received
+                      <FaTruck /> Reassign
                     </button>
                   )}
 
@@ -253,6 +305,7 @@ const AdminReturnRequests = () => {
         </table>
       </div>
 
+      {/* Modals */}
       {selectedForRefund && (
         <RefundModal
           request={selectedForRefund}
@@ -262,6 +315,16 @@ const AdminReturnRequests = () => {
           }
         />
       )}
+
+      <ReassignmentModal
+        isOpen={reassignModalOpen}
+        onClose={() => setReassignModalOpen(false)}
+        loading={reassignLoading}
+        options={reassignOptions}
+        selectedBoy={selectedNewBoy}
+        onSelectBoy={setSelectedNewBoy}
+        onConfirm={handleConfirmReassign}
+      />
     </div>
   );
 };
