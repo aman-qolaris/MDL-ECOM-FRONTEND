@@ -3,10 +3,16 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { authStart, authSuccess, authFailure } from "../store/slices/authSlice";
+import {
+  authStart,
+  authSuccess,
+  authFailure,
+  clearError,
+} from "../store/slices/authSlice";
 import { loginUser } from "../services/authService";
 // Added icons for the modern UI
 import { FaPhoneAlt, FaLock } from "react-icons/fa";
+import { useEffect } from "react";
 
 // Schema: Validate Phone & Password
 const schema = yup
@@ -21,6 +27,10 @@ const schema = yup
 
 const Login = () => {
   const dispatch = useDispatch();
+  // 🟢 ADD THIS BLOCK
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
 

@@ -6,6 +6,7 @@ import {
   FaBoxOpen,
   FaHistory,
   FaMoneyBillWave,
+  FaUndo, // 🟢 Import Icon
 } from "react-icons/fa";
 
 const AdminDeliveryBoyDetails = () => {
@@ -29,20 +30,34 @@ const AdminDeliveryBoyDetails = () => {
 
   if (loading) return <div className="p-8 text-center">Loading Orders...</div>;
 
-  const StatusBadge = ({ status }) => {
-    const styles = {
-      ASSIGNED: "bg-blue-100 text-blue-800",
-      PICKED: "bg-yellow-100 text-yellow-800",
-      DELIVERED: "bg-green-100 text-green-800",
-      FAILED: "bg-red-100 text-red-800",
-    };
+  // 🟢 UPDATED BADGE COMPONENT
+  const StatusBadge = ({ status, type }) => {
+    const isReturn = type === "RETURN";
+
+    // Custom Labels
+    let label = status;
+    if (isReturn) {
+      if (status === "ASSIGNED") label = "Pickup Assigned";
+      if (status === "PICKED") label = "Return Picked";
+      if (status === "DELIVERED") label = "Returned to Warehouse";
+    }
+
+    // Custom Colors
+    let style = "bg-gray-100 text-gray-800";
+    if (status === "ASSIGNED") style = "bg-blue-100 text-blue-800";
+    if (status === "PICKED") style = "bg-yellow-100 text-yellow-800";
+    if (status === "FAILED") style = "bg-red-100 text-red-800";
+    if (status === "DELIVERED") {
+      style = isReturn
+        ? "bg-purple-100 text-purple-800"
+        : "bg-green-100 text-green-800";
+    }
+
     return (
       <span
-        className={`px-2 py-1 rounded text-xs font-bold ${
-          styles[status] || "bg-gray-100"
-        }`}
+        className={`px-2 py-1 rounded text-xs font-bold flex items-center gap-1 w-fit ${style}`}
       >
-        {status}
+        {isReturn && <FaUndo size={10} />} {label}
       </span>
     );
   };
@@ -78,9 +93,15 @@ const AdminDeliveryBoyDetails = () => {
                       {order.assignedArea}
                     </div>
                   </td>
+
+                  {/* 🟢 PASS TYPE TO BADGE */}
                   <td className="p-4">
-                    <StatusBadge status={order.assignmentStatus} />
+                    <StatusBadge
+                      status={order.assignmentStatus}
+                      type={order.type}
+                    />
                   </td>
+
                   <td className="p-4">₹{order.amount}</td>
                   <td className="p-4 text-sm">
                     <span className="font-semibold">{order.paymentMethod}</span>
@@ -92,9 +113,20 @@ const AdminDeliveryBoyDetails = () => {
                       {order.payment ? "(PAID)" : "(UNPAID)"}
                     </span>
                   </td>
+
+                  {/* 🟢 HIDE CASH FOR RETURNS */}
                   <td className="p-4 font-bold text-red-600">
-                    {order.cashToCollect > 0 ? `₹${order.cashToCollect}` : "-"}
+                    {order.type === "RETURN" ? (
+                      <span className="text-gray-400 text-xs font-normal">
+                        N/A (Return)
+                      </span>
+                    ) : order.cashToCollect > 0 ? (
+                      `₹${order.cashToCollect}`
+                    ) : (
+                      "-"
+                    )}
                   </td>
+
                   <td className="p-4">
                     <Link
                       to={`/admin/orders/${order.id}`}

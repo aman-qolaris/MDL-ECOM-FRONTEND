@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom"; // ✅ Import this
+import { useSearchParams } from "react-router-dom";
 import { getVendorOrders } from "../../services/orderService";
-import { FaBox, FaFilter, FaTimes } from "react-icons/fa";
+import { FaBox, FaFilter, FaTimes, FaUndo } from "react-icons/fa"; // 🟢 Import FaUndo
 
 const VendorOrders = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Get Query Params
   const [searchParams, setSearchParams] = useSearchParams();
-  const filterType = searchParams.get("filter"); // "today" or "pending"
+  const filterType = searchParams.get("filter"); // "today", "pending", or "returns"
 
   useEffect(() => {
     fetchOrders();
@@ -33,15 +32,17 @@ const VendorOrders = () => {
     }
     if (filterType === "today") {
       const today = new Date().toISOString().split("T")[0];
-      // Check if createdAt exists and starts with today's date
       return item.createdAt && item.createdAt.startsWith(today);
     }
-    return true; // Show all if no filter
+    // 🟢 NEW FILTER: Returns
+    if (filterType === "returns") {
+      return item.returnStatus && item.returnStatus !== "NONE";
+    }
+    return true;
   });
 
-  // ✅ Helper to clear filter
   const clearFilter = () => {
-    setSearchParams({}); // Removes ?filter=...
+    setSearchParams({});
   };
 
   if (loading) return <div className="p-6">Loading your orders...</div>;
@@ -55,9 +56,13 @@ const VendorOrders = () => {
         {filterType && (
           <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold border border-blue-200">
             <FaFilter />
-            <span>
+            <span className="capitalize">
               Showing:{" "}
-              {filterType === "today" ? "Today's Orders" : "Pending Orders"}
+              {filterType === "today"
+                ? "Today's Orders"
+                : filterType === "returns"
+                ? "Return Requests" // 🟢 Label for returns
+                : "Pending Orders"}
             </span>
             <button
               onClick={clearFilter}
@@ -122,6 +127,12 @@ const VendorOrders = () => {
                             {item.Product.Category.name}
                           </span>
                         )}
+                        {/* 🟢 Show Return Reason if available */}
+                        {item.returnReason && (
+                          <span className="text-[10px] text-red-500 italic mt-1">
+                            Reason: "{item.returnReason}"
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -139,17 +150,27 @@ const VendorOrders = () => {
                   </td>
 
                   <td className="py-3 px-6 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.status === "PACKED"
-                          ? "bg-green-100 text-green-700"
-                          : item.status === "CANCELLED"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {item.status || "PENDING"}
-                    </span>
+                    <div className="flex flex-col gap-1 items-center">
+                      {/* 🟢 Return Status Badge */}
+                      {item.returnStatus && item.returnStatus !== "NONE" && (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
+                          <FaUndo size={10} /> {item.returnStatus}
+                        </span>
+                      )}
+
+                      {/* Normal Status Badge */}
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          item.status === "PACKED"
+                            ? "bg-green-100 text-green-700"
+                            : item.status === "CANCELLED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {item.status || "PENDING"}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}

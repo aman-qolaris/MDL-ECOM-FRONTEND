@@ -7,6 +7,7 @@ import {
   FaClock,
   FaCalendarDay,
   FaFilter,
+  FaUndo, // 🟢 Import this icon
 } from "react-icons/fa";
 import { getVendorDashboardStats } from "../../services/vendorService";
 import StatsCard from "../../components/common/StatsCard";
@@ -26,7 +27,7 @@ const VendorDashboard = () => {
 
   useEffect(() => {
     loadData();
-  }, [filterType, dateRange]); // ❌ navigate removed (not needed)
+  }, [filterType, dateRange]);
 
   const loadData = async () => {
     setLoading(true);
@@ -87,6 +88,15 @@ const VendorDashboard = () => {
       link: "/vendor/products",
       desc: "Manage Inventory",
     },
+    // 🟢 NEW CARD: Returns
+    {
+      title: "Returns",
+      dataKey: "returnsCount",
+      icon: <FaUndo />,
+      color: "bg-rose-500",
+      link: "/vendor/orders?filter=returns",
+      desc: "Active Return Requests",
+    },
     {
       title: "Today's Orders",
       dataKey: "todayOrders",
@@ -116,7 +126,6 @@ const VendorDashboard = () => {
             <FaFilter /> Filters:
           </div>
 
-          {/* Preset Buttons */}
           <div className="flex bg-gray-100 rounded-md p-1">
             {["all", "today", "week"].map((f) => (
               <button
@@ -144,7 +153,6 @@ const VendorDashboard = () => {
             </button>
           </div>
 
-          {/* Date Range Inputs */}
           {filterType === "range" && (
             <div className="flex items-center gap-2 animate-fadeIn">
               <input
@@ -170,20 +178,27 @@ const VendorDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+        {" "}
+        {/* 🟢 Updated grid cols to 6 to fit new card */}
         {loading
-          ? Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-32 bg-white rounded-xl border border-gray-200 p-6 flex gap-4"
-              >
-                <Skeleton className="w-12 h-12 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-8 w-3/4" />
+          ? Array.from({ length: 6 }).map(
+              (
+                _,
+                i // 🟢 Updated skeleton count
+              ) => (
+                <div
+                  key={i}
+                  className="h-32 bg-white rounded-xl border border-gray-200 p-6 flex gap-4"
+                >
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-8 w-3/4" />
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            )
           : cards.map((card, index) => (
               <StatsCard
                 key={index}

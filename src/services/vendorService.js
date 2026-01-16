@@ -1,14 +1,6 @@
-import api from "./api";
-import axios from "axios";
+import api from "./api"; // 🟢 Only import your custom API instance
 
-// Helper to get headers safely (handles cases where interceptor might miss if strictly using axios directly)
-const getAuthHeaders = () => {
-  const token =
-    localStorage.getItem("vendorToken") || localStorage.getItem("token");
-  return { Authorization: `Bearer ${token}` };
-};
-
-// --- EXISTING ADMIN FUNCTIONS ---
+// --- ADMIN FUNCTIONS ---
 export const getAllVendors = async () => {
   const response = await api.get("/admin/vendors");
   return response.data;
@@ -24,7 +16,7 @@ export const rejectVendor = async (vendorId) => {
   return response.data;
 };
 
-// Helper to check if a date is within range
+// --- HELPER: Date Range Check ---
 const isWithinRange = (dateString, start, end) => {
   if (!dateString) return false;
   const date = new Date(dateString);
@@ -36,18 +28,15 @@ const isWithinRange = (dateString, start, end) => {
   return date >= startDate && date <= endDate;
 };
 
-// --- UPDATED VENDOR DASHBOARD FUNCTION ---
+// --- VENDOR DASHBOARD STATS ---
 export const getVendorDashboardStats = async (dateFilter = null) => {
   try {
-    const config = { headers: getAuthHeaders() };
-
-    // Parallel Fetch
+    // 🟢 REPLACED direct axios calls with api.get()
+    // The interceptor in api.js will automatically attach the Vendor Token
+    // and use the correct Base URL.
     const [ordersRes, productsRes] = await Promise.all([
-      axios.get("http://localhost:5007/api/orders/vendor/orders", config),
-      axios.get(
-        "http://localhost:5007/api/products/vendor/my-products",
-        config
-      ),
+      api.get("/orders/vendor/orders"),
+      api.get("/products/vendor/my-products"),
     ]);
 
     let orders = ordersRes.data;
@@ -60,32 +49,45 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
       );
     }
 
-    // Calculations (on potentially filtered orders)
+    // 🟢 Robust Total Sales Calculation (Excludes Returns)
     const totalSales = orders
-      .filter((item) => item.status === "DELIVERED")
+      .filter((item) => {
+        const status = item.status?.toUpperCase() || "";
+        const returnStatus = item.returnStatus?.toUpperCase() || "NONE";
+
+        // Only count if DELIVERED and NOT returned/refunded
+        return (
+          status === "DELIVERED" &&
+          ["NONE", "REQUESTED", "APPROVED", "PICKUP_SCHEDULED"].includes(
+            returnStatus
+          )
+        );
+      })
       .reduce((acc, item) => acc + (parseFloat(item.price) || 0), 0);
 
-    // Recalculate specific "Today" metrics based on the filtered set
-    // (Or keep absolute "Today" if you prefer. Usually "Today" changes to "Today within filtered range" which is just the filtered range itself, but for specific "Today" stats inside a range view, we often just count the filtered list)
-
-    // Logic: If filtering by range, "todayOrders" usually just means "orders in this view" or strictly "today".
-    // To match the Admin Dashboard pattern, we usually recalculate "Today" strictly from current date,
-    // BUT since we filtered the main list 'orders' above, if the range excludes today, this will be 0.
+    // Today's Orders
     const todayStr = new Date().toISOString().split("T")[0];
     const todayOrders = orders.filter(
       (item) => item.createdAt && item.createdAt.startsWith(todayStr)
     ).length;
 
+    // Pending Orders
     const pendingOrders = orders.filter((item) =>
-      ["PENDING", "PROCESSING"].includes(item.status)
+      ["PENDING", "PROCESSING"].includes(item.status?.toUpperCase())
+    ).length;
+
+    // Active Returns Count
+    const returnsCount = orders.filter(
+      (item) => item.returnStatus && item.returnStatus !== "NONE"
     ).length;
 
     return {
       totalSales,
       totalOrders: orders.length,
-      productCount: products.length, // Inventory count usually remains global
+      productCount: products.length,
       todayOrders,
       pendingOrders,
+      returnsCount,
     };
   } catch (error) {
     console.error("Error fetching vendor stats:", error);
