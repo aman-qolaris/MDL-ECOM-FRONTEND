@@ -52,11 +52,11 @@ const ProductCard = ({ product }) => {
 
   return (
     // 1. Adjusted Height: Changed h-[330px] to h-[365px] to fit the description
-    <div className="group relative w-full max-w-[180px] sm:max-w-[200px] lg:max-w-[220px] mx-auto bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
+    <div className="group relative w-full mx-auto bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
       {/* Image Link */}
       <Link
         to={`/product/${product.id}`}
-        className="relative h-[160px] overflow-hidden bg-gray-50 block"
+        className="relative h-44 sm:h-[160px] overflow-hidden bg-gray-50 block"
         onMouseEnter={() => prefetchProductById(product?.id)}
         onFocus={() => prefetchProductById(product?.id)}
       >

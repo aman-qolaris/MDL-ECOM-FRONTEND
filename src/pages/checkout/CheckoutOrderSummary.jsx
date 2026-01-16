@@ -22,7 +22,7 @@ const CheckoutOrderSummary = ({ items, subtotal, shippingCost, total }) => {
   }, [items]);
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 lg:sticky lg:top-24">
       <h2 className="text-xl font-bold mb-4 text-gray-800">Order Summary</h2>
 
       <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">

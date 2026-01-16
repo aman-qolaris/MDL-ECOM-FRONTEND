@@ -3,7 +3,7 @@ import PaymentForm from "../../components/checkout/PaymentForm";
 const CheckoutPaymentStep = ({ step, onSubmit, onBack }) => {
   return (
     <div
-      className={`bg-white p-6 rounded-xl shadow-sm border ${
+      className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border ${
         step === 2 ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
       } ${step < 2 ? "opacity-60" : ""}`}
     >

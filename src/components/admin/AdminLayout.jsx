@@ -3,14 +3,14 @@ import AdminSidebar from "./AdminSidebar";
 
 const AdminLayout = () => {
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 overflow-hidden">
       {/* Sidebar (Fixed Left) */}
       <AdminSidebar />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="bg-white shadow-sm h-16 flex items-center px-6 justify-end">
+        <header className="bg-white shadow-sm h-16 flex items-center px-3 sm:px-6 justify-end">
           {/* <--- 2. Wrap this section in a Link to /admin/settings */}
           <Link
             to="/admin/settings"
@@ -24,7 +24,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content Rendered Here */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-3 sm:p-6">
           <Outlet />
         </main>
       </div>

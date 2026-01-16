@@ -39,13 +39,13 @@ const Profile = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen bg-gray-50">
+    <div className="container mx-auto px-4 py-6 sm:py-8 min-h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-8 text-gray-800">My Account</h1>
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* === SIDEBAR NAVIGATION === */}
         <div className="md:w-1/4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden md:sticky md:top-24">
             {/* User Mini Profile */}
             <div className="p-6 border-b border-gray-100 flex flex-col items-center bg-gray-50/50">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md mb-3 bg-blue-100 flex items-center justify-center">

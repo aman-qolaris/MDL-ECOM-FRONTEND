@@ -4,7 +4,7 @@ import { FaArrowRight } from "react-icons/fa";
 
 const CartSummary = ({ cartTotal, shippingCost, grandTotal, onCheckout }) => {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:sticky lg:top-24">
       <h2 className="text-xl font-bold mb-6 text-gray-800">Order Summary</h2>
 
       <div className="space-y-4 mb-6">

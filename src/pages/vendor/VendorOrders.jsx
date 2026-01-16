@@ -49,7 +49,7 @@ const VendorOrders = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Your Orders</h2>
 
         {/* ✅ Show Active Filter Badge */}
@@ -89,93 +89,95 @@ const VendorOrders = () => {
             )}
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 uppercase text-sm">
-                <th className="py-3 px-6">Order Ref</th>
-                <th className="py-3 px-6">Product Details</th>
-                <th className="py-3 px-6 text-right">Price</th>
-                <th className="py-3 px-6 text-center">Qty</th>
-                <th className="py-3 px-6 text-right">Total</th>
-                <th className="py-3 px-6 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-600 text-sm">
-              {filteredItems.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-3 px-6 font-mono font-bold text-gray-500">
-                    #{item.orderId}
-                  </td>
-
-                  <td className="py-3 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-purple-100 p-2 rounded text-purple-600 shrink-0">
-                        <FaBox />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-800">
-                          {item.Product?.name || "Unknown Product"}
-                        </span>
-                        <span className="text-xs text-gray-400 font-mono">
-                          ID: {item.productId}
-                        </span>
-                        {item.Product?.Category && (
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">
-                            {item.Product.Category.name}
-                          </span>
-                        )}
-                        {/* 🟢 Show Return Reason if available */}
-                        {item.returnReason && (
-                          <span className="text-[10px] text-red-500 italic mt-1">
-                            Reason: "{item.returnReason}"
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-3 px-6 text-right">
-                    ₹{item.price?.toLocaleString()}
-                  </td>
-
-                  <td className="py-3 px-6 text-center font-bold">
-                    {item.quantity}
-                  </td>
-
-                  <td className="py-3 px-6 text-right font-bold text-gray-800">
-                    ₹{(item.price * item.quantity).toLocaleString()}
-                  </td>
-
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex flex-col gap-1 items-center">
-                      {/* 🟢 Return Status Badge */}
-                      {item.returnStatus && item.returnStatus !== "NONE" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
-                          <FaUndo size={10} /> {item.returnStatus}
-                        </span>
-                      )}
-
-                      {/* Normal Status Badge */}
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          item.status === "PACKED"
-                            ? "bg-green-100 text-green-700"
-                            : item.status === "CANCELLED"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {item.status || "PENDING"}
-                      </span>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[860px]">
+              <thead>
+                <tr className="bg-gray-50 text-gray-600 uppercase text-sm">
+                  <th className="py-3 px-6">Order Ref</th>
+                  <th className="py-3 px-6">Product Details</th>
+                  <th className="py-3 px-6 text-right">Price</th>
+                  <th className="py-3 px-6 text-center">Qty</th>
+                  <th className="py-3 px-6 text-right">Total</th>
+                  <th className="py-3 px-6 text-center">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="text-gray-600 text-sm">
+                {filteredItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-3 px-6 font-mono font-bold text-gray-500">
+                      #{item.orderId}
+                    </td>
+
+                    <td className="py-3 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-purple-100 p-2 rounded text-purple-600 shrink-0">
+                          <FaBox />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-800">
+                            {item.Product?.name || "Unknown Product"}
+                          </span>
+                          <span className="text-xs text-gray-400 font-mono">
+                            ID: {item.productId}
+                          </span>
+                          {item.Product?.Category && (
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">
+                              {item.Product.Category.name}
+                            </span>
+                          )}
+                          {/* 🟢 Show Return Reason if available */}
+                          {item.returnReason && (
+                            <span className="text-[10px] text-red-500 italic mt-1">
+                              Reason: "{item.returnReason}"
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-6 text-right">
+                      ₹{item.price?.toLocaleString()}
+                    </td>
+
+                    <td className="py-3 px-6 text-center font-bold">
+                      {item.quantity}
+                    </td>
+
+                    <td className="py-3 px-6 text-right font-bold text-gray-800">
+                      ₹{(item.price * item.quantity).toLocaleString()}
+                    </td>
+
+                    <td className="py-3 px-6 text-center">
+                      <div className="flex flex-col gap-1 items-center">
+                        {/* 🟢 Return Status Badge */}
+                        {item.returnStatus && item.returnStatus !== "NONE" && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
+                            <FaUndo size={10} /> {item.returnStatus}
+                          </span>
+                        )}
+
+                        {/* Normal Status Badge */}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            item.status === "PACKED"
+                              ? "bg-green-100 text-green-700"
+                              : item.status === "CANCELLED"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {item.status || "PENDING"}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

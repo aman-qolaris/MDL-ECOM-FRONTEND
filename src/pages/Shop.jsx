@@ -52,7 +52,7 @@ const Shop = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen">
+    <div className="container mx-auto px-4 py-6 sm:py-8 min-h-screen">
       <button
         onClick={() => navigate("/")}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition cursor-pointer"
@@ -76,7 +76,7 @@ const Shop = () => {
         {/* Main Content */}
         <div className="w-full md:w-3/4">
           {/* Header Bar */}
-          <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
             <p className="text-gray-600">
               {loading ? (
                 <span>Searching...</span>
@@ -91,12 +91,12 @@ const Shop = () => {
               )}
             </p>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
               <label className="text-sm text-gray-600 hidden sm:block">
                 Sort By:
               </label>
               <select
-                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer w-full sm:w-auto"
                 value={filters.sort || "default"}
                 onChange={handleSortChange}
               >
