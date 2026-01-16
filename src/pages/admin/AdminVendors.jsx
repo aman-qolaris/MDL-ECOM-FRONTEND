@@ -53,7 +53,7 @@ const AdminVendors = () => {
         await rejectVendor(id);
       }
       // Refresh list
-      fetchVendors();
+      loadData();
     } catch (err) {
       alert(`Failed to ${action} vendor`);
     }

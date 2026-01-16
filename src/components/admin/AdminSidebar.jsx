@@ -48,14 +48,14 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white w-64 min-h-screen flex flex-col transition-all duration-300">
+    <div className="bg-gray-900 text-white w-full md:w-64 md:min-h-screen flex flex-col transition-all duration-300">
       {/* Brand */}
       <div className="h-16 flex items-center justify-center border-b border-gray-800">
         <h1 className="text-xl font-bold tracking-wider">ADMIN PANEL</h1>
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 py-6 space-y-2">
+      <nav className="flex-1 py-4 sm:py-6 space-y-2">
         {menuItems.map((item) => (
           <Link
             key={item.path}

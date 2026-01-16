@@ -117,7 +117,7 @@ const VendorAddProduct = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+    <div className="max-w-2xl mx-auto bg-white p-4 sm:p-8 rounded-xl shadow-sm border border-gray-200">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Product</h2>
 
       {error && (
@@ -141,7 +141,7 @@ const VendorAddProduct = () => {
         </div>
 
         {/* Price & Stock */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Price (₹)

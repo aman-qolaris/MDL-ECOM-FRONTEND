@@ -81,6 +81,8 @@ const VendorLogin = () => {
                 name="phone"
                 type="tel"
                 required
+                maxLength={10} // 1. Blocks input after 10 characters
+                pattern="\d{10}" // 2. Ensures strictly 10 digits are required
                 placeholder="Enter your 10-digit phone"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
                 onChange={handleChange}

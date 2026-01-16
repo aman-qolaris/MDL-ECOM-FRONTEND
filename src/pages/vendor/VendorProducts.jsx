@@ -137,7 +137,7 @@ const VendorProducts = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen relative animate-fadeIn">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen relative animate-fadeIn">
       {/* Header */}
       <ProductHeader />
 

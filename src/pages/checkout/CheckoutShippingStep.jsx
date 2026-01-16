@@ -16,11 +16,11 @@ const CheckoutShippingStep = ({
 }) => {
   return (
     <div
-      className={`bg-white p-6 rounded-xl shadow-sm border ${
+      className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border ${
         step === 1 ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
       }`}
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <span
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
@@ -117,7 +117,7 @@ const CheckoutShippingStep = ({
       )}
 
       {step > 1 && (
-        <div className="text-gray-600 ml-10 text-sm">
+        <div className="text-gray-600 ml-0 sm:ml-10 text-sm">
           <p className="font-medium text-gray-900">
             {shippingAddress?.fullName}
           </p>

@@ -61,9 +61,9 @@ const VendorLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       {/* SIDEBAR */}
-      <div className="w-64 bg-purple-800 text-white flex flex-col">
+      <div className="w-full md:w-64 bg-purple-800 text-white flex flex-col">
         <div className="p-6 text-center border-b border-purple-700">
           <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
             <FaStore /> Vendor Panel
@@ -112,7 +112,7 @@ const VendorLayout = () => {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 overflow-y-auto">
-        <header className="bg-white shadow-sm p-4 flex justify-between items-center">
+        <header className="bg-white shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <h2 className="text-xl font-bold text-gray-800">Vendor Portal</h2>
           <Link
             to="/vendor/profile"
@@ -127,7 +127,7 @@ const VendorLayout = () => {
           </Link>
         </header>
 
-        <main className="p-6">
+        <main className="p-3 sm:p-6">
           <Outlet />
         </main>
       </div>
