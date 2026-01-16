@@ -1,9 +1,15 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { authStart, authSuccess, authFailure } from "../store/slices/authSlice";
+import {
+  authStart,
+  authSuccess,
+  authFailure,
+  clearError,
+} from "../store/slices/authSlice";
 import { registerUser } from "../services/authService";
 import {
   FaUser,
@@ -65,6 +71,11 @@ const schema = yup
 
 const Register = () => {
   const dispatch = useDispatch();
+  // 🟢 ADD THIS BLOCK
+  useEffect(() => {
+    dispatch(clearError()); // Clear old errors when page loads
+  }, [dispatch]);
+
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
 

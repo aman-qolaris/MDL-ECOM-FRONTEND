@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+// 🟢 1. Remove axios, import api
+import api from "../../services/api";
 import { FaCalendarAlt, FaChartLine, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -13,44 +14,48 @@ const VendorSales = () => {
     fetchOrders();
   }, []);
 
-  // ... imports
-
   const fetchOrders = async () => {
     try {
-      // ✅ FIX: Check 'vendorToken'
-      const token =
-        localStorage.getItem("vendorToken") ||
-        localStorage.getItem("token") ||
-        JSON.parse(localStorage.getItem("userInfo") || "{}").token;
+      // 🟢 2. Use api.get (Cleaner, Auto-Auth)
+      const res = await api.get("/orders/vendor/orders");
 
-      const res = await axios.get(
-        "http://localhost:5007/api/orders/vendor/orders",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setOrders(res.data.filter((item) => item.status === "DELIVERED"));
+      // 🟢 3. STRICT FILTERING (Matches Dashboard Logic)
+      // Only keep items that are DELIVERED and NOT in a "returned" state
+      const validSales = res.data.filter((item) => {
+        const status = item.status?.toUpperCase() || "";
+        const returnStatus = item.returnStatus?.toUpperCase() || "NONE";
+
+        return (
+          status === "DELIVERED" &&
+          ["NONE", "REQUESTED", "APPROVED", "PICKUP_SCHEDULED"].includes(
+            returnStatus
+          )
+        );
+      });
+
+      setOrders(validSales);
     } catch (err) {
       console.error(err);
+      // api.js interceptor handles 401, but we can keep this for safety
       if (err.response?.status === 401) navigate("/vendor/login");
     } finally {
       setLoading(false);
     }
   };
 
-  // ... rest of the file
-
-  // --- FILTER LOGIC ---
+  // --- FILTER LOGIC (Time-based) ---
   const getFilteredData = () => {
     const now = new Date();
     return orders.filter((item) => {
       const itemDate = new Date(item.createdAt);
+      // Reset hours to ensure accurate comparison
+      itemDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       if (activeTab === "weekly") {
-        const oneWeekAgo = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() - 7
-        );
+        const oneWeekAgo = new Date(today);
+        oneWeekAgo.setDate(today.getDate() - 7);
         return itemDate >= oneWeekAgo;
       }
       if (activeTab === "monthly") {
@@ -67,6 +72,7 @@ const VendorSales = () => {
   };
 
   const filteredOrders = getFilteredData();
+
   const totalPeriodSales = filteredOrders.reduce(
     (acc, item) => acc + (parseFloat(item.price) || 0),
     0
@@ -115,7 +121,7 @@ const VendorSales = () => {
           ₹{totalPeriodSales.toLocaleString()}
         </h3>
         <p className="text-gray-400 text-sm mt-2 flex items-center gap-1">
-          <FaCalendarAlt /> Based on delivered orders
+          <FaCalendarAlt /> Net Revenue (Excl. Returns)
         </p>
       </div>
 

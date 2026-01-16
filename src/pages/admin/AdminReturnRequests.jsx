@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // 🟢 1. Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { toast } from "react-toastify";
 import {
@@ -11,11 +11,12 @@ import {
   FaUndo,
   FaWarehouse,
   FaExternalLinkAlt,
+  FaClipboardCheck,
 } from "react-icons/fa";
 import RefundModal from "../../components/admin/returns/RefundModal";
 
 const AdminReturnRequests = () => {
-  const navigate = useNavigate(); // 🟢 2. Initialize hook
+  const navigate = useNavigate();
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedForRefund, setSelectedForRefund] = useState(null);
@@ -43,25 +44,24 @@ const AdminReturnRequests = () => {
       return;
 
     try {
-      // API Call
       await api.put(`/orders/admin/${orderId}/items/${itemId}/return-status`, {
         status,
       });
 
-      // 🟢 3. Handle Success & Redirection
       if (status === "RETURNED") {
-        toast.success("Item marked as Received. Ready for Refund.");
-        fetchReturns(); // Refresh to show "Process Refund" button
+        toast.success("Item Marked as Dropped at Warehouse");
+        fetchReturns();
+      } else if (status === "COMPLETED") {
+        toast.success("Item Verified & Restocked Successfully!");
+        fetchReturns();
       } else if (status === "REFUNDED") {
-        toast.success("Refund Confirmed! Redirecting to Order Details...");
+        toast.success("Refund Confirmed! Redirecting...");
         setSelectedForRefund(null);
-
-        // 🟢 REDIRECT TO ORDER DETAILS PAGE
         setTimeout(() => {
           navigate(`/admin/orders/${orderId}`);
         }, 1000);
       } else {
-        toast.success(`Return status updated to ${status}`);
+        toast.success(`Status updated to ${status}`);
         fetchReturns();
       }
     } catch (err) {
@@ -97,23 +97,20 @@ const AdminReturnRequests = () => {
                 key={`${req.itemId}-${index}`}
                 className="hover:bg-gray-50 transition"
               >
-                {/* 1. Order ID Column */}
+                {/* 1. Order ID */}
                 <td className="p-4 align-top">
                   <div className="flex flex-col gap-2">
                     <span className="font-bold text-gray-800 text-lg">
                       #{req.orderId}
                     </span>
-
                     <Link
                       to={`/admin/orders/${req.orderId}`}
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline flex items-center gap-1"
                     >
-                      View Order Details <FaExternalLinkAlt size={10} />
+                      View Order <FaExternalLinkAlt size={10} />
                     </Link>
-
                     <div className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded w-fit font-bold">
-                      Refund: ₹
-                      {req.amountToRefund || req.price * req.quantity || 0}
+                      Refund: ₹{req.amountToRefund || 0}
                     </div>
                   </div>
                 </td>
@@ -121,20 +118,25 @@ const AdminReturnRequests = () => {
                 {/* 2. Customer Info */}
                 <td className="p-4 max-w-xs align-top">
                   <div className="font-medium">
-                    {req.customerName || req.User?.name}
+                    {req.customerName || "Guest User"}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {req.customerPhone || req.User?.phone}
+                    {req.customerPhone}
                   </div>
                   <div className="mt-2 text-sm bg-red-50 text-red-700 p-2 rounded border border-red-100 italic">
-                    "{req.reason || req.returnReason}"
+                    "{req.reason}"
                   </div>
                 </td>
 
                 {/* 3. Logistics Status */}
                 <td className="p-4 align-top">
-                  {(req.status === "APPROVED" || req.status === "RETURNED") && (
-                    <div className="space-y-1">
+                  {[
+                    "APPROVED",
+                    "PICKUP_SCHEDULED",
+                    "RETURNED",
+                    "COMPLETED",
+                  ].includes(req.status) && (
+                    <div className="space-y-2">
                       <div className="flex items-center gap-1 text-xs font-bold text-gray-500 uppercase">
                         <FaTruck /> Assigned To
                       </div>
@@ -142,19 +144,27 @@ const AdminReturnRequests = () => {
                         {req.pickupBoy || "Finding Agent..."}
                       </div>
 
-                      <div
-                        className={`text-xs px-2 py-1 rounded w-fit font-bold ${
-                          req.pickupStatus === "DELIVERED"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {req.pickupStatus === "DELIVERED"
-                          ? "Dropped at Warehouse"
-                          : req.pickupStatus || "Pickup Pending"}
-                      </div>
+                      {/* Status Badges */}
+                      {req.status === "PICKUP_SCHEDULED" && (
+                        <div className="text-xs px-2 py-1 rounded w-fit font-bold bg-blue-100 text-blue-700 flex items-center gap-1">
+                          <FaTruck /> In Transit
+                        </div>
+                      )}
+
+                      {req.status === "RETURNED" && (
+                        <div className="text-xs px-2 py-1 rounded w-fit font-bold bg-orange-100 text-orange-700 flex items-center gap-1">
+                          <FaWarehouse /> Dropped at Warehouse
+                        </div>
+                      )}
+
+                      {req.status === "COMPLETED" && (
+                        <div className="text-xs px-2 py-1 rounded w-fit font-bold bg-purple-100 text-purple-700 flex items-center gap-1">
+                          <FaCheck /> Verified & Restocked
+                        </div>
+                      )}
                     </div>
                   )}
+
                   {req.status === "REQUESTED" && (
                     <span className="text-gray-400 italic">
                       Pending Approval
@@ -174,51 +184,54 @@ const AdminReturnRequests = () => {
 
                 {/* 4. Action Buttons */}
                 <td className="p-4 text-right align-top">
-                  {/* Step 1: Approve / Reject */}
+                  {/* Step 1: Initial Approval */}
                   {req.status === "REQUESTED" && (
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() =>
                           handleAction(req.orderId, req.itemId, "APPROVED")
                         }
-                        className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-bold shadow-sm"
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700"
                       >
-                        <FaCheck /> Approve
+                        Approve
                       </button>
                       <button
                         onClick={() =>
                           handleAction(req.orderId, req.itemId, "REJECTED")
                         }
-                        className="flex items-center gap-1 px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-xs font-bold"
+                        className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50"
                       >
-                        <FaTimes /> Reject
+                        Reject
                       </button>
                     </div>
                   )}
 
-                  {/* Step 2: Waiting Logic */}
-                  {req.status === "APPROVED" &&
-                    req.pickupStatus !== "DELIVERED" && (
-                      <span className="text-xs text-gray-400 italic">
-                        Waiting for pickup...
-                      </span>
-                    )}
+                  {/* Step 2: Manual Confirm (Fallback if Delivery Boy doesn't update) */}
+                  {req.status === "APPROVED" && (
+                    <button
+                      onClick={() =>
+                        handleAction(req.orderId, req.itemId, "RETURNED")
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-xs font-bold shadow-md ml-auto"
+                    >
+                      <FaWarehouse /> Confirm Received
+                    </button>
+                  )}
 
-                  {/* Step 3: Confirm Received (Updates status to RETURNED) */}
-                  {req.status === "APPROVED" &&
-                    req.pickupStatus === "DELIVERED" && (
-                      <button
-                        onClick={() =>
-                          handleAction(req.orderId, req.itemId, "RETURNED")
-                        }
-                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-bold shadow-md ml-auto"
-                      >
-                        <FaWarehouse /> Confirm Received
-                      </button>
-                    )}
-
-                  {/* Step 4: Process Refund (Opens Modal -> Then Redirects) */}
+                  {/* Step 3: VERIFY (This calls COMPLETED) */}
                   {req.status === "RETURNED" && (
+                    <button
+                      onClick={() =>
+                        handleAction(req.orderId, req.itemId, "COMPLETED")
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-bold shadow-md ml-auto"
+                    >
+                      <FaClipboardCheck /> Verify Item
+                    </button>
+                  )}
+
+                  {/* Step 4: Refund */}
+                  {req.status === "COMPLETED" && (
                     <button
                       onClick={() => setSelectedForRefund(req)}
                       className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-bold shadow-md ml-auto"
@@ -227,9 +240,8 @@ const AdminReturnRequests = () => {
                     </button>
                   )}
 
-                  {/* Step 5: Done */}
-                  {(req.status === "REFUNDED" ||
-                    req.status === "COMPLETED") && (
+                  {/* Done */}
+                  {req.status === "REFUNDED" && (
                     <span className="text-xs font-bold text-gray-400 flex items-center justify-end gap-1">
                       <FaUndo /> Refunded
                     </span>
@@ -237,19 +249,10 @@ const AdminReturnRequests = () => {
                 </td>
               </tr>
             ))}
-
-            {returns.length === 0 && (
-              <tr>
-                <td colSpan="4" className="p-10 text-center text-gray-500">
-                  No active return requests found.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
 
-      {/* Render Refund Modal */}
       {selectedForRefund && (
         <RefundModal
           request={selectedForRefund}
