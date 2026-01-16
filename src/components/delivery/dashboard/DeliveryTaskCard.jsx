@@ -11,7 +11,12 @@ import {
 } from "react-icons/fa";
 
 const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
+  // 🟢 1. MATCH BACKEND CONTROLLER LOGIC
+  // In deliveryTask.controller.js: const type = isReturn ? "RETURN_PICKUP" : "DELIVERY";
   const isReturn = task.type === "RETURN_PICKUP";
+
+  // 🟢 2. DATA MAPPING
+  // Backend sends 'address' object and 'items' array explicitly
   const address = task.address || {};
   const items = task.items || [];
 
@@ -23,7 +28,7 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border overflow-hidden relative ${
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden relative transition-all hover:shadow-md ${
         isReturn
           ? "border-l-4 border-l-red-500"
           : "border-l-4 border-l-green-500"
@@ -45,23 +50,26 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono mb-2">
+          {/* 🟢 3. DISPLAY ORDER ID */}
           <span>#{task.orderId}</span>
           <span>•</span>
           <FaCalendarAlt />{" "}
-          {new Date(task.createdAt || task.updatedAt).toLocaleDateString()}
+          {new Date(
+            task.date || task.updatedAt || Date.now()
+          ).toLocaleDateString()}
         </div>
 
         {/* Customer & Cash */}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="font-bold text-gray-800 text-lg">
-              {task.customerName || address.fullName}
+              {task.customerName || "Customer"}
             </h3>
             <a
-              href={`tel:${task.phone || address.phone}`}
+              href={`tel:${task.phone}`}
               className="text-blue-600 text-sm flex items-center gap-1 font-medium hover:underline"
             >
-              <FaPhone size={12} /> {task.phone || address.phone}
+              <FaPhone size={12} /> {task.phone}
             </a>
           </div>
 
@@ -104,7 +112,7 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
           </a>
         </div>
 
-        {/* Items List (Important for verifying Returns) */}
+        {/* Items List */}
         <div className="mb-4">
           <p className="text-xs text-gray-400 uppercase font-bold mb-1">
             Items to {isReturn ? "Verify & Pick" : "Deliver"}
@@ -117,12 +125,13 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                   className="text-sm text-gray-700 flex justify-between border-b border-gray-100 pb-1 last:border-0"
                 >
                   <span>
-                    {item.Product?.name || "Product"}{" "}
+                    {/* Access Product details sent by controller */}
+                    {item.Product?.name || "Product Item"}{" "}
                     <span className="text-gray-400">x{item.quantity}</span>
                   </span>
                   {isReturn && (
-                    <span className="text-xs text-red-500 italic">
-                      ({item.returnReason})
+                    <span className="text-xs text-red-500 italic block mt-0.5">
+                      Reason: {item.returnReason || "N/A"}
                     </span>
                   )}
                 </div>
@@ -135,16 +144,14 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions - Only for Active Tab */}
         {activeTab === "active" && (
           <div className="grid grid-cols-1 gap-2">
-            {/* 1. Pick Up Phase */}
-            {(task.status === "ASSIGNED" ||
-              task.assignmentStatus === "ASSIGNED") && (
+            {/* STAGE 1: ASSIGNED -> PICKED */}
+            {task.status === "ASSIGNED" && (
               <button
-                onClick={() =>
-                  onStatusUpdate(task.assignmentId || task.id, "PICKED")
-                }
+                // Use assignmentId for status updates
+                onClick={() => onStatusUpdate(task.assignmentId, "PICKED")}
                 className={`w-full py-3 rounded-lg font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
                   isReturn
                     ? "bg-orange-500 hover:bg-orange-600"
@@ -157,20 +164,17 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                   </>
                 ) : (
                   <>
-                    <FaBoxOpen /> Pick from Seller/Warehouse
+                    <FaBoxOpen /> Pick from Warehouse
                   </>
                 )}
               </button>
             )}
 
-            {/* 2. Delivery Phase */}
+            {/* STAGE 2: PICKED -> DELIVERED */}
             {(task.status === "PICKED" ||
-              task.assignmentStatus === "PICKED" ||
               task.status === "OUT_FOR_DELIVERY") && (
               <button
-                onClick={() =>
-                  onStatusUpdate(task.assignmentId || task.id, "DELIVERED")
-                }
+                onClick={() => onStatusUpdate(task.assignmentId, "DELIVERED")}
                 className={`w-full py-3 rounded-lg font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
                   isReturn
                     ? "bg-red-600 hover:bg-red-700"
@@ -183,7 +187,7 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                   </>
                 ) : (
                   <>
-                    <FaCheckCircle /> Deliver to Customer
+                    <FaCheckCircle /> Mark Delivered
                   </>
                 )}
               </button>
