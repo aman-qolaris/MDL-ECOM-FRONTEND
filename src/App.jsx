@@ -14,6 +14,7 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 // Protected Route Wrappers
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
+import AdminCreateOrder from "./pages/admin/AdminCreateOrder";
 
 // --- CUSTOMER PAGES ---
 const Home = lazy(() => import("./pages/Home"));
@@ -104,6 +105,7 @@ function App() {
                 path="inventory/vendor/:vendorId/sales"
                 element={<AdminVendorSales />}
               />
+              <Route path="orders/create" element={<AdminCreateOrder />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="orders/:id" element={<AdminOrderDetails />} />
               <Route path="returns" element={<AdminReturnRequests />} />
@@ -127,6 +129,10 @@ function App() {
           <Route path="/delivery/login" element={<DeliveryLogin />} />
           <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
 
+          {/* Vendor Auth Public Routes */}
+          <Route path="vendor/register" element={<VendorRegister />} />
+          <Route path="vendor/login" element={<VendorLogin />} />
+
           {/* === VENDOR ROUTES === */}
           <Route path="/vendor" element={<VendorLayout />}>
             <Route path="dashboard" element={<VendorDashboard />} />
@@ -143,10 +149,6 @@ function App() {
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
-
-            {/* Vendor Auth Public Routes */}
-            <Route path="vendor/register" element={<VendorRegister />} />
-            <Route path="vendor/login" element={<VendorLogin />} />
 
             <Route path="shop" element={<Shop />} />
             <Route path="product/:id" element={<ProductDetails />} />

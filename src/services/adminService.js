@@ -81,3 +81,23 @@ export const updateReturnStatus = async (orderId, itemId, status) => {
   );
   return response.data;
 };
+
+export const searchUserByPhone = async (phone) => {
+  const response = await api.get(`/admin/users/search?phone=${phone}`);
+  return response.data;
+};
+
+export const registerUserOnBehalf = async (userData) => {
+  const response = await api.post("/admin/users/register", userData);
+  return response.data;
+};
+
+export const addUserAddressOnBehalf = async (addressData) => {
+  const response = await api.post("/admin/users/address", addressData);
+  return response.data;
+};
+
+export const createOrderOnBehalf = async (orderData) => {
+  const response = await api.post("/orders/admin/create", orderData);
+  return response.data;
+};

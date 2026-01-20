@@ -12,6 +12,7 @@ import {
   FaClipboardList,
   FaUndo,
 } from "react-icons/fa";
+import { FiPlusSquare } from "react-icons/fi";
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -22,6 +23,11 @@ const AdminSidebar = () => {
   const menuItems = [
     { path: "/admin/dashboard", name: "Dashboard", icon: <FaTachometerAlt /> },
     { path: "/admin/inventory", name: "Inventory", icon: <FaBox /> },
+    {
+      path: "/admin/orders/create",
+      name: "Create Order",
+      icon: <FiPlusSquare />,
+    },
     { path: "/admin/orders", name: "Orders", icon: <FaShoppingBag /> },
     {
       path: "/admin/assigned-orders",
