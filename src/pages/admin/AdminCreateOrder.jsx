@@ -367,6 +367,7 @@ const AdminCreateOrder = () => {
               {user.Addresses && user.Addresses.length > 0 ? (
                 <div className="space-y-2 mb-4">
                   <select
+                    value={selectedAddress?.id || ""}
                     onChange={(e) =>
                       setSelectedAddress(
                         user.Addresses.find((a) => a.id == e.target.value)
@@ -376,11 +377,7 @@ const AdminCreateOrder = () => {
                   >
                     <option value="">-- Select Delivery Address --</option>
                     {user.Addresses.map((addr) => (
-                      <option
-                        key={addr.id}
-                        value={addr.id}
-                        selected={selectedAddress?.id === addr.id}
-                      >
+                      <option key={addr.id} value={addr.id}>
                         {addr.addressLine1}, {addr.area} ({addr.zipCode})
                       </option>
                     ))}
