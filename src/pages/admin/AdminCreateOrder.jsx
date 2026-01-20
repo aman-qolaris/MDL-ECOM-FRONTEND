@@ -7,8 +7,9 @@ import {
   addUserAddressOnBehalf,
   createOrderOnBehalf,
 } from "../../services/adminService";
-import { getDeliveryLocations } from "../../services/orderService"; // 🟢 Import for Area Dropdown
+import { getDeliveryLocations } from "../../services/orderService";
 import api from "../../services/api";
+import useDebounce from "../../hooks/useDebounce"; // 🟢 1. Import Hook
 import {
   FiSearch,
   FiUser,
@@ -33,6 +34,9 @@ const AdminCreateOrder = () => {
   const [productQuery, setProductQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [cart, setCart] = useState([]);
+
+  // 🟢 2. Use the Debounce Hook (500ms delay)
+  const debouncedProductSearch = useDebounce(productQuery, 500);
 
   // --- FORMS SETUP ---
   const {
@@ -59,12 +63,11 @@ const AdminCreateOrder = () => {
     },
   });
 
-  // --- 🟢 FETCH DELIVERY AREAS ON MOUNT ---
+  // --- FETCH DELIVERY AREAS ON MOUNT ---
   useEffect(() => {
     const fetchAreas = async () => {
       try {
         const data = await getDeliveryLocations();
-        // Parse structure: { "Chhattisgarh": { "Raipur": ["Area1", "Area2"] } }
         const raipurAreas = data?.[FIXED_STATE]?.[FIXED_CITY] || [];
         setAvailableAreas(raipurAreas);
       } catch (error) {
@@ -75,7 +78,15 @@ const AdminCreateOrder = () => {
     fetchAreas();
   }, []);
 
-  // --- HELPER: RESTRICT INPUT TO NUMBERS ONLY ---
+  // 🟢 3. Effect: Trigger Search when Debounced Value Changes
+  useEffect(() => {
+    if (debouncedProductSearch) {
+      searchProducts(debouncedProductSearch);
+    } else {
+      setSearchResults([]); // Clear results if input is empty
+    }
+  }, [debouncedProductSearch]);
+
   const handleNumberInput = (e, maxLength) => {
     const value = e.target.value.replace(/[^0-9]/g, "");
     if (value.length > maxLength) {
@@ -132,8 +143,8 @@ const AdminCreateOrder = () => {
       const res = await addUserAddressOnBehalf({
         userId: user.id,
         ...data,
-        city: FIXED_CITY, // Force Fixed City
-        state: FIXED_STATE, // Force Fixed State
+        city: FIXED_CITY,
+        state: FIXED_STATE,
         isDefault: true,
       });
 
@@ -153,14 +164,24 @@ const AdminCreateOrder = () => {
     }
   };
 
-  // 4. SEARCH PRODUCTS
-  const searchProducts = async () => {
-    if (!productQuery) return;
+  // 🟢 4. Updated Search Function (Safeguarded)
+  const searchProducts = async (query) => {
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
     try {
-      const res = await api.get(`/products?search=${productQuery}&limit=5`);
-      setSearchResults(res.data.products);
+      const res = await api.get(`/products?search=${query}&limit=5`);
+
+      // 🟢 FIX: Ensure we always set an array, even if API returns null/undefined
+      // Check if response is { products: [...] } OR just [...]
+      const products =
+        res.data.products || (Array.isArray(res.data) ? res.data : []);
+
+      setSearchResults(products);
     } catch (err) {
-      console.error(err);
+      console.error("Product Search Error:", err);
+      setSearchResults([]); // Fallback to empty array on error
     }
   };
 
@@ -200,11 +221,23 @@ const AdminCreateOrder = () => {
         0
       );
 
+      // 🟢 CRITICAL FIX: Construct a complete 'shippingAddress' object
+      // The Order Service expects 'fullName' inside this object to display the name.
+      const finalShippingAddress = {
+        fullName: user.name, // 👈 This fixes "Guest" -> "User Name"
+        phone: user.phone,
+        addressLine1: selectedAddress.addressLine1, // Ensure these keys match DB
+        area: selectedAddress.area,
+        city: selectedAddress.city,
+        state: selectedAddress.state,
+        zipCode: selectedAddress.zipCode || "492001", // Fallback if missing
+      };
+
       await createOrderOnBehalf({
         userId: user.id,
         items: itemsPayload,
         amount: totalAmount,
-        address: selectedAddress,
+        address: finalShippingAddress, // 👈 Send the fixed object
         paymentMethod: "COD",
       });
 
@@ -378,7 +411,7 @@ const AdminCreateOrder = () => {
                     <option value="">-- Select Delivery Address --</option>
                     {user.Addresses.map((addr) => (
                       <option key={addr.id} value={addr.id}>
-                        {addr.addressLine1}, {addr.area} ({addr.zipCode})
+                        {addr.addressLine1}, {addr.area}
                       </option>
                     ))}
                   </select>
@@ -514,20 +547,22 @@ const AdminCreateOrder = () => {
               <input
                 value={productQuery}
                 onChange={(e) => setProductQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && searchProducts()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && searchProducts(productQuery)
+                }
                 placeholder="Search products by name..."
                 className="flex-1 p-2 border rounded-lg"
               />
               <button
-                onClick={searchProducts}
+                onClick={() => searchProducts(productQuery)}
                 className="bg-gray-800 text-white px-6 rounded-lg hover:bg-gray-900"
               >
                 Search
               </button>
             </div>
 
-            {/* Search Results */}
-            {searchResults.length > 0 && (
+            {/* 🟢 FIX: Add '?' before .length to prevent crash if undefined */}
+            {searchResults?.length > 0 && (
               <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
                   Select Products to Add
