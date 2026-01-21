@@ -93,7 +93,7 @@ export const registerUserOnBehalf = async (userData) => {
 };
 
 export const addUserAddressOnBehalf = async (addressData) => {
-  const response = await api.post("/admin/users/address", addressData);
+  const response = await api.post("/addresses/admin/add", addressData);
   return response.data;
 };
 
