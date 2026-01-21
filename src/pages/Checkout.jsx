@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import { clearCartThunk } from "../store/thunks/cartThunks";
-// 1. Import optimized selector
 import { selectCartItems } from "../store/slices/cartSlice";
 import { initiatePayment } from "../services/paymentService";
 import { createOrder } from "../services/orderService";
+// 🟢 1. Import Wallet Service
+import { getWalletBalance } from "../services/walletService";
 
 import CheckoutOrderSummary from "./checkout/CheckoutOrderSummary";
 import CheckoutPaymentStep from "./checkout/CheckoutPaymentStep";
@@ -16,13 +17,13 @@ const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // 2. Use specific selector for performance
   const items = useSelector(selectCartItems);
   const { user } = useSelector((state) => state.auth);
 
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0); // 🟢 2. Wallet State
 
   const {
     isInitializing,
@@ -35,39 +36,56 @@ const Checkout = () => {
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
-  // 3. OPTIMIZATION: Memoize the calculation.
-  // This prevents recalculating the total on every keystroke when user fills the address form.
-  const { subtotal, shippingCost, total } = useMemo(() => {
-    const sub = items.reduce((acc, item) => {
-      // Robust Price Check
-      const product = item.Product || item.product || {};
-      const price = product.price || item.price || 0;
-      return acc + price * item.quantity;
-    }, 0);
-
-    const ship = sub > 1000 ? 0 : 50;
-    return {
-      subtotal: sub,
-      shippingCost: ship,
-      total: sub + ship,
+  // 🟢 3. Fetch Wallet Balance on Mount
+  useEffect(() => {
+    const loadWallet = async () => {
+      try {
+        const data = await getWalletBalance();
+        setWalletBalance(data.balance || 0);
+      } catch (err) {
+        console.error("Failed to load wallet", err);
+      }
     };
-  }, [items]);
+    if (user) loadWallet();
+  }, [user]);
 
-  // LOADING CHECK
+  // 4. Calculate Totals & Split
+  const { subtotal, shippingCost, total, walletUsed, payableAmount } =
+    useMemo(() => {
+      const sub = items.reduce((acc, item) => {
+        const product = item.Product || item.product || {};
+        const price = product.price || item.price || 0;
+        return acc + price * item.quantity;
+      }, 0);
+
+      const ship = sub > 1000 ? 0 : 50;
+      const grandTotal = sub + ship;
+
+      // 🟢 Logic: Use Wallet as much as possible
+      const used = Math.min(grandTotal, walletBalance);
+      const toPay = grandTotal - used;
+
+      return {
+        subtotal: sub,
+        shippingCost: ship,
+        total: grandTotal,
+        walletUsed: used, // Amount covered by wallet
+        payableAmount: toPay, // Remaining to be paid via COD/Online
+      };
+    }, [items, walletBalance]);
+
   if (isInitializing) {
     return (
       <div className="min-h-screen flex justify-center items-center text-gray-500">
-        Loading Checkout...
+        Loading...
       </div>
     );
   }
 
-  // REDIRECT if empty
   if (items.length === 0 && !isPaymentSuccess) {
     return <Navigate to="/shop" replace />;
   }
 
-  // HANDLERS
   const handleNewAddressSubmit = (addressData) => {
     setShippingAddress(addressData);
     setStep(2);
@@ -95,11 +113,33 @@ const Checkout = () => {
           quantity: item.quantity,
           price: item.Product?.price || item.price,
         })),
-        amount: total,
+        amount: total, // Backend handles the split logic based on this total
         address: shippingAddress,
       };
 
-      // --- 1. COD Flow ---
+      // --- 1. FULL WALLET PAYMENT (Payable is 0) ---
+      if (payableAmount === 0) {
+        const orderPayload = {
+          ...payload,
+          paymentMethod: "WALLET",
+          payment: true,
+        };
+        const response = await createOrder(orderPayload);
+
+        setIsPaymentSuccess(true);
+        navigate("/order-success", {
+          state: {
+            orderId: response.orderId || response.id,
+            orderDetails: { itemCount: items.length, totalAmount: total },
+          },
+        });
+        dispatch(clearCartThunk());
+        return;
+      }
+
+      // --- 2. PARTIAL / NORMAL PAYMENT ---
+      // User pays 'payableAmount' via COD or Razorpay
+
       if (paymentData.method === "cod") {
         const orderPayload = {
           ...payload,
@@ -119,28 +159,22 @@ const Checkout = () => {
         return;
       }
 
-      // --- 2. Razorpay Flow ---
       if (paymentData.method === "razorpay") {
-        // A. Create Order in Database FIRST
         const orderPayload = {
           ...payload,
           paymentMethod: "RAZORPAY",
           payment: false,
         };
         const dbOrder = await createOrder(orderPayload);
-
-        // Get the real Order ID from DB response
         const dbOrderId = dbOrder.orderId || dbOrder.id;
 
-        // B. Now Initiate Payment
+        // Initiate Razorpay for the PAYABLE AMOUNT (not the total)
         await initiatePayment(
-          total,
+          payableAmount, // 🟢 Charge only the remaining amount
           user,
           dbOrderId,
           async (paymentResponse) => {
-            // C. On Success
             setIsPaymentSuccess(true);
-
             navigate("/order-success", {
               state: {
                 orderId: dbOrderId,
@@ -178,9 +212,7 @@ const Checkout = () => {
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Checkout</h1>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* LEFT COLUMN */}
         <div className="lg:w-2/3 space-y-6">
-          {/* STEP 1: SHIPPING ADDRESS */}
           <CheckoutShippingStep
             step={step}
             shippingAddress={shippingAddress}
@@ -195,21 +227,25 @@ const Checkout = () => {
             onDeliverSavedAddress={handleSavedAddressSubmit}
           />
 
-          {/* STEP 2: PAYMENT */}
+          {/* 🟢 Pass updated amounts to Payment Step */}
           <CheckoutPaymentStep
             step={step}
+            payableAmount={payableAmount}
+            walletUsed={walletUsed}
             onSubmit={handleOrderSubmit}
             onBack={() => setStep(1)}
           />
         </div>
 
-        {/* RIGHT COLUMN: SUMMARY */}
         <div className="lg:w-1/3">
+          {/* 🟢 Pass Wallet info to Summary */}
           <CheckoutOrderSummary
             items={items}
             subtotal={subtotal}
             shippingCost={shippingCost}
             total={total}
+            walletUsed={walletUsed}
+            payableAmount={payableAmount}
           />
         </div>
       </div>
