@@ -7,20 +7,27 @@ import {
   FaCheck,
   FaTimes,
   FaTruck,
-  FaWallet, // Changed Icon
+  FaWallet,
   FaUndo,
   FaWarehouse,
   FaExternalLinkAlt,
   FaClipboardCheck,
+  FaFileInvoice, // 🟢 Import Icon
 } from "react-icons/fa";
 import RefundModal from "../../components/admin/returns/RefundModal";
 import ReassignmentModal from "../../components/admin/orders/details/ReassignmentModal";
+// 🟢 Import the new Modal
+import CreditNoteModal from "../../components/admin/returns/CreditNoteModal";
 
 const AdminReturnRequests = () => {
   const navigate = useNavigate();
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [selectedForRefund, setSelectedForRefund] = useState(null);
+
+  // 🟢 State for Credit Note View
+  const [selectedCreditNote, setSelectedCreditNote] = useState(null);
 
   // --- Reassignment State ---
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
@@ -108,7 +115,6 @@ const AdminReturnRequests = () => {
         toast.success("Item Verified & Restocked Successfully!");
         fetchReturns();
       } else if (status === "CREDITED") {
-        // 🟢 NEW SUCCESS MESSAGE
         toast.success("Credit Note Generated! Wallet Updated.");
         setSelectedForRefund(null);
         fetchReturns();
@@ -221,10 +227,11 @@ const AdminReturnRequests = () => {
                       Pending Approval
                     </span>
                   )}
-                  {/* 🟢 NEW STATUS DISPLAY */}
+
+                  {/* Status Display */}
                   {(req.status === "REFUNDED" || req.status === "CREDITED") && (
                     <span className="text-green-600 font-bold flex items-center gap-1">
-                      <FaWallet /> Refunded
+                      <FaWallet /> Credited to Wallet
                     </span>
                   )}
                   {req.status === "REJECTED" && (
@@ -277,7 +284,6 @@ const AdminReturnRequests = () => {
                     </button>
                   )}
 
-                  {/* 🟢 CHANGED BUTTON: Create Credit Note */}
                   {req.status === "COMPLETED" && (
                     <button
                       onClick={() => setSelectedForRefund(req)}
@@ -287,10 +293,19 @@ const AdminReturnRequests = () => {
                     </button>
                   )}
 
+                  {/* 🟢 CHANGED: View Credit Note Link */}
                   {(req.status === "REFUNDED" || req.status === "CREDITED") && (
-                    <span className="text-xs font-bold text-gray-400 flex items-center justify-end gap-1">
-                      <FaCheck /> Done
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
+                        <FaCheck /> Done
+                      </span>
+                      <button
+                        onClick={() => setSelectedCreditNote(req)}
+                        className="text-xs text-purple-600 font-semibold hover:text-purple-800 hover:underline flex items-center gap-1 bg-purple-50 px-2 py-1 rounded"
+                      >
+                        <FaFileInvoice /> View Credit Note
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -305,9 +320,16 @@ const AdminReturnRequests = () => {
           request={selectedForRefund}
           onClose={() => setSelectedForRefund(null)}
           onConfirm={(orderId, itemId) =>
-            // 🟢 SENDING 'CREDITED' STATUS TO BACKEND
             handleAction(orderId, itemId, "CREDITED")
           }
+        />
+      )}
+
+      {/* 🟢 Credit Note Modal */}
+      {selectedCreditNote && (
+        <CreditNoteModal
+          data={selectedCreditNote}
+          onClose={() => setSelectedCreditNote(null)}
         />
       )}
 

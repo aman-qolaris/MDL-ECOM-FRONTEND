@@ -5,9 +5,12 @@ import {
   FaSearch,
   FaChevronLeft,
   FaChevronRight,
+  FaArrowLeft,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const AdminUsers = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,9 +57,17 @@ const AdminUsers = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <FaUser className="text-purple-600" /> Users Management
-        </h2>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-purple-600 hover:border-purple-300 transition-all shadow-sm"
+          >
+            <FaArrowLeft />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <FaUser className="text-purple-600" /> Users Management
+          </h2>
+        </div>
 
         {/* SEARCH BAR */}
         <div className="relative w-full md:w-80">

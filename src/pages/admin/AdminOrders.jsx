@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaSearch, FaFilter, FaEye, FaBoxOpen } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaSearch,
+  FaFilter,
+  FaEye,
+  FaBoxOpen,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { getAllOrders } from "../../services/orderService";
 import AdminTableSkeleton from "../../components/placeholders/AdminTableSkeleton";
 
 const AdminOrders = () => {
+  const navigate = useNavigate(); // 🟢 Add this line
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,9 +82,15 @@ const AdminOrders = () => {
 
   return (
     <div className="animate-fadeIn pb-10">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Order Management
-      </h2>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm"
+        >
+          <FaArrowLeft />
+        </button>
+        <h2 className="text-2xl font-bold text-gray-800">Order Management</h2>
+      </div>
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
