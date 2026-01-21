@@ -9,7 +9,7 @@ import {
 } from "../../services/adminService";
 import { getDeliveryLocations } from "../../services/orderService";
 import api from "../../services/api";
-import useDebounce from "../../hooks/useDebounce"; // 🟢 1. Import Hook
+import useDebounce from "../../hooks/useDebounce";
 import {
   FiSearch,
   FiUser,
@@ -35,7 +35,6 @@ const AdminCreateOrder = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [cart, setCart] = useState([]);
 
-  // 🟢 2. Use the Debounce Hook (500ms delay)
   const debouncedProductSearch = useDebounce(productQuery, 500);
 
   // --- FORMS SETUP ---
@@ -78,12 +77,12 @@ const AdminCreateOrder = () => {
     fetchAreas();
   }, []);
 
-  // 🟢 3. Effect: Trigger Search when Debounced Value Changes
+  // Effect: Trigger Search when Debounced Value Changes
   useEffect(() => {
     if (debouncedProductSearch) {
       searchProducts(debouncedProductSearch);
     } else {
-      setSearchResults([]); // Clear results if input is empty
+      setSearchResults([]);
     }
   }, [debouncedProductSearch]);
 
@@ -164,7 +163,7 @@ const AdminCreateOrder = () => {
     }
   };
 
-  // 🟢 4. Updated Search Function (Safeguarded)
+  // 4. PRODUCT SEARCH
   const searchProducts = async (query) => {
     if (!query) {
       setSearchResults([]);
@@ -172,16 +171,12 @@ const AdminCreateOrder = () => {
     }
     try {
       const res = await api.get(`/products?search=${query}&limit=5`);
-
-      // 🟢 FIX: Ensure we always set an array, even if API returns null/undefined
-      // Check if response is { products: [...] } OR just [...]
       const products =
         res.data.products || (Array.isArray(res.data) ? res.data : []);
-
       setSearchResults(products);
     } catch (err) {
       console.error("Product Search Error:", err);
-      setSearchResults([]); // Fallback to empty array on error
+      setSearchResults([]);
     }
   };
 
@@ -221,23 +216,22 @@ const AdminCreateOrder = () => {
         0
       );
 
-      // 🟢 CRITICAL FIX: Construct a complete 'shippingAddress' object
-      // The Order Service expects 'fullName' inside this object to display the name.
+      // 🟢 REMOVED ZIP CODE FROM PAYLOAD
       const finalShippingAddress = {
-        fullName: user.name, // 👈 This fixes "Guest" -> "User Name"
+        fullName: user.name,
         phone: user.phone,
-        addressLine1: selectedAddress.addressLine1, // Ensure these keys match DB
+        addressLine1: selectedAddress.addressLine1,
         area: selectedAddress.area,
         city: selectedAddress.city,
         state: selectedAddress.state,
-        zipCode: selectedAddress.zipCode || "492001", // Fallback if missing
+        // zipCode field removed
       };
 
       await createOrderOnBehalf({
         userId: user.id,
         items: itemsPayload,
         amount: totalAmount,
-        address: finalShippingAddress, // 👈 Send the fixed object
+        address: finalShippingAddress,
         paymentMethod: "COD",
       });
 
@@ -502,25 +496,7 @@ const AdminCreateOrder = () => {
                     </div>
                   </div>
 
-                  {/* Zip Code */}
-                  <div>
-                    <label className="text-xs text-gray-500">Zip Code</label>
-                    <input
-                      {...registerAddress("zipCode", {
-                        required: "Zip Code is required",
-                        minLength: { value: 6, message: "Invalid Zip" },
-                      })}
-                      placeholder="Zip Code"
-                      maxLength={6}
-                      onInput={(e) => handleNumberInput(e, 6)}
-                      className="w-full p-2 border rounded-lg text-sm"
-                    />
-                    {addrErrors.zipCode && (
-                      <p className="text-red-500 text-xs">
-                        {addrErrors.zipCode.message}
-                      </p>
-                    )}
-                  </div>
+                  {/* 🟢 ZIP CODE INPUT REMOVED FROM HERE */}
 
                   <button
                     type="submit"
@@ -561,7 +537,7 @@ const AdminCreateOrder = () => {
               </button>
             </div>
 
-            {/* 🟢 FIX: Add '?' before .length to prevent crash if undefined */}
+            {/* Product Results */}
             {searchResults?.length > 0 && (
               <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
@@ -586,7 +562,7 @@ const AdminCreateOrder = () => {
                             {prod.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            ₹{prod.price} | Stock: {prod.stock}
+                            ₹{prod.price} | Stock: {prod.availableStock}
                           </p>
                         </div>
                       </div>
