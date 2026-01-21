@@ -14,9 +14,12 @@ import ProductFilters from "../../components/vendor/products/ProductFilters";
 import ProductTable from "../../components/vendor/products/ProductTable";
 import DeleteProductModal from "../../components/vendor/products/DeleteProductModal";
 import EditProductModal from "../../components/vendor/products/EditProductModal";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 
 const VendorProducts = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { items, loading } = useSelector((state) => state.products);
 
   // Local State
@@ -138,6 +141,15 @@ const VendorProducts = () => {
 
   return (
     <div className="p-3 sm:p-6 bg-gray-50 min-h-screen relative animate-fadeIn">
+      <div className="flex items-center gap-4 mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-purple-600 hover:border-purple-300 transition-all shadow-sm"
+        >
+          <FaArrowLeft />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800">My Products</h1>
+      </div>
       {/* Header */}
       <ProductHeader />
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getVendorOrders } from "../../services/orderService";
-import { FaBox, FaFilter, FaTimes, FaUndo } from "react-icons/fa"; // 🟢 Import FaUndo
+import { FaArrowLeft, FaBox, FaFilter, FaTimes, FaUndo } from "react-icons/fa"; // 🟢 Import FaUndo
 
 const VendorOrders = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,8 +51,15 @@ const VendorOrders = () => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Your Orders</h2>
-
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm"
+          >
+            <FaArrowLeft />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800">Your Orders</h2>
+        </div>
         {/* ✅ Show Active Filter Badge */}
         {filterType && (
           <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold border border-blue-200">
