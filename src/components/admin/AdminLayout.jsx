@@ -3,7 +3,7 @@ import AdminSidebar from "./AdminSidebar";
 
 const AdminLayout = () => {
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       {/* Sidebar (Fixed Left) */}
       <AdminSidebar />
 

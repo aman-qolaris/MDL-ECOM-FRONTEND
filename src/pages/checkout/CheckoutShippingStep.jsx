@@ -1,4 +1,5 @@
 import { FaPlus } from "react-icons/fa";
+import { useSelector } from "react-redux"; // 🟢 1. Import Redux
 import AddressForm from "../../components/checkout/AddressForm";
 
 const CheckoutShippingStep = ({
@@ -14,6 +15,9 @@ const CheckoutShippingStep = ({
   onSubmitNewAddress,
   onDeliverSavedAddress,
 }) => {
+  // 🟢 2. Get User Data for Name/Phone Fallback
+  const { user } = useSelector((state) => state.auth);
+
   return (
     <div
       className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border ${
@@ -67,17 +71,35 @@ const CheckoutShippingStep = ({
                       className="mt-1 w-4 h-4 text-blue-600"
                     />
                     <div>
-                      <p className="font-bold text-gray-900">{addr.fullName}</p>
+                      {/* 🟢 3. Use User Name */}
+                      <p className="font-bold text-gray-900">
+                        {user?.name || "User"}
+                      </p>
+
                       <p className="text-sm text-gray-600">
                         {addr.addressLine1}
                       </p>
+
+                      {/* 🟢 4. Show Area, City, State */}
                       <p className="text-sm text-gray-600">
-                        {addr.city}, {addr.zipCode}
+                        {addr.area}, {addr.city}
                       </p>
+                      <p className="text-sm text-gray-600 font-semibold uppercase">
+                        {addr.state}
+                      </p>
+
+                      {/* 🟢 5. Use User Phone */}
                       <p className="text-xs text-gray-500 mt-1">
-                        📞 {addr.phone}
+                        📞 {user?.phone || "No Phone"}
                       </p>
                     </div>
+
+                    {/* Optional: Show Default Badge */}
+                    {addr.isDefault && (
+                      <span className="absolute top-2 right-2 bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Default
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -116,16 +138,17 @@ const CheckoutShippingStep = ({
         </div>
       )}
 
+      {/* 🟢 6. Update Summary View (Step > 1) */}
       {step > 1 && (
         <div className="text-gray-600 ml-0 sm:ml-10 text-sm">
-          <p className="font-medium text-gray-900">
-            {shippingAddress?.fullName}
+          <p className="font-medium text-gray-900">{user?.name}</p>
+          <p>
+            {shippingAddress?.addressLine1}, {shippingAddress?.area}
           </p>
           <p>
-            {shippingAddress?.addressLine1}, {shippingAddress?.city} -{" "}
-            {shippingAddress?.zipCode}
+            {shippingAddress?.city}, {shippingAddress?.state}
           </p>
-          <p>Phone: {shippingAddress?.phone}</p>
+          <p>Phone: {user?.phone}</p>
         </div>
       )}
     </div>

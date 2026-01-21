@@ -38,7 +38,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
     };
 
     try {
-      const addedBoy = await addDeliveryBoy(payload);
+      const response = await addDeliveryBoy(payload);
 
       // Reset Form
       setNewName("");
@@ -50,7 +50,9 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
       alert("Delivery Partner Registered Successfully!");
 
       if (onBoyAdded) {
-        onBoyAdded(addedBoy);
+        // ✅ FIX: Extract the actual deliveryBoy object
+        // If your backend returns { message: "...", deliveryBoy: {...} }
+        onBoyAdded(response.deliveryBoy);
       }
     } catch (error) {
       console.error(error);

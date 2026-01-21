@@ -6,25 +6,34 @@ import { loginDeliveryBoy } from "../../services/orderService";
 const DeliveryLogin = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // ✅ 1. Input Handler to Enforce 10-Digit Limit
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    // Only allow numbers and max length 10
+    if (/^\d{0,10}$/.test(value)) {
+      setPhone(value);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
-    // 1. Basic Client-side Validation
+    // 2. Basic Client-side Validation
     if (!phone || !password) {
       setError("Please fill in all fields");
       return;
     }
 
-    // Optional: Check if phone contains only numbers
-    if (!/^\d+$/.test(phone)) {
-      setError("Please enter a valid phone number (digits only)");
+    // ✅ 3. Strict 10-Digit Check
+    if (phone.length !== 10) {
+      setError("Phone number must be exactly 10 digits.");
       return;
     }
 
@@ -33,13 +42,10 @@ const DeliveryLogin = () => {
     try {
       const data = await loginDeliveryBoy(phone, password);
 
-      // 2. Save Token & Info
+      // Save Token & Info
       localStorage.setItem("deliveryToken", data.token);
       localStorage.setItem("deliveryBoy", JSON.stringify(data.boy));
 
-      // 3. Success Feedback & Redirect
-      // navigate("/delivery/dashboard"); // Make sure this route exists in App.jsx
-      // OR if you haven't made the dashboard yet, redirect to home:
       navigate("/delivery/dashboard");
     } catch (err) {
       console.error(err);
@@ -76,7 +82,7 @@ const DeliveryLogin = () => {
         }
       `}</style>
 
-      {/* Background Blobs (Green/Emerald Theme) */}
+      {/* Background Blobs */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
       <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
 
@@ -113,10 +119,12 @@ const DeliveryLogin = () => {
               <input
                 type="text"
                 required
+                maxLength="10" // ✅ HTML limit
                 className="w-full pl-11 pr-4 py-3 rounded-xl bg-gray-50/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none transition-all duration-300 shadow-sm"
-                placeholder="Enter your phone number"
+                placeholder="Enter 10-digit mobile number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange} // ✅ Use custom handler
+                inputMode="numeric" // ✅ Shows number pad on mobile
               />
             </div>
           </div>
@@ -136,7 +144,6 @@ const DeliveryLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              {/* Toggle Password Visibility */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -163,7 +170,6 @@ const DeliveryLogin = () => {
           </button>
         </form>
 
-        {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             Forgot Credentials?{" "}

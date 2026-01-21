@@ -41,21 +41,7 @@ const OrderDetailFooter = ({
           </button>
         )}
 
-        {canReturnOrder && (
-          <button
-            onClick={onReturnOrder}
-            disabled={returningOrder}
-            className="px-4 py-2 bg-orange-100 text-orange-700 font-bold border border-orange-200 rounded-lg hover:bg-orange-200 transition flex items-center gap-2 disabled:opacity-50"
-          >
-            {returningOrder ? (
-              "Processing..."
-            ) : (
-              <>
-                <FaUndo /> Return Order
-              </>
-            )}
-          </button>
-        )}
+        {/* Return Order Button Removed */}
 
         {selectedReturnItem && (
           <ReturnRequestModal
