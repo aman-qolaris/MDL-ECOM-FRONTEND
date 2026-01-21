@@ -7,7 +7,7 @@ import {
   FaCheck,
   FaTimes,
   FaTruck,
-  FaMoneyBillWave,
+  FaWallet, // Changed Icon
   FaUndo,
   FaWarehouse,
   FaExternalLinkAlt,
@@ -74,7 +74,6 @@ const AdminReturnRequests = () => {
 
       toast.success("Delivery Partner Reassigned");
 
-      // Dynamic Update: Immediately update the pickupBoy name in the table
       setReturns((prevReturns) =>
         prevReturns.map((item) =>
           item.orderId === targetReturn.orderId
@@ -108,12 +107,11 @@ const AdminReturnRequests = () => {
       } else if (status === "COMPLETED") {
         toast.success("Item Verified & Restocked Successfully!");
         fetchReturns();
-      } else if (status === "REFUNDED") {
-        toast.success("Refund Confirmed! Redirecting...");
+      } else if (status === "CREDITED") {
+        // 🟢 NEW SUCCESS MESSAGE
+        toast.success("Credit Note Generated! Wallet Updated.");
         setSelectedForRefund(null);
-        setTimeout(() => {
-          navigate(`/admin/orders/${orderId}`);
-        }, 1000);
+        fetchReturns();
       } else {
         toast.success(`Status updated to ${status}`);
         fetchReturns();
@@ -198,7 +196,6 @@ const AdminReturnRequests = () => {
                         {req.pickupBoy || "Finding Agent..."}
                       </div>
 
-                      {/* Status Badges */}
                       {req.status === "PICKUP_SCHEDULED" && (
                         <div className="text-xs px-2 py-1 rounded w-fit font-bold bg-blue-100 text-blue-700 flex items-center gap-1">
                           <FaTruck /> In Transit
@@ -224,9 +221,10 @@ const AdminReturnRequests = () => {
                       Pending Approval
                     </span>
                   )}
-                  {req.status === "REFUNDED" && (
+                  {/* 🟢 NEW STATUS DISPLAY */}
+                  {(req.status === "REFUNDED" || req.status === "CREDITED") && (
                     <span className="text-green-600 font-bold flex items-center gap-1">
-                      <FaCheck /> Complete
+                      <FaWallet /> Refunded
                     </span>
                   )}
                   {req.status === "REJECTED" && (
@@ -238,7 +236,6 @@ const AdminReturnRequests = () => {
 
                 {/* 4. Action Buttons */}
                 <td className="p-4 text-right align-top">
-                  {/* Step 1: Initial Approval */}
                   {req.status === "REQUESTED" && (
                     <div className="flex justify-end gap-2">
                       <button
@@ -260,7 +257,6 @@ const AdminReturnRequests = () => {
                     </div>
                   )}
 
-                  {/* Step 2: Reassign Option (Instead of Confirm Received) */}
                   {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
                     <button
                       onClick={() => handleOpenReassign(req)}
@@ -270,7 +266,6 @@ const AdminReturnRequests = () => {
                     </button>
                   )}
 
-                  {/* Step 3: VERIFY (This calls COMPLETED) */}
                   {req.status === "RETURNED" && (
                     <button
                       onClick={() =>
@@ -282,20 +277,19 @@ const AdminReturnRequests = () => {
                     </button>
                   )}
 
-                  {/* Step 4: Refund */}
+                  {/* 🟢 CHANGED BUTTON: Create Credit Note */}
                   {req.status === "COMPLETED" && (
                     <button
                       onClick={() => setSelectedForRefund(req)}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-bold shadow-md ml-auto"
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs font-bold shadow-md ml-auto"
                     >
-                      <FaMoneyBillWave /> Process Refund
+                      <FaWallet /> Create Credit Note
                     </button>
                   )}
 
-                  {/* Done */}
-                  {req.status === "REFUNDED" && (
+                  {(req.status === "REFUNDED" || req.status === "CREDITED") && (
                     <span className="text-xs font-bold text-gray-400 flex items-center justify-end gap-1">
-                      <FaUndo /> Refunded
+                      <FaCheck /> Done
                     </span>
                   )}
                 </td>
@@ -311,7 +305,8 @@ const AdminReturnRequests = () => {
           request={selectedForRefund}
           onClose={() => setSelectedForRefund(null)}
           onConfirm={(orderId, itemId) =>
-            handleAction(orderId, itemId, "REFUNDED")
+            // 🟢 SENDING 'CREDITED' STATUS TO BACKEND
+            handleAction(orderId, itemId, "CREDITED")
           }
         />
       )}
