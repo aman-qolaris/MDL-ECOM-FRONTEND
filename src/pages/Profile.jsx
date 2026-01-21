@@ -8,15 +8,15 @@ import {
   FaBoxOpen,
   FaSignOutAlt,
   FaLock,
-  FaUniversity,
   FaMapMarkerAlt,
+  FaWallet,
 } from "react-icons/fa";
 
 import ProfileTab from "../components/profile/ProfileTab";
 import OrdersTab from "../components/profile/OrdersTab";
 import SecurityTab from "../components/profile/SecurityTab";
-// 🟢 2. Import New Component
 import AddressBookTab from "../components/profile/AddressBookTab";
+import WalletTab from "../components/profile/WalletTab"; // 🟢 2. Import Component
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -123,6 +123,23 @@ const Profile = () => {
                 Order History
               </button>
 
+              {/* 🟢 4. NEW WALLET SIDEBAR BUTTON */}
+              <button
+                onClick={() => setActiveTab("wallet")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                  activeTab === "wallet"
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <FaWallet
+                  className={
+                    activeTab === "wallet" ? "text-blue-500" : "text-gray-400"
+                  }
+                />
+                My Wallet
+              </button>
+
               <button
                 onClick={() => setActiveTab("security")}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
@@ -154,9 +171,9 @@ const Profile = () => {
         {/* === MAIN CONTENT AREA === */}
         <div className="md:w-3/4">
           {activeTab === "profile" && <ProfileTab user={user} />}
-          {/* 🟢 4. Render Bank Tab */}
           {activeTab === "addresses" && <AddressBookTab />}
           {activeTab === "orders" && <OrdersTab />}
+          {activeTab === "wallet" && <WalletTab />}
           {activeTab === "security" && <SecurityTab userId={user.id} />}
         </div>
       </div>

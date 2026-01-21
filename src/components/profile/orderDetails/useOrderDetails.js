@@ -90,9 +90,9 @@ export function useOrderDetails(initialOrder) {
     const deliveryDate = new Date(item.updatedAt);
     const now = new Date();
     const diffTime = Math.abs(now - deliveryDate);
-    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return diffHours <= 48;
+    return diffHours <= 7;
   }, []);
 
   const canReturnOrder = useMemo(() => {
