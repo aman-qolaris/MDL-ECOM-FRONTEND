@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { validateVerhoeff } from "../../../utils/verhoeff";
 
 // === VALIDATION SCHEMA ===
 export const registrationSchema = yup
@@ -24,9 +25,15 @@ export const registrationSchema = yup
         "Password must contain at least one special character"
       )
       .required("Password is required"),
+    // 🟢 UPDATED AADHAR VALIDATION
     aadhar: yup
       .string()
       .matches(/^\d{12}$/, "Aadhar number must be exactly 12 digits")
+      .test(
+        "verhoeff-check",
+        "Invalid Aadhar Number (Checksum failed)",
+        (value) => validateVerhoeff(value) // Using the imported function
+      )
       .required("Aadhar number is required"),
 
     // 2. Business Information
