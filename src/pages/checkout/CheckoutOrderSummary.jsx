@@ -1,6 +1,14 @@
 import { useMemo } from "react";
+import { FaWallet } from "react-icons/fa";
 
-const CheckoutOrderSummary = ({ items, subtotal, shippingCost, total }) => {
+const CheckoutOrderSummary = ({
+  items,
+  subtotal,
+  shippingCost,
+  total,
+  walletUsed,
+  payableAmount,
+}) => {
   const lines = useMemo(() => {
     return items.map((item) => {
       const product = item.Product || item.product || {};
@@ -61,9 +69,21 @@ const CheckoutOrderSummary = ({ items, subtotal, shippingCost, total }) => {
             <span>₹{shippingCost}</span>
           )}
         </div>
+
+        {/* 🟢 Wallet Deduction Row */}
+        {walletUsed > 0 && (
+          <div className="flex justify-between text-purple-700 font-medium bg-purple-50 p-2 rounded-lg">
+            <span className="flex items-center gap-2">
+              <FaWallet /> Wallet Used
+            </span>
+            <span>- ₹{walletUsed.toLocaleString()}</span>
+          </div>
+        )}
+
         <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-100 mt-2">
-          <span>Total</span>
-          <span>₹{total.toLocaleString()}</span>
+          <span>To Pay</span>
+          {/* 🟢 Show Payable Amount */}
+          <span>₹{payableAmount.toLocaleString()}</span>
         </div>
       </div>
     </div>
