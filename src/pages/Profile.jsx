@@ -9,13 +9,14 @@ import {
   FaSignOutAlt,
   FaLock,
   FaUniversity,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 
 import ProfileTab from "../components/profile/ProfileTab";
 import OrdersTab from "../components/profile/OrdersTab";
 import SecurityTab from "../components/profile/SecurityTab";
 // 🟢 2. Import New Component
-import BankDetailsTab from "../components/profile/BankDetailsTab";
+import AddressBookTab from "../components/profile/AddressBookTab";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -87,21 +88,23 @@ const Profile = () => {
                 Profile Details
               </button>
 
-              {/* 🟢 3. NEW: Bank Details Button */}
+              {/* Sidebar Button */}
               <button
-                onClick={() => setActiveTab("bank")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
-                  activeTab === "bank"
+                onClick={() => setActiveTab("addresses")} // Changed ID
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg ... ${
+                  activeTab === "addresses"
                     ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    : "text-gray-600..."
                 }`}
               >
-                <FaUniversity
+                <FaMapMarkerAlt
                   className={
-                    activeTab === "bank" ? "text-blue-500" : "text-gray-400"
+                    activeTab === "addresses"
+                      ? "text-blue-500"
+                      : "text-gray-400"
                   }
                 />
-                Bank Details
+                My Addresses
               </button>
 
               <button
@@ -152,7 +155,7 @@ const Profile = () => {
         <div className="md:w-3/4">
           {activeTab === "profile" && <ProfileTab user={user} />}
           {/* 🟢 4. Render Bank Tab */}
-          {activeTab === "bank" && <BankDetailsTab user={user} />}
+          {activeTab === "addresses" && <AddressBookTab />}
           {activeTab === "orders" && <OrdersTab />}
           {activeTab === "security" && <SecurityTab userId={user.id} />}
         </div>

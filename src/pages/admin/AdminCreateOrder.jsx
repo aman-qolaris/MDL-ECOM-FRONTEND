@@ -103,10 +103,10 @@ const AdminCreateOrder = () => {
       const foundUser = await searchUserByPhone(data.phone);
       setUser(foundUser);
       toast.success("User found!");
-      if (foundUser.Addresses?.length > 0) {
+      if (foundUser.addresses?.length > 0) {
         const def =
-          foundUser.Addresses.find((a) => a.isDefault) ||
-          foundUser.Addresses[0];
+          foundUser.addresses.find((a) => a.isDefault) ||
+          foundUser.addresses[0];
         setSelectedAddress(def);
       }
     } catch (error) {
@@ -151,7 +151,7 @@ const AdminCreateOrder = () => {
       const newAddr = res.address;
       const updatedUser = {
         ...user,
-        Addresses: [...(user.Addresses || []), newAddr],
+        addresses: [...(user.addresses || []), newAddr],
       };
       setUser(updatedUser);
       setSelectedAddress(newAddr);
@@ -397,19 +397,19 @@ const AdminCreateOrder = () => {
                 <FiMapPin className="mr-2 text-blue-600" /> Address
               </h2>
 
-              {user.Addresses && user.Addresses.length > 0 ? (
+              {user.addresses && user.addresses.length > 0 ? (
                 <div className="space-y-2 mb-4">
                   <select
                     value={selectedAddress?.id || ""}
                     onChange={(e) =>
                       setSelectedAddress(
-                        user.Addresses.find((a) => a.id == e.target.value)
+                        user.addresses.find((a) => a.id == e.target.value)
                       )
                     }
                     className="w-full p-2 border rounded-lg bg-gray-50"
                   >
                     <option value="">-- Select Delivery Address --</option>
-                    {user.Addresses.map((addr) => (
+                    {user.addresses.map((addr) => (
                       <option key={addr.id} value={addr.id}>
                         {addr.addressLine1}, {addr.area}
                       </option>
@@ -426,7 +426,7 @@ const AdminCreateOrder = () => {
               {/* Add Address Form */}
               <details
                 className="group"
-                open={!user.Addresses || user.Addresses.length === 0}
+                open={!user.addresses || user.addresses.length === 0}
               >
                 <summary className="cursor-pointer text-sm text-blue-600 font-medium hover:underline">
                   + Add New Address

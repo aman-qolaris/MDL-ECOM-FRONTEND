@@ -149,7 +149,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
           addingToCart={addingToCart}
           isOrderActive={isOrderActive}
           onCancelOrder={handleCancelOrder}
-          canReturnOrder={canReturnOrder}
+          canReturnOrder={false}
           onReturnOrder={handleReturnOrder}
           returningOrder={returningOrder}
           onClose={onClose}
