@@ -15,6 +15,7 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminCreateOrder from "./pages/admin/AdminCreateOrder";
+import AdminShippingRates from "./pages/admin/AdminShippingRates";
 
 // --- CUSTOMER PAGES ---
 const Home = lazy(() => import("./pages/Home"));
@@ -121,6 +122,7 @@ function App() {
                 path="cod-reconciliation"
                 element={<AdminCODReconciliation />}
               />
+              <Route path="shipping-rates" element={<AdminShippingRates />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
           </Route>
