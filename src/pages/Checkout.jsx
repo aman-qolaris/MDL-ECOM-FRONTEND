@@ -4,8 +4,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { clearCartThunk } from "../store/thunks/cartThunks";
 import { selectCartItems } from "../store/slices/cartSlice";
 import { initiatePayment } from "../services/paymentService";
-import { createOrder } from "../services/orderService";
-// 🟢 1. Import Wallet Service
+// 🟢 UPDATED: Import the new helper function
+import { createOrder, getShippingRateForArea } from "../services/orderService";
 import { getWalletBalance } from "../services/walletService";
 
 import CheckoutOrderSummary from "./checkout/CheckoutOrderSummary";
@@ -23,7 +23,10 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(0); // 🟢 2. Wallet State
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  // 🟢 UPDATED: Add State for dynamic shipping rate
+  const [shippingRate, setShippingRate] = useState(0);
 
   const {
     isInitializing,
@@ -36,7 +39,7 @@ const Checkout = () => {
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
-  // 🟢 3. Fetch Wallet Balance on Mount
+  // Fetch Wallet Balance on Mount
   useEffect(() => {
     const loadWallet = async () => {
       try {
@@ -49,7 +52,34 @@ const Checkout = () => {
     if (user) loadWallet();
   }, [user]);
 
-  // 4. Calculate Totals & Split
+  // 🟢 UPDATED: New Effect to Fetch Shipping Rate when Address Changes
+  useEffect(() => {
+    const fetchShipping = async () => {
+      let area = "";
+
+      // Case 1: User selected a saved address from the list
+      if (selectedAddressId) {
+        const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+        if (addr) area = addr.area;
+      }
+      // Case 2: User entered a new address manually
+      else if (shippingAddress?.area) {
+        area = shippingAddress.area;
+      }
+
+      // If we have an area, ask backend for the rate
+      if (area) {
+        const rate = await getShippingRateForArea(area);
+        setShippingRate(rate);
+      } else {
+        setShippingRate(0); // Reset if no area selected
+      }
+    };
+
+    fetchShipping();
+  }, [selectedAddressId, shippingAddress, savedAddresses]);
+
+  // 🟢 UPDATED: Calculate Totals using dynamic 'shippingRate'
   const { subtotal, shippingCost, total, walletUsed, payableAmount } =
     useMemo(() => {
       const sub = items.reduce((acc, item) => {
@@ -58,10 +88,11 @@ const Checkout = () => {
         return acc + price * item.quantity;
       }, 0);
 
-      const ship = sub > 1000 ? 0 : 50;
+      // 🟢 UPDATED: Use the state value instead of hardcoded logic
+      const ship = shippingRate;
+
       const grandTotal = sub + ship;
 
-      // 🟢 Logic: Use Wallet as much as possible
       const used = Math.min(grandTotal, walletBalance);
       const toPay = grandTotal - used;
 
@@ -69,10 +100,10 @@ const Checkout = () => {
         subtotal: sub,
         shippingCost: ship,
         total: grandTotal,
-        walletUsed: used, // Amount covered by wallet
-        payableAmount: toPay, // Remaining to be paid via COD/Online
+        walletUsed: used,
+        payableAmount: toPay,
       };
-    }, [items, walletBalance]);
+    }, [items, walletBalance, shippingRate]); // 🟢 Added shippingRate dependency
 
   if (isInitializing) {
     return (
@@ -113,11 +144,14 @@ const Checkout = () => {
           quantity: item.quantity,
           price: item.Product?.price || item.price,
         })),
-        amount: total, // Backend handles the split logic based on this total
+        // 🟢 UPDATED: Send 'subtotal' (Item Total) instead of 'total'.
+        // The backend logic you shared adds 'shippingCharge' to this amount.
+        // If we sent 'total', the customer would be charged shipping twice.
+        amount: subtotal,
         address: shippingAddress,
       };
 
-      // --- 1. FULL WALLET PAYMENT (Payable is 0) ---
+      // --- 1. FULL WALLET PAYMENT ---
       if (payableAmount === 0) {
         const orderPayload = {
           ...payload,
@@ -138,8 +172,6 @@ const Checkout = () => {
       }
 
       // --- 2. PARTIAL / NORMAL PAYMENT ---
-      // User pays 'payableAmount' via COD or Razorpay
-
       if (paymentData.method === "cod") {
         const orderPayload = {
           ...payload,
@@ -168,9 +200,8 @@ const Checkout = () => {
         const dbOrder = await createOrder(orderPayload);
         const dbOrderId = dbOrder.orderId || dbOrder.id;
 
-        // Initiate Razorpay for the PAYABLE AMOUNT (not the total)
         await initiatePayment(
-          payableAmount, // 🟢 Charge only the remaining amount
+          payableAmount,
           user,
           dbOrderId,
           async (paymentResponse) => {
@@ -227,7 +258,6 @@ const Checkout = () => {
             onDeliverSavedAddress={handleSavedAddressSubmit}
           />
 
-          {/* 🟢 Pass updated amounts to Payment Step */}
           <CheckoutPaymentStep
             step={step}
             payableAmount={payableAmount}
@@ -238,7 +268,6 @@ const Checkout = () => {
         </div>
 
         <div className="lg:w-1/3">
-          {/* 🟢 Pass Wallet info to Summary */}
           <CheckoutOrderSummary
             items={items}
             subtotal={subtotal}

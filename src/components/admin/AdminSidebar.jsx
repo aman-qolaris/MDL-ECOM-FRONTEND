@@ -11,6 +11,7 @@ import {
   FaMoneyBillWave,
   FaClipboardList,
   FaUndo,
+  FaMapMarkedAlt,
 } from "react-icons/fa";
 import { FiPlusSquare } from "react-icons/fi";
 
@@ -41,6 +42,11 @@ const AdminSidebar = () => {
       path: "/admin/cod-reconciliation",
       name: "COD Reconciliation",
       icon: <FaMoneyBillWave />,
+    },
+    {
+      path: "/admin/shipping-rates",
+      name: "Shipping Rates",
+      icon: <FaMapMarkedAlt />,
     },
     { path: "/admin/users", name: "Users", icon: <FaUsers /> },
     { path: "/admin/settings", name: "Settings", icon: <FaCog /> },

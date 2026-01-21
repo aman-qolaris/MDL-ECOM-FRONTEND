@@ -7,7 +7,10 @@ import {
   addUserAddressOnBehalf,
   createOrderOnBehalf,
 } from "../../services/adminService";
-import { getDeliveryLocations } from "../../services/orderService";
+import {
+  getDeliveryLocations,
+  getShippingRateForArea,
+} from "../../services/orderService";
 import api from "../../services/api";
 import useDebounce from "../../hooks/useDebounce";
 import {
@@ -34,6 +37,8 @@ const AdminCreateOrder = () => {
   const [productQuery, setProductQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [cart, setCart] = useState([]);
+
+  const [shippingCost, setShippingCost] = useState(0);
 
   const debouncedProductSearch = useDebounce(productQuery, 500);
 
@@ -85,6 +90,19 @@ const AdminCreateOrder = () => {
       setSearchResults([]);
     }
   }, [debouncedProductSearch]);
+
+  // 🟢 2. NEW EFFECT: Fetch Shipping when Address Changes
+  useEffect(() => {
+    const fetchShipping = async () => {
+      if (selectedAddress && selectedAddress.area) {
+        const rate = await getShippingRateForArea(selectedAddress.area);
+        setShippingCost(rate);
+      } else {
+        setShippingCost(0);
+      }
+    };
+    fetchShipping();
+  }, [selectedAddress]);
 
   const handleNumberInput = (e, maxLength) => {
     const value = e.target.value.replace(/[^0-9]/g, "");
@@ -211,7 +229,8 @@ const AdminCreateOrder = () => {
         price: item.price,
       }));
 
-      const totalAmount = cart.reduce(
+      // Calculate Subtotal only
+      const subtotal = cart.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
@@ -230,7 +249,7 @@ const AdminCreateOrder = () => {
       await createOrderOnBehalf({
         userId: user.id,
         items: itemsPayload,
-        amount: totalAmount,
+        amount: subtotal,
         address: finalShippingAddress,
         paymentMethod: "COD",
       });
@@ -247,6 +266,10 @@ const AdminCreateOrder = () => {
       setLoading(false);
     }
   };
+
+  // Helper variables for UI
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const totalPayable = subtotal + shippingCost;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -637,19 +660,32 @@ const AdminCreateOrder = () => {
                   </span>
                 </div>
               </div>
+              {/* 🟢 UPDATED: Price Breakdown */}
               <div className="text-right flex items-center gap-6">
-                <div>
-                  <p className="text-sm text-gray-500">Total Payable</p>
-                  <p className="text-2xl font-bold text-gray-800">
-                    ₹{cart.reduce((sum, i) => sum + i.price * i.quantity, 0)}
+                <div className="text-sm space-y-1">
+                  <p className="text-gray-500">
+                    Subtotal:{" "}
+                    <span className="font-medium text-gray-800">
+                      ₹{subtotal}
+                    </span>
+                  </p>
+                  <p className="text-gray-500">
+                    Shipping:{" "}
+                    <span className="font-medium text-green-600">
+                      {shippingCost > 0 ? `+ ₹${shippingCost}` : "Free"}
+                    </span>
+                  </p>
+                  <p className="text-lg font-bold text-gray-800 border-t pt-1 mt-1">
+                    Total: ₹{totalPayable}
                   </p>
                 </div>
+
                 <button
                   onClick={placeOrder}
                   disabled={loading || cart.length === 0 || !selectedAddress}
                   className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all transform active:scale-95"
                 >
-                  {loading ? "Placing Order..." : "Confirm Order"}
+                  {loading ? "Placing..." : "Confirm Order"}
                 </button>
               </div>
             </div>

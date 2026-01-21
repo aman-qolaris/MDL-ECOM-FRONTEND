@@ -7,6 +7,20 @@ const BASE_URL = "http://localhost:5007/api";
 // 🛍️ CUSTOMER
 // ==================================================
 
+// 🟢 NEW: Fetch dynamic shipping rate
+export const getShippingRateForArea = async (areaName) => {
+  try {
+    // Calls the backend route we just created
+    const { data } = await api.get(
+      `/orders/shipping/calculate?area=${encodeURIComponent(areaName)}`
+    );
+    return data.rate;
+  } catch (error) {
+    console.error("Shipping Rate Error:", error);
+    return 0; // Default to 0 if api fails
+  }
+};
+
 export const createOrder = async (orderData) => {
   const response = await api.post("/orders/checkout", orderData);
   return response.data;
