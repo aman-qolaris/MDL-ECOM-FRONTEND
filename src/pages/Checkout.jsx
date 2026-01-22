@@ -136,6 +136,15 @@ const Checkout = () => {
     try {
       setLoading(true);
 
+// 🟢 FIX START: Ensure Name and Phone are always present in the address
+      // If shippingAddress (saved address) lacks name/phone, fallback to logged-in user details
+      const finalShippingAddress = {
+        ...shippingAddress,
+        fullName: shippingAddress?.fullName || user?.name,
+        phone: shippingAddress?.phone || user?.phone,
+      };
+      // 🟢 FIX END
+
       const payload = {
         userId: user?.id,
         items: items.map((item) => ({
@@ -148,7 +157,7 @@ const Checkout = () => {
         // The backend logic you shared adds 'shippingCharge' to this amount.
         // If we sent 'total', the customer would be charged shipping twice.
         amount: subtotal,
-        address: shippingAddress,
+        address: finalShippingAddress
       };
 
       // --- 1. FULL WALLET PAYMENT ---
