@@ -172,17 +172,26 @@ const AdminOrderDetails = () => {
   };
 
   const calculatePriceDetails = () => {
-    if (!order) return { subtotal: 0, total: 0 };
+    if (!order) return { subtotal: 0, total: 0, shippingCharge: 0, creditApplied: 0 };
+    
     const activeItems = order.OrderItems.filter(
       (item) => item.status !== "CANCELLED"
     );
+    
     const subtotal = activeItems.reduce(
       (acc, item) => acc + item.price * item.quantity,
       0
     );
-    return { subtotal, total: order.amount };
-  };
 
+    // 🟢 UPDATED: Include explicit shipping and credit fields
+    return { 
+      subtotal, 
+      total: order.amount, // This is the final payable amount
+      shippingCharge: order.shippingCharge,
+      creditApplied: order.creditApplied 
+    };
+  };
+  
   const priceDetails = calculatePriceDetails();
 
   // Helper for Status Badge Color
