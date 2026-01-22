@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaShoppingCart, FaUser, FaSearch, FaBars } from "react-icons/fa";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getCartItems } from "../../store/thunks/cartThunks";
 // 1. Import the specific selector
@@ -22,6 +22,8 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const hasFetchedCartRef = useRef(false);
+
   useEffect(() => {
     // Prevent navigation if search was cleared but debounce hasn't updated yet
     if (searchTerm === "" && debouncedSearch !== "") return;
@@ -29,11 +31,15 @@ const Header = () => {
     // Navigate to shop with search query after user stops typing
     if (debouncedSearch.trim()) {
       const query = `?search=${encodeURIComponent(debouncedSearch)}`;
-      navigate(`/shop${query}`);
+      const nextUrl = `/shop${query}`;
+      const currentUrl = `${location.pathname}${location.search}`;
+      if (currentUrl !== nextUrl) {
+        navigate(nextUrl, { replace: true });
+      }
       setIsMobileMenuOpen(false);
     } else if (location.pathname === "/shop" && location.search) {
       // Clear search params if query is empty while on shop page
-      navigate("/shop");
+      navigate("/shop", { replace: true });
     }
   }, [
     debouncedSearch,
@@ -44,9 +50,16 @@ const Header = () => {
   ]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(getCartItems());
+    if (!isAuthenticated) {
+      hasFetchedCartRef.current = false;
+      return;
     }
+
+    // In React 18 StrictMode (dev), effects can run twice on mount.
+    // This guard prevents duplicate cart fetches and the rerenders they cause.
+    if (hasFetchedCartRef.current) return;
+    hasFetchedCartRef.current = true;
+    dispatch(getCartItems());
   }, [dispatch, isAuthenticated]);
 
   // 3. Removed the manual 'items.reduce' calculation here.
@@ -62,7 +75,7 @@ const Header = () => {
           <Link
             to="/"
             onClick={() => setSearchTerm("")}
-            className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-80 transition-opacity relative z-10"
+            className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-purple-600 hover:opacity-80 transition-opacity relative z-10"
           >
             My E-Store
           </Link>
@@ -90,7 +103,7 @@ const Header = () => {
             >
               <FaShoppingCart size={22} />
               {cartCount > 0 && (
-                <span className="absolute -top-2.5 -right-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md animate-pulse">
+                <span className="absolute -top-2.5 -right-2.5 bg-linear-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md animate-pulse">
                   {cartCount}
                 </span>
               )}

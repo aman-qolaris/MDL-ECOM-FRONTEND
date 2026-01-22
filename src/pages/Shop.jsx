@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaArrowLeft, FaFilter } from "react-icons/fa";
@@ -27,20 +27,33 @@ const Shop = () => {
   const filters = useSelector((state) => state.filters);
   const debouncedFilters = useDebounce(filters, 250);
 
+  const renderProductCard = useCallback(
+    (product) => <ProductCard product={product} />,
+    []
+  );
+
   // 2. URL Params Sync (Keep existing logic)
   useEffect(() => {
     const categoryFromURL = searchParams.get("category");
     const searchFromURL = searchParams.get("search");
 
+    const nextCategory = categoryFromURL || "";
+    const nextSearch = searchFromURL || "";
+
+    // Prevent redundant dispatches (keeps workflow the same, reduces rerenders).
+    if (filters.category === nextCategory && filters.search === nextSearch) {
+      return;
+    }
+
     // Keep Redux filters in sync with the URL, including when params are cleared.
     // This ensures clearing the search term shows all products again.
     dispatch(
       setFilters({
-        category: categoryFromURL || "",
-        search: searchFromURL || "",
+        category: nextCategory,
+        search: nextSearch,
       })
     );
-  }, [searchParams, dispatch]);
+  }, [searchParams, dispatch, filters.category, filters.search]);
 
   // 3. Data Fetching
   useEffect(() => {
@@ -120,9 +133,7 @@ const Shop = () => {
             displayItems.length >= 30 ? (
               <VirtualizedProductGrid
                 items={displayItems}
-                renderItem={(product) => (
-                  <ProductCard key={product.id} product={product} />
-                )}
+                renderItem={renderProductCard}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

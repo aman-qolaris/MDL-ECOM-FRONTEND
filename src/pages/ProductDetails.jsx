@@ -7,7 +7,6 @@ import { selectFeaturedProducts } from "../store/slices/productSlice";
 import useDeferredRender from "../hooks/useDeferredRender";
 import useIsAuthenticated from "../hooks/useIsAuthenticated";
 import useCartQuantity from "../hooks/useCartQuantity";
-import { dummyProducts } from "../data/dummyData";
 import {
   FaShoppingCart,
   FaArrowLeft,
@@ -65,8 +64,7 @@ const ProductDetails = () => {
     };
   }, [dispatch, id]);
 
-  const product =
-    currentProduct || dummyProducts.find((p) => p.id === parseInt(id));
+  const product = currentProduct;
 
   const productId = useMemo(() => {
     const resolved = product?.id ?? parseInt(id);

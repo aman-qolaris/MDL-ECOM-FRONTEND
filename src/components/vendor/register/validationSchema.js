@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import { validateVerhoeff } from "../../../utils/verhoeff";
+import { validateVerhoeff } from "../../../utils/verhoeffs";
 
 // === VALIDATION SCHEMA ===
 export const registrationSchema = yup

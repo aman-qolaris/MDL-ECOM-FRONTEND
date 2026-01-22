@@ -8,7 +8,6 @@ import {
 } from "../../store/slices/productSlice";
 import ProductCard from "../common/ProductCard";
 import { FaArrowRight, FaGem } from "react-icons/fa"; // Added FaGem icon
-import { dummyProducts } from "../../data/dummyData";
 
 const FeaturedProducts = () => {
   const dispatch = useDispatch();
@@ -20,8 +19,7 @@ const FeaturedProducts = () => {
     dispatch(getFeaturedProducts());
   }, [dispatch]);
 
-  const displayProducts =
-    featured.length > 0 ? featured : dummyProducts.slice(0, 4);
+  const displayProducts = featured;
 
   return (
     <section className="py-5 sm:py-6">
