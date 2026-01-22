@@ -1,8 +1,17 @@
 import { FaCreditCard, FaMapMarkerAlt } from "react-icons/fa";
 
 const OrderAddressPaymentInfo = ({ order }) => {
-  return (
+  // 🟢 1. EXTRACT VALUES SAFELY
+  const shipping = parseFloat(order.shippingCharge || 0);
+  const credit = parseFloat(order.creditApplied || 0);
+  const payable = parseFloat(order.amount || 0);
+
+  // 🟢 2. CALCULATE TRUE SUBTOTAL (Item Total)
+  // Logic: Payable + WalletUsed - Shipping = Item Price
+  const itemSubtotal = (payable + credit) - shipping;
+   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* --- Shipping Address Section (Unchanged) --- */}
       <div>
         <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
           <FaMapMarkerAlt className="text-blue-600" /> Shipping Address
@@ -25,6 +34,7 @@ const OrderAddressPaymentInfo = ({ order }) => {
         </div>
       </div>
 
+      {/* --- Payment Info Section (UPDATED) --- */}
       <div>
         <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
           <FaCreditCard className="text-blue-600" /> Payment Info
@@ -36,18 +46,41 @@ const OrderAddressPaymentInfo = ({ order }) => {
               {order.paymentMethod || "Card"}
             </span>
           </div>
+
+          {/* 🟢 3. SHOW CALCULATED ITEM SUBTOTAL */}
           <div className="flex justify-between">
-            <span className="text-gray-600">Subtotal</span>
-            <span className="font-medium text-gray-900">₹{order.amount}</span>
+            <span className="text-gray-600">Item Subtotal</span>
+            <span className="font-medium text-gray-900">
+              ₹{itemSubtotal.toLocaleString()}
+            </span>
           </div>
+
+          {/* 🟢 4. DYNAMIC SHIPPING DISPLAY */}
           <div className="flex justify-between">
             <span className="text-gray-600">Shipping</span>
-            <span className="font-medium text-green-600">Free</span>
+            <span
+              className={`font-medium ${
+                shipping > 0 ? "text-gray-900" : "text-green-600"
+              }`}
+            >
+              {shipping > 0 ? `₹${shipping}` : "Free"}
+            </span>
           </div>
+
+          {/* 🟢 5. SHOW WALLET CREDIT IF USED */}
+          {credit > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Wallet Credit</span>
+              <span className="font-medium text-green-600">
+                - ₹{credit.toLocaleString()}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between border-t border-gray-200 pt-2 mt-1">
             <span className="font-bold text-gray-800">Total Paid</span>
             <span className="font-bold text-blue-600 text-lg">
-              ₹{order.amount}
+              ₹{payable.toLocaleString()}
             </span>
           </div>
         </div>
