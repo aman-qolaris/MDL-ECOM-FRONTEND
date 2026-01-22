@@ -1,5 +1,4 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { dummyProducts } from "../../data/dummyData";
 
 // Input Selectors
 const selectProductItems = (state) => state.products.items;
@@ -9,8 +8,7 @@ const selectFilters = (state) => state.filters;
 export const selectFilteredProducts = createSelector(
   [selectProductItems, selectFilters],
   (items, filters) => {
-    // 1. Fallback to dummy data if API returns empty (preserving your logic)
-    const sourceItems = items.length > 0 ? items : dummyProducts;
+    const sourceItems = items || [];
 
     return sourceItems
       .filter((item) => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import useDeferredRender from "../hooks/useDeferredRender";
@@ -27,6 +27,8 @@ const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const hasFetchedCartRef = useRef(false);
+
   // Defer recommendation sections (and their network calls) so cart UI paints fast.
   const renderBelowFold = useDeferredRender();
 
@@ -41,9 +43,15 @@ const Cart = () => {
 
   // --- 1. Fetch Cart Data ---
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(getCartItems());
+    if (!isAuthenticated) {
+      hasFetchedCartRef.current = false;
+      return;
     }
+
+    // React StrictMode (dev) can run effects twice on mount.
+    if (hasFetchedCartRef.current) return;
+    hasFetchedCartRef.current = true;
+    dispatch(getCartItems());
   }, [dispatch, isAuthenticated]);
 
   // --- 2. Fetch Featured & Trending Data ---

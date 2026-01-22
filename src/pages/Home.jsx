@@ -20,9 +20,6 @@ const CustomerTestimonials = lazy(() =>
 );
 const TrustValues = lazy(() => import("../components/home/TrustValues"));
 
-// Fallback Data
-import { dummyProducts } from "../data/dummyData";
-
 const Home = () => {
   const dispatch = useDispatch();
 
@@ -38,8 +35,7 @@ const Home = () => {
 
   // useDeferredRender handles idle scheduling + cleanup
 
-  // Use real data if available, else dummy data
-  const allProducts = items.length > 0 ? items : dummyProducts;
+  const allProducts = items;
 
   // --- LOGIC: Group Products & Calculate Derived Lists ---
   const { trendingProducts, newArrivals, categoryRows } = useMemo(() => {
