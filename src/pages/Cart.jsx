@@ -81,11 +81,7 @@ const Cart = () => {
     }, 0);
   }, [items]);
 
-  const shippingCost = useMemo(() => (cartTotal > 1000 ? 0 : 50), [cartTotal]);
-  const grandTotal = useMemo(
-    () => cartTotal + shippingCost,
-    [cartTotal, shippingCost]
-  );
+  const grandTotal = useMemo(() => cartTotal, [cartTotal]);
 
   const handleBack = useCallback(() => navigate(-1), [navigate]);
   const handleCheckout = useCallback(() => navigate("/checkout"), [navigate]);
@@ -166,7 +162,6 @@ const Cart = () => {
           <div className="lg:w-1/3">
             <CartSummary
               cartTotal={cartTotal}
-              shippingCost={shippingCost}
               grandTotal={grandTotal}
               onCheckout={handleCheckout}
             />

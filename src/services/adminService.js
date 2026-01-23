@@ -101,3 +101,13 @@ export const createOrderOnBehalf = async (orderData) => {
   const response = await api.post("/orders/admin/create", orderData);
   return response.data;
 };
+
+// 🟢 NEW: Get Cancelled Orders pending Refund (Prepaid)
+export const getCancelledRefundOrders = async () => {
+  try {
+    const response = await api.get("/orders/admin/refunds/cancelled");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || "Failed to fetch cancelled refunds";
+  }
+};
