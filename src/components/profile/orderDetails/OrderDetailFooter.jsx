@@ -32,7 +32,7 @@ const OrderDetailFooter = ({
           )}
         </button>
 
-        {isOrderActive && (
+        {isOrderActive && onCancelOrder && (
           <button
             onClick={onCancelOrder}
             className="px-4 py-2 text-red-600 font-bold hover:bg-red-100 rounded-lg transition flex items-center gap-2"

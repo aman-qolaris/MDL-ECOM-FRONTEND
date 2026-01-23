@@ -40,6 +40,8 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     canReturnOrder,
   } = useOrderDetails(initialOrder);
 
+  const hasPackedItems = enrichedItems.some((item) => item.status === "PACKED");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -173,8 +175,8 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
           onOrderAgain={handleOrderAgain}
           addingToCart={addingToCart}
           isOrderActive={isOrderActive}
-          onCancelOrder={handleCancelOrderClick}
-          canReturnOrder={false}
+          onCancelOrder={!hasPackedItems ? handleCancelOrderClick : null}
+          canReturnOrder={canReturnOrder}
           onReturnOrder={handleReturnOrder}
           returningOrder={returningOrder}
           onClose={onClose}
