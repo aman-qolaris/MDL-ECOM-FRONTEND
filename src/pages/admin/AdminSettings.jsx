@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { FaUserShield, FaSave } from "react-icons/fa";
+import { FaUserShield, FaSave, FaArrowLeft } from "react-icons/fa";
 import { changeAdminPassword } from "../../services/authService"; // 👈 Import service
+import { useNavigate } from "react-router-dom";
 
 const AdminSettings = () => {
+  const navigate = useNavigate();
   const [adminData, setAdminData] = useState({
     name: "",
     email: "",
@@ -50,8 +52,15 @@ const AdminSettings = () => {
 
   return (
     <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Settings</h2>
-
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h2 className="text-2xl font-bold text-gray-800">Admin Settings</h2>
+      </div>
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-2xl">
         <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
           <FaUserShield className="text-blue-600" /> Account Security

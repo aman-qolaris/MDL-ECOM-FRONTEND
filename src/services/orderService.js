@@ -37,12 +37,14 @@ export const getOrderById = async (orderId) => {
 };
 
 export const cancelOrderItem = async (orderId, itemId) => {
-  const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`);
+  const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`, {
+    reason,
+  });
   return response.data;
 };
 
 export const cancelOrder = async (orderId) => {
-  const response = await api.put(`/orders/${orderId}/cancel`);
+  const response = await api.put(`/orders/${orderId}/cancel`, { reason });
   return response.data;
 };
 

@@ -80,10 +80,10 @@ const OrderItemsList = ({
                     Return Item
                   </button>
                 ) : (
-                  item.returnStatus &&
-                  item.returnStatus !== "NONE" && (
+                  item.refundStatus &&
+                  item.refundStatus !== "NONE" && (
                     <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200">
-                      RETURN: {item.returnStatus}
+                      RETURN: {item.refundStatus}
                     </span>
                   )
                 )}

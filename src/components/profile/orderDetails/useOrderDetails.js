@@ -85,14 +85,17 @@ export function useOrderDetails(initialOrder) {
 
   const isReturnable = useCallback((item) => {
     if (item.status !== "DELIVERED") return false;
-    if (item.returnStatus !== "NONE") return false;
+
+    const currentRefundStatus = item.refundStatus || "NONE";
+    if (currentRefundStatus !== "NONE") return false;
 
     const deliveryDate = new Date(item.updatedAt);
     const now = new Date();
     const diffTime = Math.abs(now - deliveryDate);
-    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return diffHours <= 7;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays <= 7;
   }, []);
 
   const canReturnOrder = useMemo(() => {

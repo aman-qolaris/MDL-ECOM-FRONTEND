@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getAllVendors } from "../../services/vendorService";
 import { getProducts } from "../../services/productService";
 import {
@@ -8,9 +8,11 @@ import {
   FaArrowRight,
   FaSearch,
   FaChartLine,
+  FaArrowLeft,
 } from "react-icons/fa";
 
 const AdminInventory = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [inventoryStats, setInventoryStats] = useState({}); // Stores both count & stock
   const [loading, setLoading] = useState(true);
@@ -62,12 +64,17 @@ const AdminInventory = () => {
 
   return (
     <div className="animate-fadeIn">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaBox /> Inventory Management
         </h2>
       </div>
-
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
         <div className="relative">
           <FaSearch className="absolute left-3 top-3 text-gray-400" />

@@ -66,10 +66,11 @@ export const getDashboardStats = async (dateFilter = null) => {
 };
 
 // ✅ Fetch all return requests
-export const getAllReturnRequests = async () => {
-  // Matches: app.get("/api/orders/admin/returns/all")
-  const response = await api.get("/orders/admin/returns/all");
-  return response.data;
+export const getAllReturnRequests = async (page = 1, limit = 10) => {
+  const response = await api.get(
+    `/orders/admin/returns/all?page=${page}&limit=${limit}`
+  );
+  return response.data; // Now returns { items: [], total: ... }
 };
 
 // ✅ Update status (Approve, Reject, Refunded)
@@ -103,11 +104,9 @@ export const createOrderOnBehalf = async (orderData) => {
 };
 
 // 🟢 NEW: Get Cancelled Orders pending Refund (Prepaid)
-export const getCancelledRefundOrders = async () => {
-  try {
-    const response = await api.get("/orders/admin/refunds/cancelled");
-    return response.data;
-  } catch (error) {
-    throw error.response?.data?.message || "Failed to fetch cancelled refunds";
-  }
+export const getCancelledRefundOrders = async (page = 1, limit = 10) => {
+  const response = await api.get(
+    `/orders/admin/refunds/cancelled?page=${page}&limit=${limit}`
+  );
+  return response.data; // Now returns { items: [], total: ... }
 };

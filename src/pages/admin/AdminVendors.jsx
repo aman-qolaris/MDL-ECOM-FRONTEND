@@ -5,9 +5,18 @@ import {
   rejectVendor,
 } from "../../services/vendorService";
 import { getProducts } from "../../services/productService"; // 👈 1. ADD THIS IMPORT
-import { FaCheck, FaTimes, FaStore, FaUserTie, FaBox } from "react-icons/fa";
+import {
+  FaCheck,
+  FaTimes,
+  FaStore,
+  FaUserTie,
+  FaBox,
+  FaArrowLeft,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const AdminVendors = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [inventoryCounts, setInventoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -70,9 +79,17 @@ const AdminVendors = () => {
 
   return (
     <div className="animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-        <FaStore /> Vendor Verification
-      </h2>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <FaStore /> Vendor Verification
+        </h2>
+      </div>
       {/* 👇 3. ADD THESE BUTTONS HERE */}
       <div className="flex gap-4 mb-6">
         <button

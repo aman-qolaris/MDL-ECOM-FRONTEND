@@ -3,9 +3,17 @@ import api from "../../services/api";
 import { getDeliveryLocations } from "../../services/orderService";
 import useDebounce from "../../hooks/useDebounce";
 import { toast } from "react-toastify";
-import { FaMapMarkerAlt, FaPlus, FaSave, FaSearch } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaMapMarkerAlt,
+  FaPlus,
+  FaSave,
+  FaSearch,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const AdminShippingRates = () => {
+  const navigate = useNavigate();
   const [rates, setRates] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,10 +99,17 @@ const AdminShippingRates = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-        <FaMapMarkerAlt className="text-blue-600" /> Shipping Rates Management
-      </h1>
-
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <FaMapMarkerAlt className="text-blue-600" /> Shipping Rates Management
+        </h1>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Add New Rate Form */}
         <div className="lg:col-span-1">

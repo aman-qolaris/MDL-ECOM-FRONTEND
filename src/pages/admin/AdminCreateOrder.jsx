@@ -18,8 +18,11 @@ import CustomerSection from "../../components/admin/orders/create/CustomerSectio
 import AddressSection from "../../components/admin/orders/create/AddressSection";
 import ItemsSection from "../../components/admin/orders/create/ItemsSection";
 import SummaryBar from "../../components/admin/orders/create/SummaryBar";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 
 const AdminCreateOrder = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -269,9 +272,17 @@ const AdminCreateOrder = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">
-        Create Order (Admin Console)
-      </h1>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Create Order (Admin Console)
+        </h1>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN: User & Address */}

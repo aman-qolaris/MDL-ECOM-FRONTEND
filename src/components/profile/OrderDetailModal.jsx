@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addItemToCart } from "../../store/thunks/cartThunks";
+import { toast } from "react-toastify"; // 🟢 ADD THIS
+import { addItemToCart, getCartItems } from "../../store/thunks/cartThunks";
 import {
   cancelOrder,
   cancelOrderItem,
@@ -15,11 +16,19 @@ import OrderDetailHeader from "./orderDetails/OrderDetailHeader";
 import OrderItemsList from "./orderDetails/OrderItemsList";
 import OrderStatusBar from "./orderDetails/OrderStatusBar";
 import { useOrderDetails } from "./orderDetails/useOrderDetails";
+import CancelRequestModal from "./CancelRequestModal"; // 🟢 ADD THIS
 
 const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedReturnItem, setSelectedReturnItem] = useState(null);
-  const [returningOrder, setReturningOrder] = useState(false); // ✅ Loading state for Return Order
+  const [returningOrder, setReturningOrder] = useState(false);
+
+  const [cancelModal, setCancelModal] = useState({
+    isOpen: false,
+    type: null, // 'ORDER' or 'ITEM'
+    targetId: null,
+  });
+  const [cancelling, setCancelling] = useState(false);
 
   const {
     order,
@@ -86,6 +95,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         ).unwrap()
       );
       await Promise.all(addPromises);
+      await dispatch(getCartItems()).unwrap();
       onClose();
       navigate("/checkout");
     } catch (error) {
@@ -97,28 +107,43 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     }
   };
 
-  const handleCancelItem = async (itemId) => {
-    if (window.confirm("Are you sure you want to cancel this specific item?")) {
-      try {
-        await cancelOrderItem(order.id, itemId);
-        alert("Item Cancelled Successfully");
-        await refreshOrder();
-      } catch (err) {
-        alert(err.response?.data?.message || "Failed to cancel item");
-      }
-    }
+  // 🟢 1. Open Modal for Item Cancellation
+  const handleCancelItemClick = (itemId) => {
+    setCancelModal({
+      isOpen: true,
+      type: "ITEM",
+      targetId: itemId,
+    });
   };
 
-  const handleCancelOrder = async () => {
-    if (window.confirm("Are you sure you want to cancel the ENTIRE order?")) {
-      try {
-        await cancelOrder(order.id);
-        alert("Order Cancelled Successfully");
+  // 🟢 2. Open Modal for Full Order Cancellation
+  const handleCancelOrderClick = () => {
+    setCancelModal({
+      isOpen: true,
+      type: "ORDER",
+      targetId: order.id,
+    });
+  };
+
+  // 🟢 3. Handle the actual API Call (Passed to CancelRequestModal)
+  const handleConfirmCancel = async (reason) => {
+    setCancelling(true);
+    try {
+      if (cancelModal.type === "ORDER") {
+        await cancelOrder(order.id, reason);
+        toast.success("Order Cancelled Successfully");
         onClose();
         window.location.reload();
-      } catch (err) {
-        alert(err.response?.data?.message || "Failed to cancel order");
+      } else if (cancelModal.type === "ITEM") {
+        await cancelOrderItem(order.id, cancelModal.targetId, reason);
+        toast.success("Item Cancelled Successfully");
+        await refreshOrder();
+        setCancelModal({ isOpen: false, type: null, targetId: null });
       }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -137,7 +162,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
             loadingItems={loadingItems}
             isOrderActive={isOrderActive}
             isReturnable={isReturnable}
-            onCancelItem={handleCancelItem}
+            onCancelItem={handleCancelItemClick}
             onSelectReturnItem={setSelectedReturnItem}
           />
 
@@ -148,7 +173,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
           onOrderAgain={handleOrderAgain}
           addingToCart={addingToCart}
           isOrderActive={isOrderActive}
-          onCancelOrder={handleCancelOrder}
+          onCancelOrder={handleCancelOrderClick}
           canReturnOrder={false}
           onReturnOrder={handleReturnOrder}
           returningOrder={returningOrder}
@@ -159,6 +184,16 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
           onReturnItemSuccess={refreshOrder}
         />
       </div>
+
+      <CancelRequestModal
+        isOpen={cancelModal.isOpen}
+        onClose={() => setCancelModal({ ...cancelModal, isOpen: false })}
+        onSubmit={handleConfirmCancel}
+        loading={cancelling}
+        title={
+          cancelModal.type === "ORDER" ? "Cancel Entire Order" : "Cancel Item"
+        }
+      />
     </div>,
     document.body
   );

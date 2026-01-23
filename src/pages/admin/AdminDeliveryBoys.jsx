@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { FaUserSecret } from "react-icons/fa";
+import { FaArrowLeft, FaUserSecret } from "react-icons/fa";
 import { getAllDeliveryBoys } from "../../services/orderService";
 import DeliveryBoyForm from "../../components/admin/delivery/DeliveryBoyForm";
 import DeliveryBoyTable from "../../components/admin/delivery/DeliveryBoyTable";
+import { useNavigate } from "react-router-dom";
 
 const AdminDeliveryBoys = () => {
+  const navigate = useNavigate();
   const [boys, setBoys] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,9 +33,17 @@ const AdminDeliveryBoys = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FaUserSecret /> Delivery Boys Management
-      </h2>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <FaUserSecret /> Delivery Boys Management
+        </h2>
+      </div>
 
       {/* Add Form Component */}
       <DeliveryBoyForm onBoyAdded={handleBoyAdded} />
