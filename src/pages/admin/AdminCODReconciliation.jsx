@@ -5,10 +5,13 @@ import {
   FaCheckCircle,
   FaHistory,
   FaArrowRight,
+  FaArrowLeft,
 } from "react-icons/fa";
 import { getCODReconciliation, settleCOD } from "../../services/orderService";
+import { useNavigate } from "react-router-dom";
 
 const AdminCODReconciliation = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,10 +57,18 @@ const AdminCODReconciliation = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <FaMoneyBillWave className="text-green-600" /> Cash on Delivery (COD)
-        Reconciliation
-      </h2>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <FaMoneyBillWave className="text-green-600" /> Cash on Delivery (COD)
+          Reconciliation
+        </h2>
+      </div>
 
       {/* 📊 SUMMARY CARD */}
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white mb-8">

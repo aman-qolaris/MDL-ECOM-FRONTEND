@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getAllDeliveryBoys } from "../../services/orderService";
-import { FaTruck, FaMapMarkerAlt, FaPhone, FaEye } from "react-icons/fa";
+import {
+  FaTruck,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEye,
+  FaArrowLeft,
+} from "react-icons/fa";
 
 const AssignedOrders = () => {
+  const navigate = useNavigate();
   const [boys, setBoys] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +33,13 @@ const AssignedOrders = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+        >
+          <FaArrowLeft size={16} />
+        </button>
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaTruck className="text-blue-600" /> Assigned Orders (Staff List)
         </h1>

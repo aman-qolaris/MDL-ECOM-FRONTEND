@@ -161,7 +161,10 @@ const OrdersTab = () => {
       {selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
+          onClose={() => {
+            setSelectedOrder(null);
+            fetchOrders();
+          }}
         />
       )}
     </div>
