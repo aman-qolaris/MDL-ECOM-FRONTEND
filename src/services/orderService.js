@@ -36,15 +36,19 @@ export const getOrderById = async (orderId) => {
   return response.data;
 };
 
-export const cancelOrderItem = async (orderId, itemId) => {
+// 🟢 FIXED: Added 'reason' as the 3rd argument
+export const cancelOrderItem = async (orderId, itemId, reason) => {
   const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`, {
-    reason,
+    reason, // Now this works because 'reason' is passed in
   });
   return response.data;
 };
 
-export const cancelOrder = async (orderId) => {
-  const response = await api.put(`/orders/${orderId}/cancel`, { reason });
+// 🟢 FIXED: Added 'reason' as the 2nd argument
+export const cancelOrder = async (orderId, reason) => {
+  const response = await api.put(`/orders/${orderId}/cancel`, {
+    reason, // Now this works because 'reason' is passed in
+  });
   return response.data;
 };
 
