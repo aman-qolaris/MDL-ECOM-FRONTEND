@@ -1,81 +1,42 @@
 import api from "./api";
 
-// Helper to check if a date is within range
-const isWithinRange = (dateString, start, end) => {
-  const date = new Date(dateString);
-  // Set times to ensure inclusive comparison
-  const startDate = new Date(start);
-  startDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(end);
-  endDate.setHours(23, 59, 59, 999);
-
-  return date >= startDate && date <= endDate;
-};
-
-// Modified to accept optional filters { start, end }
+// 🟢 FIX: Call the Backend Stats Endpoint directly
+// Do not fetch "all orders" and calculate locally.
 export const getDashboardStats = async (dateFilter = null) => {
   try {
-    // Parallel fetching
-    const [ordersRes, usersRes] = await Promise.all([
-      api.get("/orders/admin/all"),
-      api.get("/auth/users"),
-    ]);
-
-    let orders = ordersRes.data;
-    const users = usersRes.data;
-
-    // --- APPLY DATE FILTER IF PROVIDED ---
+    let query = "";
+    
+    // Construct Query Parameters if filters exist
     if (dateFilter && dateFilter.start && dateFilter.end) {
-      orders = orders.filter((o) =>
-        isWithinRange(o.createdAt, dateFilter.start, dateFilter.end)
-      );
+      query = `?start=${dateFilter.start}&end=${dateFilter.end}`;
     }
 
-    // --- Perform Calculations on (potentially filtered) orders ---
-
-    // Total Sales (Based on filtered orders)
-    const totalSales = orders
-      .filter((o) => o.status === "DELIVERED")
-      .reduce((acc, o) => acc + (parseFloat(o.amount) || 0), 0);
-
-    // Total Orders (Based on filtered orders)
-    const totalOrders = orders.length;
-
-    // --- SNAPSHOT METRICS ---
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    const todayOrders = orders.filter(
-      (o) => o.createdAt && o.createdAt.startsWith(todayStr)
-    ).length;
-
-    const pendingOrders = orders.filter((o) =>
-      ["PENDING", "PROCESSING"].includes(o.status)
-    ).length;
+    // Call the new backend logic
+    const response = await api.get(`/orders/admin/stats${query}`);
+    
+    // The backend now returns { totalSales, totalOrders, pendingOrders, todayOrders }
+    // We might need to fetch users separately if not included in that endpoint
+    const usersRes = await api.get("/auth/users");
 
     return {
-      totalSales,
-      totalOrders,
-      totalUsers: users.length,
-      todayOrders,
-      pendingOrders,
+      ...response.data,
+      totalUsers: usersRes.data.length, 
     };
   } catch (error) {
-    console.error("Error calculating admin stats:", error);
+    console.error("Error fetching admin stats:", error);
     throw error;
   }
 };
 
-// ✅ Fetch all return requests
+// ... (Keep the rest of your file exactly the same)
 export const getAllReturnRequests = async (page = 1, limit = 10) => {
   const response = await api.get(
     `/orders/admin/returns/all?page=${page}&limit=${limit}`
   );
-  return response.data; // Now returns { items: [], total: ... }
+  return response.data;
 };
 
-// ✅ Update status (Approve, Reject, Refunded)
 export const updateReturnStatus = async (orderId, itemId, status) => {
-  // Matches: app.put("/api/orders/admin/:orderId/items/:itemId/return-status")
   const response = await api.put(
     `/orders/admin/${orderId}/items/${itemId}/return-status`,
     { status }
@@ -103,10 +64,21 @@ export const createOrderOnBehalf = async (orderData) => {
   return response.data;
 };
 
-// 🟢 NEW: Get Cancelled Orders pending Refund (Prepaid)
 export const getCancelledRefundOrders = async (page = 1, limit = 10) => {
   const response = await api.get(
     `/orders/admin/refunds/cancelled?page=${page}&limit=${limit}`
   );
-  return response.data; // Now returns { items: [], total: ... }
+  return response.data;
+};
+
+
+export const getAllOrders = async (page = 1, limit = 100) => {
+  try {
+    // This calls the controller function 'getAllOrdersAdmin' we saw earlier
+    const response = await api.get("/orders/admin/all");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    return []; // Return empty array on failure to prevent crash
+  }
 };

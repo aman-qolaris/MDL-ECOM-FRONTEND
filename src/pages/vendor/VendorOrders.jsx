@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getVendorOrders } from "../../services/orderService";
-import { FaArrowLeft, FaBox, FaFilter, FaTimes, FaUndo } from "react-icons/fa"; // 🟢 Import FaUndo
+import { FaArrowLeft, FaBox, FaFilter, FaTimes, FaUndo } from "react-icons/fa";
 
 const VendorOrders = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const VendorOrders = () => {
   const [loading, setLoading] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const filterType = searchParams.get("filter"); // "today", "pending", or "returns"
+  const filterType = searchParams.get("filter");
 
   useEffect(() => {
     fetchOrders();
@@ -27,18 +27,45 @@ const VendorOrders = () => {
   };
 
   // ✅ FILTER LOGIC
+  // ... inside VendorOrders component ...
+
+  // ✅ FILTER LOGIC
   const filteredItems = items.filter((item) => {
+    // 1. Pending Orders
     if (filterType === "pending") {
       return ["PENDING", "PROCESSING"].includes(item.status);
     }
+
+    // 2. Today's Orders
     if (filterType === "today") {
       const today = new Date().toISOString().split("T")[0];
       return item.createdAt && item.createdAt.startsWith(today);
     }
-    // 🟢 NEW FILTER: Returns
+
+    // 3. Return Requests (Active Only)
     if (filterType === "returns") {
-      return item.returnStatus && item.returnStatus !== "NONE";
+      return ["REQUESTED", "APPROVED", "PICKUP_SCHEDULED", "RETURNED"].includes(
+        item.refundStatus,
+      );
     }
+
+    // 🟢 4. NEW: Revenue Filter (Matches Total Sales)
+    // Show ONLY items that are Delivered AND Kept (Not Returned/Refunded)
+    if (filterType === "revenue") {
+      return (
+        item.status === "DELIVERED" &&
+        (!item.refundStatus ||
+          item.refundStatus === "NONE" ||
+          // Note: We hide 'REQUESTED' here too if you want strict "Safe Money" view,
+          // but typically 'REQUESTED' is still counted until approved.
+          // To strictly match "Net Revenue" backend logic, exclude finalized returns:
+          !["RETURNED", "CREDITED", "COMPLETED", "CANCELLED"].includes(
+            item.refundStatus,
+          ))
+      );
+    }
+
+    // Default: Show all (or whatever your default behavior is)
     return true;
   });
 
@@ -60,7 +87,7 @@ const VendorOrders = () => {
           </button>
           <h2 className="text-2xl font-bold text-gray-800">Your Orders</h2>
         </div>
-        {/* ✅ Show Active Filter Badge */}
+
         {filterType && (
           <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold border border-blue-200">
             <FaFilter />
@@ -69,8 +96,8 @@ const VendorOrders = () => {
               {filterType === "today"
                 ? "Today's Orders"
                 : filterType === "returns"
-                ? "Return Requests" // 🟢 Label for returns
-                : "Pending Orders"}
+                  ? "Return Requests"
+                  : "Pending Orders"}
             </span>
             <button
               onClick={clearFilter}
@@ -136,7 +163,7 @@ const VendorOrders = () => {
                               {item.Product.Category.name}
                             </span>
                           )}
-                          {/* 🟢 Show Return Reason if available */}
+
                           {item.returnReason && (
                             <span className="text-[10px] text-red-500 italic mt-1">
                               Reason: "{item.returnReason}"
@@ -160,21 +187,20 @@ const VendorOrders = () => {
 
                     <td className="py-3 px-6 text-center">
                       <div className="flex flex-col gap-1 items-center">
-                        {/* 🟢 Return Status Badge */}
-                        {item.returnStatus && item.returnStatus !== "NONE" && (
+                        {/* 🟢 FIX: Use 'refundStatus' here as well */}
+                        {item.refundStatus && item.refundStatus !== "NONE" && (
                           <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
-                            <FaUndo size={10} /> {item.returnStatus}
+                            <FaUndo size={10} /> {item.refundStatus}
                           </span>
                         )}
 
-                        {/* Normal Status Badge */}
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-bold ${
                             item.status === "PACKED"
                               ? "bg-green-100 text-green-700"
                               : item.status === "CANCELLED"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
                           }`}
                         >
                           {item.status || "PENDING"}

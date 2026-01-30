@@ -12,7 +12,7 @@ export const getShippingRateForArea = async (areaName) => {
   try {
     // Calls the backend route we just created
     const { data } = await api.get(
-      `/orders/shipping/calculate?area=${encodeURIComponent(areaName)}`
+      `/orders/shipping/calculate?area=${encodeURIComponent(areaName)}`,
     );
     return data.rate;
   } catch (error) {
@@ -38,16 +38,23 @@ export const getOrderById = async (orderId) => {
 
 // 🟢 FIXED: Added 'reason' as the 3rd argument
 export const cancelOrderItem = async (orderId, itemId, reason) => {
+  console.log("🚀 SERVICE: calling cancelOrderItem", {
+    orderId,
+    itemId,
+    reason,
+  });
+  const safeReason = reason || "Customer Cancelled";
   const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`, {
-    reason, // Now this works because 'reason' is passed in
+    reason: safeReason, // Now this works because 'reason' is passed in
   });
   return response.data;
 };
 
 // 🟢 FIXED: Added 'reason' as the 2nd argument
 export const cancelOrder = async (orderId, reason) => {
+  const safeReason = reason || "Customer Cancelled";
   const response = await api.put(`/orders/${orderId}/cancel`, {
-    reason, // Now this works because 'reason' is passed in
+    reason: safeReason, // Now this works because 'reason' is passed in
   });
   return response.data;
 };
@@ -55,7 +62,7 @@ export const cancelOrder = async (orderId, reason) => {
 export const requestReturn = async (orderId, itemId, data) => {
   const response = await api.post(
     `/orders/${orderId}/items/${itemId}/return`,
-    data
+    data,
   );
   return response.data;
 };
@@ -89,11 +96,19 @@ export const updateVendorItemStatus = async (itemId, status) => {
     { status },
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return response.data;
 };
 
+export const getVendorStats = async (dateFilter = {}) => {
+  let query = "";
+  if (dateFilter.start && dateFilter.end) {
+    query = `?start=${dateFilter.start}&end=${dateFilter.end}`;
+  }
+  const response = await api.get(`/orders/vendor/stats${query}`);
+  return response.data;
+};
 // ==================================================
 // 🛡️ ADMIN
 // ==================================================
@@ -116,7 +131,7 @@ export const updateOrderStatus = async (orderId, status) => {
 export const updateOrderItemStatus = async (orderId, itemId, status) => {
   const response = await api.put(
     `/orders/admin/${orderId}/item/${itemId}/status`,
-    { status }
+    { status },
   );
   return response.data;
 };
@@ -172,7 +187,7 @@ export const getReassignmentOptions = async (orderId) => {
 export const reassignDeliveryBoy = async (
   orderId,
   oldDeliveryBoyId,
-  newDeliveryBoyId
+  newDeliveryBoyId,
 ) => {
   const response = await api.put(`/orders/admin/reassign-delivery/${orderId}`, {
     newDeliveryBoyId,
@@ -222,7 +237,7 @@ export const getDeliveryTasks = async () => {
 export const updateDeliveryStatus = async (assignmentId, status) => {
   const response = await api.put(
     `/orders/delivery/update-status/${assignmentId}`,
-    { status }
+    { status },
   );
   return response.data;
 };
