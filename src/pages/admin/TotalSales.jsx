@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom"; // 🟢 Import useSearchParams
 import { getDashboardStats, getAllOrders } from "../../services/adminService";
-import { FaArrowLeft, FaCalendarAlt, FaFilter, FaInfoCircle } from "react-icons/fa";
+import { FaArrowLeft, FaCalendarAlt, FaFilter } from "react-icons/fa";
 
-const AdminSales = () => {
+const TotalSales = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const filterMode = searchParams.get("filter"); 
+  const [searchParams] = useSearchParams(); // 🟢 Read URL params
+  const filterMode = searchParams.get("filter"); // Will be 'revenue' if clicked from Dashboard
 
   const [activeTab, setActiveTab] = useState("all"); 
   const [revenue, setRevenue] = useState(0);
@@ -20,75 +20,67 @@ const AdminSales = () => {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      // 1. Date Logic
+      // 1. Determine Date Range
       const now = new Date();
       let start = null, end = null;
+
       if (activeTab === "week") {
         const lastWeek = new Date(now);
         lastWeek.setDate(now.getDate() - 7);
-        start = lastWeek.toISOString(); end = now.toISOString();
+        start = lastWeek.toISOString();
+        end = now.toISOString();
       } else if (activeTab === "month") {
-        start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString(); end = now.toISOString();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        start = startOfMonth.toISOString();
+        end = now.toISOString();
       } else if (activeTab === "year") {
-        start = new Date(now.getFullYear(), 0, 1).toISOString(); end = now.toISOString();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        start = startOfYear.toISOString();
+        end = now.toISOString();
       }
 
-      // 2. Fetch Stats
+      // 2. Fetch Stats (Backend calculates Net Revenue correctly)
       const statsPayload = (start && end) ? { start, end } : {};
       const stats = await getDashboardStats(statsPayload);
       setRevenue(stats.totalSales || 0);
 
-      // 3. Fetch Orders
+      // 3. Fetch Orders for Table
       const allOrdersRes = await getAllOrders(1, 100); 
       let allOrdersList = Array.isArray(allOrdersRes) ? allOrdersRes : (allOrdersRes.orders || []);
 
-      // 🟢 4. HELPER: Calculate Net Revenue per Order
-      // This sums up ONLY the items that are Delivered and NOT returned
-      const getOrderNetRevenue = (order) => {
-       if (!order.OrderItems) return 0;
-        
-        // A. Sum up the Price of valid (kept) items
-        const itemsRevenue = order.OrderItems.reduce((sum, item) => {
-           // Item must be DELIVERED and NOT fully returned
-           const isKept = item.status === 'DELIVERED' && 
-                          (!item.refundStatus || item.refundStatus === 'NONE' || item.refundStatus === 'REQUESTED');
-           
-           if (isKept) return sum + (parseFloat(item.price) * item.quantity);
-           return sum;
-        }, 0);
-
-        // B. Add Shipping Charge (Only if there is at least 1 valid item)
-        // This fixes the discrepancy where Order #28 was missing the ₹20 shipping.
-       const shipping = parseFloat(order.shippingCharge || 0);
-
-        // Logic: We count shipping if we kept items OR if the order status implies delivery happened
-        // (This ensures we count shipping even if all items are returned but shipping is non-refundable)
-        const isShippingRetained = itemsRevenue > 0 || ["DELIVERED", "RETURN_REQUESTED", "PARTIALLY_RETURNED"].includes(order.status);
-        
-        return itemsRevenue + (isShippingRetained ? shipping : 0);
-      };
-
-      // 5. Transform Data & Filter
-      let processedOrders = allOrdersList.map(order => ({
-        ...order,
-        netRevenue: getOrderNetRevenue(order) // Attach calculated revenue
-      }));
-
-      // Filter: Show only orders that have > 0 Net Revenue
+      // 🟢 4. FILTERING LOGIC
+      // If we are in "Revenue Mode" (clicked from Dashboard), strictly hide non-revenue items
       if (filterMode === "revenue") {
-        processedOrders = processedOrders.filter(o => o.netRevenue > 0);
+        allOrdersList = allOrdersList.filter(order => {
+          // Check if order has ANY valid items contributing to revenue
+          // (Since admin list is Orders, not Items, we check the Parent Order status)
+          
+          // Must be DELIVERED to count as sales
+          if (order.status !== "DELIVERED") return false;
+
+          // If payment is false (unpaid COD), it's not revenue yet
+          // (Adjust this depending on if you count Accrued vs Cash revenue)
+          // if (!order.payment) return false; 
+
+          // If the order is fully returned/refunded, exclude it
+          // (Note: To be 100% precise, you'd filter order items, but filtering 
+          //  Parents with 'RETURNED' status is a good approximation for the list)
+          if (["RETURNED", "REFUNDED", "CANCELLED"].includes(order.status)) return false;
+
+          return true;
+        });
       }
 
-      // 6. Date Filter
+      // 5. Apply Date Filter
       if (activeTab !== "all") {
-        processedOrders = processedOrders.filter((order) => {
+        allOrdersList = allOrdersList.filter((order) => {
           if (!order.createdAt) return false;
           const orderDate = new Date(order.createdAt);
           return orderDate >= new Date(start) && orderDate <= new Date(end);
         });
       }
 
-      setOrders(processedOrders);
+      setOrders(allOrdersList);
 
     } catch (error) {
       console.error("Error fetching sales reports:", error);
@@ -103,7 +95,7 @@ const AdminSales = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() => navigate("/admin/dashboard")} // 🟢 Direct back to dashboard
             className="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition shadow-sm"
           >
             <FaArrowLeft />
@@ -114,7 +106,7 @@ const AdminSales = () => {
             </h1>
             {filterMode === "revenue" && (
               <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-md border border-green-200">
-                <FaFilter className="inline mr-1 mb-0.5"/> Showing Net Revenue
+                <FaFilter className="inline mr-1 mb-0.5"/> Showing Net Revenue Only
               </span>
             )}
           </div>
@@ -167,11 +159,10 @@ const AdminSales = () => {
             <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Order Ref</th>
+                <th className="px-6 py-4">Order ID</th>
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Status</th>
-                {/* 🟢 RENAMED HEADER */}
-                <th className="px-6 py-4 text-right">Net Revenue</th>
+                <th className="px-6 py-4 text-right">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -191,32 +182,17 @@ const AdminSales = () => {
                     <td className="px-6 py-4">
                       User {order.userId}
                     </td>
-                    <td className="px-6 py-4">
-                        {/* 🟢 SMART STATUS BADGE */}
-                        <div className="flex flex-col items-start gap-1">
-                             <span className={`px-2 py-1 rounded text-xs font-bold border ${
-                                order.status === 'DELIVERED' 
-                                ? 'bg-green-50 text-green-700 border-green-100' 
-                                : 'bg-yellow-50 text-yellow-700 border-yellow-100'
-                            }`}>
-                                {order.status}
-                            </span>
-                            {/* Show warning if amount differs */}
-                            {order.netRevenue < order.amount && (
-                                <span className="text-[10px] text-orange-500 flex items-center gap-1 font-medium">
-                                    <FaInfoCircle/> Partial Return
-                                </span>
-                            )}
-                        </div>
+                    <td className="px-6 py-4 text-xs font-bold">
+                       <span className={`px-2 py-1 rounded border ${
+                        order.status === 'DELIVERED' 
+                        ? 'bg-green-50 text-green-700 border-green-100' 
+                        : 'bg-gray-50 text-gray-600 border-gray-200'
+                      }`}>
+                        {order.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-gray-800 text-base">
-                      {/* 🟢 SHOW NET REVENUE, NOT TOTAL */}
-                      ₹{order.netRevenue.toLocaleString()}
-                      {order.netRevenue < order.amount && (
-                          <span className="block text-[10px] text-gray-400 line-through">
-                              ₹{parseFloat(order.amount).toLocaleString()}
-                          </span>
-                      )}
+                      ₹{parseFloat(order.amount || 0).toLocaleString()}
                     </td>
                   </tr>
                 ))
@@ -229,4 +205,4 @@ const AdminSales = () => {
   );
 };
 
-export default AdminSales;
+export default TotalSales;

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom"; // 🟢 1. Import useSearchParams
+import { useEffect, useState, useMemo } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   FaBoxOpen,
@@ -30,21 +30,15 @@ import {
 
 const AdminReturnRequests = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams(); // 🟢 2. Initialize Hook
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // --- STATE ---
-  // 🟢 3. Initialize activeTab from URL or default to 'returns'
   const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "returns"
+    searchParams.get("tab") || "returns",
   );
 
-  // 🟢 PAGINATION STATE
   const [items, setItems] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const observer = useRef();
-
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [selectedForRefund, setSelectedForRefund] = useState(null);
   const [selectedCreditNote, setSelectedCreditNote] = useState(null);
@@ -56,64 +50,51 @@ const AdminReturnRequests = () => {
   const [targetReturn, setTargetReturn] = useState(null);
   const [selectedNewBoy, setSelectedNewBoy] = useState(null);
 
-  // 🟢 4. Handle Tab Change (Updates URL)
+  // Handle Tab Change
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setSearchParams({ tab }); // Updates URL to ?tab=refunds or ?tab=returns
+    setSearchParams({ tab });
   };
 
-  // 🟢 RESET WHEN TAB CHANGES
-  useEffect(() => {
-    setItems([]);
-    setPage(1);
-    setHasMore(true);
-  }, [activeTab]);
-
-  // 🟢 FETCH DATA EFFECT
+  // 🟢 FETCH DATA (Simple, No Pagination, Explicit De-duplication)
   useEffect(() => {
     fetchData();
-  }, [activeTab, page]);
+  }, [activeTab]);
 
   const fetchData = async () => {
-    if (loading) return;
-
     setLoading(true);
     try {
       let data;
-      const LIMIT = 10;
-
+      // Fetch all (pass high limit to disable backend pagination if needed)
       if (activeTab === "returns") {
-        data = await getAllReturnRequests(page, LIMIT);
+        data = await getAllReturnRequests(1, 10000);
       } else {
-        data = await getCancelledRefundOrders(page, LIMIT);
+        data = await getCancelledRefundOrders(1, 10000);
       }
 
-      setItems((prev) => {
-        return page === 1 ? data.items : [...prev, ...data.items];
-      });
+      // 🟢 FIX: Explicit De-duplication on Frontend
+      // This ensures that even if the API sends duplicates, the UI won't show them.
+      const uniqueItems = [];
+      const seenIds = new Set();
+      const idKey = activeTab === "returns" ? "itemId" : "id";
 
-      setHasMore(data.items.length === LIMIT);
+      if (data.items && Array.isArray(data.items)) {
+        data.items.forEach((item) => {
+          if (!seenIds.has(item[idKey])) {
+            seenIds.add(item[idKey]);
+            uniqueItems.push(item);
+          }
+        });
+      }
+
+      setItems(uniqueItems);
     } catch (err) {
+      console.error(err);
       toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
-
-  // 🟢 INFINITE SCROLL OBSERVER
-  const lastItemElementRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore]
-  );
 
   // Filter Logic
   const filteredItems = useMemo(() => {
@@ -127,7 +108,7 @@ const AdminReturnRequests = () => {
 
     return items.filter((item) => {
       const itemDate = new Date(
-        item.createdAt || item.updatedAt || item.lastUpdated
+        item.createdAt || item.updatedAt || item.lastUpdated,
       );
       return itemDate >= start && itemDate <= end;
     });
@@ -156,12 +137,13 @@ const AdminReturnRequests = () => {
     try {
       await reassignDeliveryBoy(targetReturn.orderId, null, selectedNewBoy.id);
       toast.success("Delivery Partner Reassigned");
+      // Local Update
       setItems((prev) =>
         prev.map((item) =>
           item.orderId === targetReturn.orderId
             ? { ...item, pickupBoy: selectedNewBoy.name }
-            : item
-        )
+            : item,
+        ),
       );
       setReassignModalOpen(false);
     } catch (err) {
@@ -177,30 +159,40 @@ const AdminReturnRequests = () => {
       return;
 
     try {
-      await updateReturnStatus(orderId, itemId, status);
+      // 🟢 FIX: Capture response to get the assigned delivery boy
+      const response = await updateReturnStatus(orderId, itemId, status);
+      const newPickupBoy = response.pickupBoy; // Access the name returned by backend
+
       toast.success(
         status === "CREDITED"
           ? "Refund Processed Successfully!"
-          : `Status updated to ${status}`
+          : `Status updated to ${status}`,
       );
       setSelectedForRefund(null);
 
+      // 🟢 FIX: Update Local State with the new Delivery Boy immediately
       setItems((prev) =>
         prev.map((item) => {
           const currentId = activeTab === "returns" ? item.itemId : item.id;
           if (currentId == itemId) {
-            return { ...item, status: status, refundStatus: status };
+            return {
+              ...item,
+              status: status,
+              refundStatus: status,
+              // If backend sent a name, use it. Otherwise keep existing (or fallback)
+              pickupBoy: newPickupBoy || item.pickupBoy,
+            };
           }
           return item;
-        })
+        }),
       );
     } catch (err) {
+      console.error(err);
       toast.error(err.response?.data?.message || "Action failed");
     }
   };
 
-  // --- RENDER TABLES ---
-
+  // --- RENDER HELPERS ---
   const renderCancelledTable = () => (
     <table className="w-full text-left border-collapse">
       <thead className="bg-gray-50 text-gray-600 text-sm uppercase sticky top-0 z-10">
@@ -213,107 +205,98 @@ const AdminReturnRequests = () => {
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
-        {filteredItems.map((item, index) => {
-          const isLast = filteredItems.length === index + 1;
-          const creditNoteData = {
-            itemId: item.id,
-            orderId: item.orderId || item.Order?.id,
-            productName: item.Product?.name,
-            quantity: item.quantity,
-            amountToRefund: parseFloat(item.price) * item.quantity,
-            reason: item.returnReason || "Cancellation",
-            status: "CREDITED",
-            customerName: item.Order?.address?.fullName || "Customer",
-            customerPhone: item.Order?.address?.phone || "N/A",
-          };
-
-          return (
-            <tr
-              key={`${item.id}-${index}`}
-              ref={isLast ? lastItemElementRef : null}
-              className="hover:bg-gray-50 transition"
-            >
-              <td className="p-4 align-top">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
-                    {item.Product?.imageUrl ? (
-                      <img
-                        src={item.Product.imageUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <FaBox className="text-gray-400" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm text-gray-800 line-clamp-1">
-                      {item.Product?.name || `Product ID: ${item.productId}`}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Qty: {item.quantity}
-                    </p>
-                  </div>
+        {filteredItems.map((item, index) => (
+          <tr key={item.id || index} className="hover:bg-gray-50 transition">
+            <td className="p-4 align-top">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
+                  {item.Product?.imageUrl ? (
+                    <img
+                      src={item.Product.imageUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <FaBox className="text-gray-400" />
+                  )}
                 </div>
-              </td>
+                <div>
+                  <p className="font-medium text-sm text-gray-800 line-clamp-1">
+                    {item.Product?.name || `Product ID: ${item.productId}`}
+                  </p>
+                  <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                </div>
+              </div>
+            </td>
 
-              <td className="p-4 align-top">
-                <div
-                  className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded inline-block max-w-[200px] truncate"
-                  title={item.returnReason}
+            <td className="p-4 align-top">
+              <div
+                className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded inline-block max-w-[200px] truncate"
+                title={item.returnReason}
+              >
+                {item.returnReason || "Customer Cancelled"}
+              </div>
+            </td>
+
+            <td className="p-4 align-top">
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-gray-800">
+                  #{item.orderId || item.Order?.id}
+                </span>
+                <Link
+                  to={`/admin/orders/${item.orderId || item.Order?.id}`}
+                  className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
                 >
-                  {item.returnReason || "Customer Cancelled"}
+                  View Order <FaExternalLinkAlt size={8} />
+                </Link>
+                <div className="text-xs text-gray-500">
+                  {new Date(item.updatedAt).toLocaleDateString()}
                 </div>
-              </td>
+              </div>
+            </td>
 
-              <td className="p-4 align-top">
-                <div className="flex flex-col gap-1">
-                  <span className="font-bold text-gray-800">
-                    #{item.orderId || item.Order?.id}
-                  </span>
-                  <Link
-                    to={`/admin/orders/${item.orderId || item.Order?.id}`}
-                    className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
-                  >
-                    View Order <FaExternalLinkAlt size={8} />
-                  </Link>
-                  <div className="text-xs text-gray-500">
-                    {new Date(item.updatedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </td>
+            <td className="p-4 font-bold text-gray-800 align-top">
+              ₹{(parseFloat(item.price) * item.quantity).toLocaleString()}
+            </td>
 
-              <td className="p-4 font-bold text-gray-800 align-top">
-                ₹{(parseFloat(item.price) * item.quantity).toLocaleString()}
-              </td>
-
-              <td className="p-4 text-right align-top">
-                {item.refundStatus === "CREDITED" ? (
-                  <button
-                    onClick={() => setSelectedCreditNote(creditNoteData)}
-                    className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
-                  >
-                    View Credit Note
-                  </button>
-                ) : (
-                  <button
-                    onClick={() =>
-                      setSelectedForRefund({
-                        orderId: item.Order?.id || item.orderId,
-                        itemId: item.id,
-                        amountToRefund: parseFloat(item.price) * item.quantity,
-                        customerName: "Customer",
-                      })
-                    }
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md text-sm flex items-center gap-2 ml-auto"
-                  >
-                    <FaWallet /> Refund
-                  </button>
-                )}
-              </td>
-            </tr>
-          );
-        })}
+            <td className="p-4 text-right align-top">
+              {item.refundStatus === "CREDITED" ? (
+                <button
+                  onClick={() =>
+                    setSelectedCreditNote({
+                      itemId: item.id,
+                      orderId: item.orderId || item.Order?.id,
+                      productName: item.Product?.name,
+                      quantity: item.quantity,
+                      amountToRefund: parseFloat(item.price) * item.quantity,
+                      reason: item.returnReason || "Cancellation",
+                      status: "CREDITED",
+                      customerName: item.Order?.address?.fullName || "Customer",
+                      customerPhone: item.Order?.address?.phone || "N/A",
+                    })
+                  }
+                  className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
+                >
+                  View Credit Note
+                </button>
+              ) : (
+                <button
+                  onClick={() =>
+                    setSelectedForRefund({
+                      orderId: item.Order?.id || item.orderId,
+                      itemId: item.id,
+                      amountToRefund: parseFloat(item.price) * item.quantity,
+                      customerName: "Customer",
+                    })
+                  }
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md text-sm flex items-center gap-2 ml-auto"
+                >
+                  <FaWallet /> Refund
+                </button>
+              )}
+            </td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
@@ -331,162 +314,154 @@ const AdminReturnRequests = () => {
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
-        {filteredItems.map((req, index) => {
-          const isLast = filteredItems.length === index + 1;
-          return (
-            <tr
-              key={`${req.itemId}-${index}`}
-              ref={isLast ? lastItemElementRef : null}
-              className="hover:bg-gray-50 transition"
-            >
-              <td className="p-4 align-top">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
-                    {req.productImage ? (
-                      <img
-                        src={req.productImage}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <FaBox className="text-gray-400" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm text-gray-800 line-clamp-1">
-                      {req.productName || "Product Name N/A"}
-                    </p>
-                    <p className="text-xs text-gray-500">Qty: {req.quantity}</p>
-                  </div>
+        {filteredItems.map((req, index) => (
+          <tr key={req.itemId || index} className="hover:bg-gray-50 transition">
+            <td className="p-4 align-top">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
+                  {req.productImage ? (
+                    <img
+                      src={req.productImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <FaBox className="text-gray-400" />
+                  )}
                 </div>
-              </td>
-              <td className="p-4 align-top">
-                <div
-                  className="text-sm text-gray-600 max-w-[150px] truncate"
-                  title={req.reason}
+                <div>
+                  <p className="font-medium text-sm text-gray-800 line-clamp-1">
+                    {req.productName || "Product Name N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500">Qty: {req.quantity}</p>
+                </div>
+              </div>
+            </td>
+            <td className="p-4 align-top">
+              <div
+                className="text-sm text-gray-600 max-w-[150px] truncate"
+                title={req.reason}
+              >
+                {req.reason || "No Reason"}
+              </div>
+            </td>
+            <td className="p-4 align-top">
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-gray-800">#{req.orderId}</span>
+                <Link
+                  to={`/admin/orders/${req.orderId}`}
+                  className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
                 >
-                  {req.reason || "No Reason"}
+                  View Order <FaExternalLinkAlt size={8} />
+                </Link>
+                <div className="text-xs text-blue-700 font-bold">
+                  Refund: ₹{req.amountToRefund}
                 </div>
-              </td>
-              <td className="p-4 align-top">
-                <div className="flex flex-col gap-1">
-                  <span className="font-bold text-gray-800">
-                    #{req.orderId}
-                  </span>
-                  <Link
-                    to={`/admin/orders/${req.orderId}`}
-                    className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
-                  >
-                    View Order <FaExternalLinkAlt size={8} />
-                  </Link>
-                  <div className="text-xs text-blue-700 font-bold">
-                    Refund: ₹{req.amountToRefund}
+              </div>
+            </td>
+            <td className="p-4 max-w-xs align-top">
+              <div className="font-medium text-sm">{req.customerName}</div>
+              <div className="text-xs text-gray-500">{req.customerPhone}</div>
+            </td>
+            <td className="p-4 align-top">
+              {req.status === "REQUESTED" && (
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">
+                  Pending
+                </span>
+              )}
+              {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-gray-500">
+                    <FaTruck className="inline mr-1" />{" "}
+                    {/* Display the assigned name immediately */}
+                    {req.pickupBoy || "Unassigned"}
                   </div>
+                  {req.status === "PICKUP_SCHEDULED" && (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
+                      In Transit
+                    </span>
+                  )}
                 </div>
-              </td>
-              <td className="p-4 max-w-xs align-top">
-                <div className="font-medium text-sm">{req.customerName}</div>
-                <div className="text-xs text-gray-500">{req.customerPhone}</div>
-              </td>
-              <td className="p-4 align-top">
-                {req.status === "REQUESTED" && (
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">
-                    Pending
-                  </span>
-                )}
-                {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-500">
-                      <FaTruck className="inline mr-1" />{" "}
-                      {req.pickupBoy || "Unassigned"}
-                    </div>
-                    {req.status === "PICKUP_SCHEDULED" && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
-                        In Transit
-                      </span>
-                    )}
-                  </div>
-                )}
-                {req.status === "RETURNED" && (
-                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
-                    Warehouse
-                  </span>
-                )}
-                {req.status === "COMPLETED" && (
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">
-                    Verified
-                  </span>
-                )}
-                {(req.status === "REFUNDED" || req.status === "CREDITED") && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold flex items-center gap-1 w-fit">
-                    <FaCheck size={10} /> Credited
-                  </span>
-                )}
-                {req.status === "REJECTED" && (
-                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">
-                    Rejected
-                  </span>
-                )}
-              </td>
-              <td className="p-4 text-right align-top">
-                {req.status === "REQUESTED" && (
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() =>
-                        handleAction(req.orderId, req.itemId, "APPROVED")
-                      }
-                      className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleAction(req.orderId, req.itemId, "REJECTED")
-                      }
-                      className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )}
-                {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
-                  <button
-                    onClick={() => handleOpenReassign(req)}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700"
-                  >
-                    Reassign
-                  </button>
-                )}
-                {req.status === "RETURNED" && (
+              )}
+              {req.status === "RETURNED" && (
+                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
+                  Warehouse
+                </span>
+              )}
+              {req.status === "COMPLETED" && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">
+                  Verified
+                </span>
+              )}
+              {(req.status === "REFUNDED" || req.status === "CREDITED") && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold flex items-center gap-1 w-fit">
+                  <FaCheck size={10} /> Credited
+                </span>
+              )}
+              {req.status === "REJECTED" && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">
+                  Rejected
+                </span>
+              )}
+            </td>
+            <td className="p-4 text-right align-top">
+              {req.status === "REQUESTED" && (
+                <div className="flex justify-end gap-2">
                   <button
                     onClick={() =>
-                      handleAction(req.orderId, req.itemId, "COMPLETED")
+                      handleAction(req.orderId, req.itemId, "APPROVED")
                     }
-                    className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700"
+                    className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
                   >
-                    Verify Item
+                    Approve
                   </button>
-                )}
-                {req.status === "COMPLETED" && (
                   <button
-                    onClick={() => setSelectedForRefund(req)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
+                    onClick={() =>
+                      handleAction(req.orderId, req.itemId, "REJECTED")
+                    }
+                    className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50"
                   >
-                    Create Credit Note
+                    Reject
                   </button>
-                )}
-                {(req.status === "REFUNDED" || req.status === "CREDITED") && (
-                  <button
-                    onClick={() => setSelectedCreditNote(req)}
-                    className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
-                  >
-                    View Credit Note
-                  </button>
-                )}
-              </td>
-            </tr>
-          );
-        })}
+                </div>
+              )}
+              {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
+                <button
+                  onClick={() => handleOpenReassign(req)}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700"
+                >
+                  Reassign
+                </button>
+              )}
+              {req.status === "RETURNED" && (
+                <button
+                  onClick={() =>
+                    handleAction(req.orderId, req.itemId, "COMPLETED")
+                  }
+                  className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700"
+                >
+                  Verify Item
+                </button>
+              )}
+              {req.status === "COMPLETED" && (
+                <button
+                  onClick={() => setSelectedForRefund(req)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
+                >
+                  Create Credit Note
+                </button>
+              )}
+              {(req.status === "REFUNDED" || req.status === "CREDITED") && (
+                <button
+                  onClick={() => setSelectedCreditNote(req)}
+                  className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
+                >
+                  View Credit Note
+                </button>
+              )}
+            </td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
@@ -507,7 +482,6 @@ const AdminReturnRequests = () => {
             </h1>
           </div>
 
-          {/* 🟢 TABS SWITCHER (Using Handler to Sync URL) */}
           <div className="bg-white p-1 rounded-lg border border-gray-200 flex shadow-sm">
             <button
               onClick={() => handleTabChange("returns")}
@@ -565,15 +539,12 @@ const AdminReturnRequests = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-        {activeTab === "refunds"
-          ? renderCancelledTable()
-          : renderReturnsTable()}
-
-        {/* Loading Spinner at Bottom */}
-        {loading && (
-          <div className="p-4 text-center text-gray-500 text-sm">
-            Loading more...
-          </div>
+        {loading ? (
+          <div className="p-10 text-center text-gray-500">Loading...</div>
+        ) : activeTab === "refunds" ? (
+          renderCancelledTable()
+        ) : (
+          renderReturnsTable()
         )}
       </div>
 
