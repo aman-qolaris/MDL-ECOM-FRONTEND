@@ -11,22 +11,30 @@ import {
 } from "../store/slices/authSlice";
 import { loginUser } from "../services/authService";
 // Added icons for the modern UI
-import { FaPhoneAlt, FaLock } from "react-icons/fa";
-import { useEffect } from "react";
+import { FaPhoneAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { useEffect, useState } from "react";
 
 // Schema: Validate Phone & Password
 const schema = yup
   .object({
     phone: yup
       .string()
-      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
+      .matches(
+        /^[6-9]\d{9}$/,
+        "Please enter a valid Indian phone number (10 digits starting with 6-9)",
+      )
       .required("Phone number is required"),
-    password: yup.string().required("Password is required"),
+    password: yup
+      .string()
+      .min(8, "Password must be at least 8 characters long")
+      .max(16, "Password cannot exceed 16 characters")
+      .required("Password is required"),
   })
   .required();
 
 const Login = () => {
   const dispatch = useDispatch();
+  const [showPassword, setShowPassword] = useState(false);
   // 🟢 ADD THIS BLOCK
   useEffect(() => {
     dispatch(clearError());
@@ -62,8 +70,8 @@ const Login = () => {
     } catch (err) {
       dispatch(
         authFailure(
-          err.response?.data?.message || "Invalid phone number or password"
-        )
+          err.response?.data?.message || "Invalid phone number or password",
+        ),
       );
     }
   };
@@ -101,6 +109,7 @@ const Login = () => {
               <input
                 {...register("phone")}
                 type="tel"
+                maxLength={10}
                 placeholder="Enter your 10-digit number"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
@@ -119,10 +128,17 @@ const Login = () => {
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
                 {...register("password")}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-3.5 right-4 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </button>
             </div>
             <p className="text-red-500 text-xs mt-1 pl-1">
               {errors.password?.message}

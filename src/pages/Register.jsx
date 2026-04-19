@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -11,7 +11,14 @@ import {
   clearError,
 } from "../store/slices/authSlice";
 import { registerUser } from "../services/authService";
-import { FaUser, FaEnvelope, FaPhoneAlt, FaLock } from "react-icons/fa"; // Removed Bank Icons
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhoneAlt,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa"; // Removed Bank Icons
 
 // 🔴 UPDATED SCHEMA: Removed Bank Details
 const schema = yup
@@ -22,12 +29,21 @@ const schema = yup
       .min(4, "Name must be at least 4 characters")
       .max(20, "Name cannot exceed 20 characters"),
 
-    email: yup.string().email("Invalid email format").notRequired(),
+    email: yup
+      .string()
+      .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+        message: "Please enter a valid email address (e.g., name@example.com)",
+        excludeEmptyString: true,
+      })
+      .notRequired(),
 
     phone: yup
       .string()
       .required("Phone is required")
-      .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits"),
+      .matches(
+        /^[6-9]\d{9}$/,
+        "Please enter a valid Indian phone number (10 digits starting with 6-9)",
+      ),
 
     password: yup
       .string()
@@ -39,13 +55,21 @@ const schema = yup
       .matches(/[0-9]/, "Password must contain at least one number")
       .matches(
         /[!@#$%^&*(),.?":{}|<>]/,
-        "Password must contain at least one special character"
+        "Password must contain at least one special character",
       ),
+
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("password"), null], "Passwords must match")
+      .required("Please confirm your password"),
   })
   .required();
 
 const Register = () => {
   const dispatch = useDispatch();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     dispatch(clearError());
@@ -65,13 +89,14 @@ const Register = () => {
   const onSubmit = async (data) => {
     dispatch(authStart());
     try {
-      // Data sent will only contain name, email, phone, password
-      const result = await registerUser(data);
+      const { confirmPassword, ...payload } = data;
+
+      const result = await registerUser(payload);
       dispatch(authSuccess(result));
       navigate("/");
     } catch (err) {
       dispatch(
-        authFailure(err.response?.data?.message || "Registration failed")
+        authFailure(err.response?.data?.message || "Registration failed"),
       );
     }
   };
@@ -169,14 +194,54 @@ const Register = () => {
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
                 {...register("password")}
-                type="password"
+                type={showPassword ? "text" : "password"} // 🔴 Dynamic Type
                 placeholder="••••••••"
                 maxLength={16}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner" // 🔴 Changed pr-4 to pr-12
               />
+              {/* 🔴 EYE BUTTON */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-3.5 right-4 text-gray-400 hover:text-purple-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </button>
             </div>
             <p className="text-red-500 text-xs mt-1 pl-1">
               {errors.password?.message}
+            </p>
+          </div>
+
+          {/* Confirm Password Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+              Confirm Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <FaLock className="absolute top-3.5 left-3 text-gray-400" />
+              <input
+                {...register("confirmPassword")}
+                type={showConfirmPassword ? "text" : "password"} // 🔴 Dynamic Type
+                placeholder="••••••••"
+                maxLength={16}
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner" // 🔴 Changed pr-4 to pr-12
+              />
+              {/* 🔴 EYE BUTTON */}
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute top-3.5 right-4 text-gray-400 hover:text-purple-600 focus:outline-none transition-colors"
+              >
+                {showConfirmPassword ? (
+                  <FaEyeSlash size={18} />
+                ) : (
+                  <FaEye size={18} />
+                )}
+              </button>
+            </div>
+            <p className="text-red-500 text-xs mt-1 pl-1">
+              {errors.confirmPassword?.message}
             </p>
           </div>
 

@@ -7,16 +7,16 @@ import useDeferredRender from "../hooks/useDeferredRender";
 // === COMPONENTS ===
 import Hero from "../components/home/Hero";
 import CategoryShowcase from "../components/home/CategoryShowcase";
-const ProductCollection = lazy(() =>
-  import("../components/home/ProductCollection")
+const ProductCollection = lazy(
+  () => import("../components/home/ProductCollection"),
 );
-const FeaturedProducts = lazy(() =>
-  import("../components/home/FeaturedProducts")
+const FeaturedProducts = lazy(
+  () => import("../components/home/FeaturedProducts"),
 );
 const DealsOfTheDay = lazy(() => import("../components/home/DealsOfTheDay"));
 const RecentlyViewed = lazy(() => import("../components/home/RecentlyViewed"));
-const CustomerTestimonials = lazy(() =>
-  import("../components/home/CustomerTestimonials")
+const CustomerTestimonials = lazy(
+  () => import("../components/home/CustomerTestimonials"),
 );
 const TrustValues = lazy(() => import("../components/home/TrustValues"));
 
@@ -48,7 +48,7 @@ const Home = () => {
     // This gives a stable, "shuffled-like" ordering based on product identity.
     const score = (product) => {
       const key = String(
-        product?.id ?? product?._id ?? product?.slug ?? product?.name ?? ""
+        product?.id ?? product?._id ?? product?.slug ?? product?.name ?? "",
       );
       let hash = 0;
       for (let i = 0; i < key.length; i += 1) {
@@ -99,6 +99,9 @@ const Home = () => {
 
       {/* 2. SHOP BY CATEGORY (Icons) */}
       <CategoryShowcase />
+
+      {/* 8. RECENTLY VIEWED */}
+      <RecentlyViewed />
 
       {/* Defer below-the-fold sections to keep initial render fast */}
       {renderBelowFold && (

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // Added FaPhoneAlt and FaLock for the inputs
-import { FaStore, FaPhoneAlt, FaLock } from "react-icons/fa";
+import { FaStore, FaPhoneAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import api from "../../services/api"; // Uses port 5007
 
 const VendorLogin = () => {
@@ -11,7 +11,8 @@ const VendorLogin = () => {
     password: "",
   });
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false); // Added loading state for better UX
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,6 +21,18 @@ const VendorLogin = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError(null);
+
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      return setError(
+        "Please enter a valid Indian phone number (10 digits starting with 6-9)",
+      );
+    }
+
+    if (formData.password.length < 8 || formData.password.length > 16) {
+      return setError("Password must be between 8 and 16 characters");
+    }
+
     setLoading(true);
 
     // Hit the VENDOR service
@@ -81,8 +94,8 @@ const VendorLogin = () => {
                 name="phone"
                 type="tel"
                 required
-                maxLength={10} // 1. Blocks input after 10 characters
-                pattern="\d{10}" // 2. Ensures strictly 10 digits are required
+                maxLength={10}
+                pattern="[6-9]\d{9}"
                 placeholder="Enter your 10-digit phone"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
                 onChange={handleChange}
@@ -99,12 +112,21 @@ const VendorLogin = () => {
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
+                minLength={8}
+                maxLength={16}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
                 onChange={handleChange}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-3.5 right-4 text-gray-400 hover:text-purple-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </button>
             </div>
           </div>
 

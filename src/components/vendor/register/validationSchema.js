@@ -8,11 +8,17 @@ export const registrationSchema = yup
     name: yup.string().required("Full Name is required"),
     email: yup
       .string()
-      .email("Invalid email format")
+      .matches(
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        "Please enter a valid email address (e.g., name@example.com)",
+      )
       .required("Email is required"),
     phone: yup
       .string()
-      .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits")
+      .matches(
+        /^[6-9]\d{9}$/,
+        "Please enter a valid Indian phone number (10 digits starting with 6-9)",
+      )
       .required("Phone number is required"),
     password: yup
       .string()
@@ -22,17 +28,16 @@ export const registrationSchema = yup
       .matches(/[0-9]/, "Password must contain at least one number")
       .matches(
         /[!@#$%^&*(),.?":{}|<>]/,
-        "Password must contain at least one special character"
+        "Password must contain at least one special character",
       )
       .required("Password is required"),
-    // 🟢 UPDATED AADHAR VALIDATION
     aadhar: yup
       .string()
       .matches(/^\d{12}$/, "Aadhar number must be exactly 12 digits")
       .test(
         "verhoeff-check",
         "Invalid Aadhar Number (Checksum failed)",
-        (value) => validateVerhoeff(value) // Using the imported function
+        (value) => validateVerhoeff(value), // Using the imported function
       )
       .required("Aadhar number is required"),
 
@@ -52,7 +57,7 @@ export const registrationSchema = yup
       .transform((value) => value.toUpperCase())
       .matches(
         /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-        "Invalid PAN format (e.g., ABCDE1234F)"
+        "Invalid PAN format (e.g., ABCDE1234F)",
       )
       .required("PAN Number is required"),
 
@@ -62,7 +67,7 @@ export const registrationSchema = yup
       .transform((value) => value.toUpperCase())
       .matches(
         /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
-        "Invalid GST format (e.g., 22AAAAA0000A1Z5)"
+        "Invalid GST format (e.g., 22AAAAA0000A1Z5)",
       )
       .required("GST Number is required"),
 
@@ -74,7 +79,7 @@ export const registrationSchema = yup
       .transform((value) => value.toUpperCase())
       .matches(
         /^[A-Z]{4}0[A-Z0-9]{6}$/,
-        "Invalid IFSC Code (5th character must be '0')"
+        "Invalid IFSC Code (5th character must be '0')",
       )
       .required("IFSC Code is required"),
 
