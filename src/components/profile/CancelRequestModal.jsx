@@ -1,104 +1,133 @@
 import { useState } from "react";
-import { FaTimes } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { FaTimes, FaExclamationTriangle } from "react-icons/fa";
 
-const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
+import { cancelOrder } from "../../services/orderService";
+
+const CancelRequestModal = ({ order, onClose, onSuccess }) => {
   const [reason, setReason] = useState("");
-  const [customReason, setCustomReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const CANCEL_REASONS = [
+  const cancelReasons = [
+    "I changed my mind",
+    "Found a better price elsewhere",
     "Ordered by mistake",
-    "Changed my mind",
-    "Found a better price",
-    "Shipping time is too long",
-    "Need to change shipping address",
-    "Need to change payment method",
+    "Delivery is taking too long",
     "Other",
   ];
 
-  const handleSubmit = () => {
-    let finalReason = reason;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (!reason) return toast.error("Please select a reason.");
-
-    if (reason === "Other") {
-      if (!customReason.trim()) return toast.error("Please write a reason.");
-      finalReason = customReason;
+    if (!reason) {
+      setError("Please select a reason for cancellation.");
+      return;
     }
 
-    onSubmit(finalReason);
+    setLoading(true);
+    setError("");
+
+    try {
+      await cancelOrder(order?.id, reason);
+      onSuccess();
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to cancel order. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="font-bold text-lg text-red-600">
-            {title || "Cancel Order"}
-          </h3>
+        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-red-50/50">
+          <h3 className="text-xl font-bold text-gray-800">Cancel Order</h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-red-500 transition-colors"
           >
-            <FaTimes />
+            <FaTimes size={20} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-4 space-y-4">
-          <p className="text-gray-600 text-sm">
-            Are you sure you want to cancel? Please select a reason below:
-          </p>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Reason
-            </label>
-            <select
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            >
-              <option value="">-- Select Reason --</option>
-              {CANCEL_REASONS.map((r, i) => (
-                <option key={i} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6">
+          {/* Warning */}
+          <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl flex items-start gap-3 mb-6 text-sm border border-yellow-200/50">
+            <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-600" />
+            <p>
+              Are you sure you want to cancel Order{" "}
+              <strong>#{order?.id}</strong>?
+              <br className="mb-1" />
+              <span className="opacity-90">
+                Refunds for pre-paid orders will be processed automatically to
+                your original payment method.
+              </span>
+            </p>
           </div>
 
-          {reason === "Other" && (
-            <div className="space-y-1 animate-fade-in">
-              <textarea
-                className="w-full p-2 border rounded-lg h-24 text-sm focus:ring-2 focus:ring-red-500"
-                placeholder="Please describe why..."
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-              ></textarea>
-            </div>
-          )}
-        </div>
+          {/* Reasons */}
+          <div className="space-y-4 mb-6">
+            <label className="block text-sm font-bold text-gray-700">
+              Reason for Cancellation <span className="text-red-500">*</span>
+            </label>
 
-        {/* Footer */}
-        <div className="p-4 border-t flex justify-end gap-3 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition"
-          >
-            Close
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300 font-bold shadow-md transition"
-          >
-            {loading ? "Processing..." : "Confirm Cancellation"}
-          </button>
-        </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              {cancelReasons.map((r) => (
+                <label
+                  key={r}
+                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                    reason === r
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="cancelReason"
+                    value={r}
+                    checked={reason === r}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700">{r}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="text-red-500 text-xs font-semibold animate-shake">
+                {error}
+              </p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Keep Order
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading || !reason}
+              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex justify-center items-center shadow-md shadow-red-500/20"
+            >
+              {loading ? "Cancelling..." : "Confirm Cancel"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

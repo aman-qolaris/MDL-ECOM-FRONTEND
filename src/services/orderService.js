@@ -234,10 +234,10 @@ export const getDeliveryTasks = async () => {
   return response.data;
 };
 
-export const updateDeliveryStatus = async (assignmentId, status) => {
+export const updateDeliveryStatus = async (assignmentId, payload) => {
   const response = await api.put(
     `/orders/delivery/update-status/${assignmentId}`,
-    { status },
+    payload,
   );
   return response.data;
 };

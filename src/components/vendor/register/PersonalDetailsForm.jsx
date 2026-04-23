@@ -1,13 +1,19 @@
 /* eslint-disable react/prop-types */
+import { useState } from "react";
 import {
   FaUser,
   FaEnvelope,
   FaPhoneAlt,
   FaLock,
   FaIdCard,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 
 const PersonalDetailsForm = ({ register, errors }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <div>
       <h3 className="text-xl font-bold text-gray-700 flex items-center gap-2 border-b border-gray-200/50 pb-2 mb-6">
@@ -69,23 +75,6 @@ const PersonalDetailsForm = ({ register, errors }) => {
           <p className="error-text">{errors.phone?.message}</p>
         </div>
 
-        {/* Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
-            Password *
-          </label>
-          <div className="relative">
-            <FaLock className="absolute top-3.5 left-3 text-gray-400" />
-            <input
-              type="password"
-              {...register("password")}
-              className="input-glass pl-10"
-              placeholder="••••••••"
-            />
-          </div>
-          <p className="error-text">{errors.password?.message}</p>
-        </div>
-
         {/* Aadhar */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
@@ -105,6 +94,54 @@ const PersonalDetailsForm = ({ register, errors }) => {
             />
           </div>
           <p className="error-text">{errors.aadhar?.message}</p>
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            Password *
+          </label>
+          <div className="relative">
+            <FaLock className="absolute top-3.5 left-3 text-gray-400" />
+            <input
+              type={showPassword ? "text" : "password"}
+              {...register("password")}
+              className="input-glass pl-10 pr-10"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute top-3.5 right-3 text-gray-400 hover:text-gray-700 focus:outline-none transition-colors"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+          <p className="error-text">{errors.password?.message}</p>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            Confirm Password *
+          </label>
+          <div className="relative">
+            <FaLock className="absolute top-3.5 left-3 text-gray-400" />
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              {...register("confirmPassword")}
+              className="input-glass pl-10 pr-10"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute top-3.5 right-3 text-gray-400 hover:text-gray-700 focus:outline-none transition-colors"
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+          <p className="error-text">{errors.confirmPassword?.message}</p>
         </div>
       </div>
     </div>

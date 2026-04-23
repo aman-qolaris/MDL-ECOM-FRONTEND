@@ -12,21 +12,17 @@ const OrdersTab = () => {
 
   useEffect(() => {
     fetchOrders();
-    // Scroll to top of the list when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Fetch 10 items per page
       const data = await getMyOrders(currentPage, 10);
-
       if (data.orders) {
         setOrders(data.orders);
         setTotalPages(data.totalPages);
       } else {
-        // Fallback if backend doesn't send pagination structure yet
         setOrders(Array.isArray(data) ? data : []);
       }
     } catch (error) {
@@ -34,6 +30,32 @@ const OrdersTab = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Status mapping matching backend Enums
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "PROCESSING":
+        return "bg-blue-100 text-blue-700";
+      case "PACKED":
+        return "bg-indigo-100 text-indigo-700";
+      case "OUT_FOR_DELIVERY":
+        return "bg-purple-100 text-purple-700";
+      case "DELIVERED":
+        return "bg-green-100 text-green-700";
+      case "RETURN_REQUESTED":
+        return "bg-orange-100 text-orange-700";
+      case "CANCELLED":
+      case "PARTIALLY_CANCELLED":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const formatStatus = (status) => {
+    if (!status) return "Processing";
+    return status.replace(/_/g, " ").toUpperCase();
   };
 
   return (
@@ -65,15 +87,11 @@ const OrdersTab = () => {
                       Order #{order.id}
                     </span>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                        order.status === "DELIVERED"
-                          ? "bg-green-100 text-green-700"
-                          : order.status === "CANCELLED"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getStatusStyle(
+                        order.status,
+                      )}`}
                     >
-                      {order.status}
+                      {formatStatus(order.status)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -108,10 +126,8 @@ const OrdersTab = () => {
               </button>
 
               <div className="flex gap-2">
-                {/* Generate Simple Page Numbers */}
                 {[...Array(totalPages)].map((_, i) => {
                   const pageNum = i + 1;
-                  // Only show current, first, last, and neighbors (Optional logic to keep UI clean)
                   if (
                     totalPages > 7 &&
                     Math.abs(currentPage - pageNum) > 2 &&
@@ -157,7 +173,6 @@ const OrdersTab = () => {
         </>
       )}
 
-      {/* Order Detail Modal */}
       {selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}

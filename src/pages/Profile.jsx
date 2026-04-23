@@ -2,21 +2,19 @@ import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../store/slices/authSlice";
-// 🟢 1. Import Icon
+
 import {
   FaUser,
   FaBoxOpen,
   FaSignOutAlt,
   FaLock,
   FaMapMarkerAlt,
-  FaWallet,
 } from "react-icons/fa";
 
 import ProfileTab from "../components/profile/ProfileTab";
 import OrdersTab from "../components/profile/OrdersTab";
 import SecurityTab from "../components/profile/SecurityTab";
 import AddressBookTab from "../components/profile/AddressBookTab";
-import WalletTab from "../components/profile/WalletTab"; // 🟢 2. Import Component
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -25,7 +23,7 @@ const Profile = () => {
   const { user } = useSelector((state) => state.auth);
 
   const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || "profile"
+    location.state?.activeTab || "profile",
   );
 
   const handleLogout = () => {
@@ -88,13 +86,12 @@ const Profile = () => {
                 Profile Details
               </button>
 
-              {/* Sidebar Button */}
               <button
-                onClick={() => setActiveTab("addresses")} // Changed ID
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg ... ${
+                onClick={() => setActiveTab("addresses")}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
                   activeTab === "addresses"
                     ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600..."
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
                 <FaMapMarkerAlt
@@ -121,23 +118,6 @@ const Profile = () => {
                   }
                 />
                 Order History
-              </button>
-
-              {/* 🟢 4. NEW WALLET SIDEBAR BUTTON */}
-              <button
-                onClick={() => setActiveTab("wallet")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
-                  activeTab === "wallet"
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <FaWallet
-                  className={
-                    activeTab === "wallet" ? "text-blue-500" : "text-gray-400"
-                  }
-                />
-                My Wallet
               </button>
 
               <button
@@ -173,7 +153,6 @@ const Profile = () => {
           {activeTab === "profile" && <ProfileTab user={user} />}
           {activeTab === "addresses" && <AddressBookTab />}
           {activeTab === "orders" && <OrdersTab />}
-          {activeTab === "wallet" && <WalletTab />}
           {activeTab === "security" && <SecurityTab userId={user.id} />}
         </div>
       </div>

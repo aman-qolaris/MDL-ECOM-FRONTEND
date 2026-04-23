@@ -1,13 +1,6 @@
 import PaymentForm from "../../components/checkout/PaymentForm";
 
-// 🟢 1. Add payableAmount and walletUsed to props here
-const CheckoutPaymentStep = ({
-  step,
-  onSubmit,
-  onBack,
-  payableAmount,
-  walletUsed,
-}) => {
+const CheckoutPaymentStep = ({ step, onSubmit, onBack, payableAmount }) => {
   return (
     <div
       className={`bg-white p-4 sm:p-6 rounded-xl shadow-sm border ${
@@ -27,13 +20,11 @@ const CheckoutPaymentStep = ({
         Payment Method
       </h2>
 
-      {/* 🟢 2. Pass them down to PaymentForm */}
       {step === 2 && (
         <PaymentForm
           onSubmit={onSubmit}
           onBack={onBack}
           payableAmount={payableAmount}
-          walletUsed={walletUsed}
         />
       )}
     </div>

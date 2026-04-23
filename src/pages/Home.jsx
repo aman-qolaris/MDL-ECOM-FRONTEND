@@ -139,9 +139,6 @@ const Home = () => {
             products={newArrivals}
           />
 
-          {/* 8. RECENTLY VIEWED */}
-          <RecentlyViewed />
-
           {/* 9. TESTIMONIALS */}
           <CustomerTestimonials />
 

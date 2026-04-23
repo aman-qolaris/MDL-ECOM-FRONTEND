@@ -21,7 +21,7 @@ const DeliveryDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [historyFilterType, setHistoryFilterType] = useState("date");
   const [historyDate, setHistoryDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().split("T")[0],
@@ -75,14 +75,20 @@ const DeliveryDashboard = () => {
     navigate("/delivery/login");
   };
 
-  const handleStatusUpdate = async (assignmentId, newStatus) => {
-    // Dynamic confirmation message based on action
+  const handleStatusUpdate = async (
+    assignmentId,
+    newStatus,
+    extraPayload = {},
+  ) => {
     const actionName = newStatus === "PICKED" ? "Pick Up" : "Complete Job";
     if (!window.confirm(`Confirm ${actionName}?`)) return;
 
     try {
-      await updateDeliveryStatus(assignmentId, newStatus);
-      // Refresh without blocking the UI behind a full-screen spinner.
+      await updateDeliveryStatus(assignmentId, {
+        status: newStatus,
+        ...extraPayload,
+      });
+
       setLoading(false);
       const data = await getDeliveryTasks();
       if (Array.isArray(data)) {
@@ -92,7 +98,7 @@ const DeliveryDashboard = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to update status");
+      alert(error.response?.data?.message || "Failed to update status");
     }
   };
 

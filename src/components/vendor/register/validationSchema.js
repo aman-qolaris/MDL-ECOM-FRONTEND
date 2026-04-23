@@ -31,6 +31,10 @@ export const registrationSchema = yup
         "Password must contain at least one special character",
       )
       .required("Password is required"),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("password"), null], "Passwords must match")
+      .required("Confirm Password is required"),
     aadhar: yup
       .string()
       .matches(/^\d{12}$/, "Aadhar number must be exactly 12 digits")

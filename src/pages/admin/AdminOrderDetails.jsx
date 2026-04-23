@@ -97,7 +97,7 @@ const AdminOrderDetails = () => {
           `⛔ INSUFFICIENT WAREHOUSE STOCK!\n\n` +
             `Required: ${item.quantity}\n` +
             `Available in Warehouse: ${product.warehouseStock}\n\n` +
-            `Please transfer stock to warehouse before packing.`
+            `Please transfer stock to warehouse before packing.`,
         );
         return;
       }
@@ -117,7 +117,7 @@ const AdminOrderDetails = () => {
   };
 
   const areAllItemsReady = order?.OrderItems?.every(
-    (item) => item.status === "PACKED" || item.status === "CANCELLED"
+    (item) => item.status === "PACKED" || item.status === "CANCELLED",
   );
 
   const isPackingAllowed =
@@ -172,26 +172,25 @@ const AdminOrderDetails = () => {
   };
 
   const calculatePriceDetails = () => {
-    if (!order) return { subtotal: 0, total: 0, shippingCharge: 0, creditApplied: 0 };
-    
+    if (!order) return { subtotal: 0, total: 0, shippingCharge: 0 };
+
     const activeItems = order.OrderItems.filter(
-      (item) => item.status !== "CANCELLED"
-    );
-    
-    const subtotal = activeItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
+      (item) => item.status !== "CANCELLED",
     );
 
-    // 🟢 UPDATED: Include explicit shipping and credit fields
-    return { 
-      subtotal, 
-      total: order.amount, // This is the final payable amount
+    const subtotal = activeItems.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    );
+
+    // 🟢 UPDATED: Removed creditApplied
+    return {
+      subtotal,
+      total: order.amount,
       shippingCharge: order.shippingCharge,
-      creditApplied: order.creditApplied 
     };
   };
-  
+
   const priceDetails = calculatePriceDetails();
 
   // Helper for Status Badge Color
@@ -261,7 +260,7 @@ const AdminOrderDetails = () => {
               </span>
               <span
                 className={`px-4 py-1.5 rounded-full text-sm font-bold border shadow-sm ${getStatusColor(
-                  order.status
+                  order.status,
                 )}`}
               >
                 {order.status}

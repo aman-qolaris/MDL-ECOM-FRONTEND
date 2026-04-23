@@ -1,164 +1,147 @@
 import { useState } from "react";
-import { FaTimes } from "react-icons/fa";
-import { toast } from "react-toastify";
-import api from "../../services/api"; // Ensure you have your axios instance here
+import { FaTimes, FaUndoAlt, FaExclamationCircle } from "react-icons/fa";
 
-const ReturnRequestModal = ({ orderId, item, onClose, onSuccess }) => {
+// Ensure this matches your actual service import path
+import { requestReturn } from "../../services/orderService";
+
+const ReturnRequestModal = ({ order, item, onClose, onSuccess }) => {
   const [reason, setReason] = useState("");
-  const [customReason, setCustomReason] = useState("");
+  const [comments, setComments] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // 1. Define Policies per Category
-  const RETURN_REASONS = {
-    Electronics: [
-      "Device not working",
-      "Physical Damage",
-      "Wrong Item Received",
-      "Box was empty",
-    ],
-    Fashion: [
-      "Size Issue (Too Small/Big)",
-      "Fabric Quality Bad",
-      "Color Mismatch",
-      "Wrong Item",
-    ],
-    "Home & Kitchen": ["Product Damaged", "Parts Missing", "Wrong Item"],
-    Books: ["Torn Pages", "Wrong Edition", "Print Not Clear"],
-    "Beauty & Personal care": [
-      "Expired Product",
-      "Seal Broken",
-      "Allergic Reaction",
-    ],
-    Sports: ["Size Issue", "Damaged Equipment", "Wrong Item"],
-    Default: ["Product Quality Issue", "Shipment Delayed", "Other"],
-  };
+  const returnReasons = [
+    "Received wrong item",
+    "Item was damaged or defective",
+    "Item doesn't match the description",
+    "Quality is not as expected",
+    "Missing parts or accessories",
+    "Other",
+  ];
 
-  // Determine which list to show based on product category
-  // Ensure your item.Product object has a 'category' field, or pass categoryName prop
-  const categoryName = item.Product?.Category?.name || "Default";
-  const reasonList = RETURN_REASONS[categoryName] || RETURN_REASONS["Default"];
-
-  const handleSubmit = async () => {
-    let finalReason = reason;
-
-    // 2. Validation for 'Others'
-    if (reason === "Others" || reason === "Other") {
-      if (!customReason.trim()) return toast.error("Please write a reason.");
-
-      const wordCount = customReason.trim().split(/\s+/).length;
-      if (wordCount > 100)
-        return toast.error("Reason must be under 100 words.");
-
-      finalReason = `Others: ${customReason}`;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!reason) {
+      setError("Please select a reason for the return.");
+      return;
     }
 
-    if (!finalReason) return toast.error("Please select a reason.");
+    setLoading(true);
+    setError("");
 
     try {
-      setLoading(true);
-      await api.post(`/orders/${orderId}/items/${item.id}/return`, {
-        reason: finalReason,
-        categoryName: categoryName,
+      // Call your backend to update status to RETURN_REQUESTED
+      await requestReturn(order.id, item.id, {
+        reason: reason === "Other" ? comments : reason,
+        comments,
       });
-      toast.success("Return Request Sent!");
-      onSuccess(); // Refresh parent data
-      onClose();
+      onSuccess(); // Close modal and refresh the order list
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to request return");
+      setError(
+        err.response?.data?.message ||
+          "Failed to submit return request. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="font-bold text-lg">Request Return</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-orange-50/50">
+          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <FaUndoAlt className="text-orange-500" /> Request Return
+          </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-orange-500 transition-colors"
           >
-            <FaTimes />
+            <FaTimes size={20} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-4 space-y-4">
-          <div className="bg-gray-50 p-3 rounded-lg flex gap-3">
-            {/* Show Product Image if available */}
-            {item.Product?.imageUrl && (
-              <img
-                src={item.Product.imageUrl}
-                alt=""
-                className="w-12 h-12 object-cover rounded"
-              />
-            )}
-            <div>
-              <p className="font-medium line-clamp-1">
-                {item.Product?.name || "Product"}
-              </p>
-              <p className="text-sm text-gray-500">Category: {categoryName}</p>
-            </div>
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="bg-blue-50 text-blue-800 p-4 rounded-xl flex items-start gap-3 mb-6 text-sm border border-blue-200/50">
+            <FaExclamationCircle className="mt-0.5 shrink-0 text-blue-600" />
+            <p>
+              You are requesting a return for Order <strong>#{order.id}</strong>
+              .
+              <br className="mb-1" />
+              <span className="opacity-90">
+                Once approved, refunds for online payments are credited to the
+                original payment source. For COD orders, our team will contact
+                you.
+              </span>
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Reason for Return
+          <div className="space-y-4 mb-6">
+            <label className="block text-sm font-bold text-gray-700">
+              Why are you returning this?{" "}
+              <span className="text-red-500">*</span>
             </label>
-            <select
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            >
-              <option value="">-- Select Reason --</option>
-              {reasonList.map((r, i) => (
-                <option key={i} value={r}>
-                  {r}
-                </option>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              {returnReasons.map((r) => (
+                <label
+                  key={r}
+                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                    reason === r
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="returnReason"
+                    value={r}
+                    checked={reason === r}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700">{r}</span>
+                </label>
               ))}
-              <option value="Others">Others (Write your own)</option>
-            </select>
-          </div>
-
-          {/* Conditional Text Area */}
-          {(reason === "Others" || reason === "Other") && (
-            <div className="space-y-1">
-              <textarea
-                className="w-full p-2 border rounded-lg h-24 text-sm focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe your issue (max 100 words)..."
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-              ></textarea>
-              <p className="text-xs text-right text-gray-400">
-                {customReason.split(/\s+/).filter((w) => w).length}/100 words
-              </p>
             </div>
-          )}
 
-          <div className="bg-yellow-50 text-yellow-800 text-xs p-3 rounded border border-yellow-200">
-            <strong>Note:</strong> Items must be returned in original condition
-            with box and tags. Pickup will be assigned after approval.
+            {reason === "Other" && (
+              <div className="mt-3 animate-fadeIn">
+                <textarea
+                  placeholder="Please specify the reason..."
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-shadow"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+            )}
+
+            {error && (
+              <p className="text-red-500 text-xs font-semibold animate-shake">
+                {error}
+              </p>
+            )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
-          >
-            {loading ? "Submitting..." : "Submit Request"}
-          </button>
-        </div>
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-colors disabled:opacity-50 flex justify-center items-center shadow-md shadow-orange-500/20"
+            >
+              {loading ? "Submitting..." : "Submit Request"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

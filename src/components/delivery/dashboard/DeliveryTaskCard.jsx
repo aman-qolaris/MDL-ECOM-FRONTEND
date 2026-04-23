@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useState, useEffect } from "react";
 import {
   FaUndo,
   FaBoxOpen,
@@ -8,23 +9,55 @@ import {
   FaMapMarkerAlt,
   FaWarehouse,
   FaCheckCircle,
+  FaQrcode,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 
 const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
-  // 🟢 1. MATCH BACKEND CONTROLLER LOGIC
-  // In deliveryTask.controller.js: const type = isReturn ? "RETURN_PICKUP" : "DELIVERY";
-  const isReturn = task.type === "RETURN_PICKUP";
+  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+  const [paymentMode, setPaymentMode] = useState("CASH");
+  const [utrNumber, setUtrNumber] = useState("");
 
-  // 🟢 2. DATA MAPPING
-  // Backend sends 'address' object and 'items' array explicitly
+  const isReturn = task.type === "RETURN_PICKUP";
   const address = task.address || {};
   const items = task.items || [];
+  const requiresPaymentCollection =
+    !isReturn && task.paymentMethod === "COD" && task.cashToCollect > 0;
 
-  // Map Link
   const mapQuery = `${address.addressLine1}, ${address.city}, ${address.state}`;
-  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    mapQuery
-  )}`;
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=$$${encodeURIComponent(mapQuery)}`;
+
+  // 🟢 SMART LOGIC: Listen for Webhook Updates
+  useEffect(() => {
+    // If the 5-second background refresh detects that the webhook marked the order as paid,
+    // cashToCollect will drop to 0. We automatically close the manual UTR flow!
+    if (showPaymentFlow && task.cashToCollect === 0) {
+      setShowPaymentFlow(false);
+    }
+  }, [task.cashToCollect, showPaymentFlow]);
+
+  const handleDeliverClick = () => {
+    if (requiresPaymentCollection) {
+      setShowPaymentFlow(true);
+    } else {
+      // If prepaid, or if the webhook already handled it, skip straight to delivery!
+      onStatusUpdate(task.assignmentId, "DELIVERED");
+    }
+  };
+
+  const handleConfirmPaymentAndDeliver = () => {
+    if (paymentMode === "QR" && !utrNumber.trim()) {
+      alert("Please enter the UTR number for manual QR payment verification.");
+      return;
+    }
+
+    onStatusUpdate(task.assignmentId, "DELIVERED", {
+      codPaymentMode: paymentMode,
+      utrNumber: paymentMode === "QR" ? utrNumber : undefined,
+    });
+
+    setShowPaymentFlow(false);
+  };
 
   return (
     <div
@@ -34,7 +67,6 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
           : "border-l-4 border-l-green-500"
       }`}
     >
-      {/* Badge Type */}
       <div className="absolute top-3 right-3">
         {isReturn ? (
           <span className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200">
@@ -50,12 +82,11 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono mb-2">
-          {/* 🟢 3. DISPLAY ORDER ID */}
           <span>#{task.orderId}</span>
           <span>•</span>
           <FaCalendarAlt />{" "}
           {new Date(
-            task.date || task.updatedAt || Date.now()
+            task.date || task.updatedAt || Date.now(),
           ).toLocaleDateString()}
         </div>
 
@@ -79,23 +110,23 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                 Do Not Pay
               </span>
             ) : task.cashToCollect > 0 ? (
-              <div className="text-orange-600 font-bold flex flex-col items-end">
+              <div className="text-orange-600 font-bold flex flex-col items-end animate-fade-in">
                 <span className="text-xs text-gray-500 font-normal">
-                  Collect Cash
+                  Collect Payment
                 </span>
                 <span className="text-lg flex items-center">
                   <FaRupeeSign size={14} /> {task.cashToCollect}
                 </span>
               </div>
             ) : (
-              <span className="text-green-600 text-xs font-bold uppercase border border-green-200 px-2 py-1 rounded bg-green-50">
-                Prepaid
+              <span className="text-green-600 text-xs font-bold uppercase border border-green-200 px-2 py-1 rounded bg-green-50 animate-fade-in">
+                Prepaid Verified
               </span>
             )}
           </div>
         </div>
 
-        {/* Address & Map */}
+        {/* Address */}
         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 mb-4 flex justify-between items-center">
           <div className="text-sm text-gray-600 w-3/4">
             <p className="line-clamp-2">
@@ -125,7 +156,6 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                   className="text-sm text-gray-700 flex justify-between border-b border-gray-100 pb-1 last:border-0"
                 >
                   <span>
-                    {/* Access Product details sent by controller */}
                     {item.Product?.name || "Product Item"}{" "}
                     <span className="text-gray-400">x{item.quantity}</span>
                   </span>
@@ -144,53 +174,115 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
           </div>
         </div>
 
-        {/* Actions - Only for Active Tab */}
+        {/* Active Tab Actions */}
         {activeTab === "active" && (
-          <div className="grid grid-cols-1 gap-2">
+          <div className="mt-4 pt-4 border-t border-gray-100">
             {/* STAGE 1: ASSIGNED -> PICKED */}
             {task.status === "ASSIGNED" && (
               <button
-                // Use assignmentId for status updates
                 onClick={() => onStatusUpdate(task.assignmentId, "PICKED")}
-                className={`w-full py-3 rounded-lg font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
+                className={`w-full py-3 rounded-xl font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
                   isReturn
                     ? "bg-orange-500 hover:bg-orange-600"
                     : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
-                {isReturn ? (
-                  <>
-                    <FaBoxOpen /> Pick from Customer
-                  </>
-                ) : (
-                  <>
-                    <FaBoxOpen /> Pick from Warehouse
-                  </>
-                )}
+                <FaBoxOpen />{" "}
+                {isReturn ? "Pick from Customer" : "Pick from Warehouse"}
               </button>
             )}
 
-            {/* STAGE 2: PICKED -> DELIVERED */}
+            {/* STAGE 2: PICKED -> DELIVERED (Or Return Dropped) */}
             {(task.status === "PICKED" ||
               task.status === "OUT_FOR_DELIVERY") && (
-              <button
-                onClick={() => onStatusUpdate(task.assignmentId, "DELIVERED")}
-                className={`w-full py-3 rounded-lg font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
-                  isReturn
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                {isReturn ? (
-                  <>
-                    <FaWarehouse /> Drop at Warehouse
-                  </>
+              <>
+                {!showPaymentFlow ? (
+                  <button
+                    onClick={handleDeliverClick}
+                    className={`w-full py-3 rounded-xl font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 ${
+                      isReturn
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-green-600 hover:bg-green-700"
+                    }`}
+                  >
+                    {isReturn ? (
+                      <>
+                        <FaWarehouse /> Drop at Warehouse
+                      </>
+                    ) : (
+                      <>
+                        <FaCheckCircle /> Mark Delivered
+                      </>
+                    )}
+                  </button>
                 ) : (
-                  <>
-                    <FaCheckCircle /> Mark Delivered
-                  </>
+                  /* INLINE PAYMENT COLLECTION UI FOR COD */
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                      <FaRupeeSign className="text-orange-600" /> Collect ₹
+                      {task.cashToCollect}
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <button
+                        onClick={() => setPaymentMode("CASH")}
+                        className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors ${
+                          paymentMode === "CASH"
+                            ? "bg-green-600 text-white border-green-600 shadow-sm"
+                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <FaMoneyBillWave /> Cash
+                      </button>
+                      <button
+                        onClick={() => setPaymentMode("QR")}
+                        className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors ${
+                          paymentMode === "QR"
+                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <FaQrcode /> QR/UPI
+                      </button>
+                    </div>
+
+                    {paymentMode === "QR" && (
+                      <div className="mb-4 animate-fade-in">
+                        <label className="block text-xs font-bold text-gray-600 mb-1">
+                          Enter UTR Number *
+                        </label>
+                        <p className="text-[10px] text-gray-500 mb-2">
+                          If the customer paid via a Razorpay link, this screen
+                          will auto-close when verified. If they paid a shop QR,
+                          enter the UTR below.
+                        </p>
+                        <input
+                          type="text"
+                          value={utrNumber}
+                          onChange={(e) => setUtrNumber(e.target.value)}
+                          placeholder="e.g. 312345678901"
+                          className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowPaymentFlow(false)}
+                        className="flex-1 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleConfirmPaymentAndDeliver}
+                        className="flex- py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1 shadow-sm"
+                      >
+                        <FaCheckCircle /> Confirm & Deliver
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </button>
+              </>
             )}
           </div>
         )}
