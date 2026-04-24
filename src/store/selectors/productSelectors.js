@@ -9,13 +9,21 @@ export const selectFilteredProducts = createSelector(
   [selectProductItems, selectFilters],
   (items, filters) => {
     const sourceItems = items || [];
+    const activeCategories = Array.isArray(filters.categories)
+      ? filters.categories.filter(Boolean)
+      : [];
 
     return sourceItems
       .filter((item) => {
         // Category Filter
         const itemCategory =
           item.Category?.name || item.category?.name || item.category;
-        if (filters.category && itemCategory !== filters.category) return false;
+        // Prefer multi-select categories; tolerate legacy single `category`
+        if (activeCategories.length > 0) {
+          if (!activeCategories.includes(itemCategory)) return false;
+        } else if (filters.category) {
+          if (itemCategory !== filters.category) return false;
+        }
 
         // Price Filters
         if (filters.minPrice && item.price < parseFloat(filters.minPrice))
@@ -46,5 +54,5 @@ export const selectFilteredProducts = createSelector(
           return new Date(b.createdAt) - new Date(a.createdAt);
         return 0; // Default (Relevance)
       });
-  }
+  },
 );

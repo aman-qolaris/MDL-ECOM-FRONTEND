@@ -2,17 +2,17 @@ import api from "./api"; // 🟢 Only import your custom API instance
 
 // --- ADMIN FUNCTIONS ---
 export const getAllVendors = async () => {
-  const response = await api.get("/admin/vendors");
+  const response = await api.get("/admin/vendors/vendors");
   return response.data;
 };
 
 export const approveVendor = async (vendorId) => {
-  const response = await api.put(`/admin/vendors/${vendorId}/approve`);
+  const response = await api.put(`/admin/vendors//vendors/${vendorId}/approve`);
   return response.data;
 };
 
 export const rejectVendor = async (vendorId) => {
-  const response = await api.put(`/admin/vendors/${vendorId}/reject`);
+  const response = await api.put(`/admin/vendors//vendors/${vendorId}/reject`);
   return response.data;
 };
 
@@ -45,7 +45,7 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
     // --- APPLY DATE FILTER IF PROVIDED ---
     if (dateFilter && dateFilter.start && dateFilter.end) {
       orders = orders.filter((item) =>
-        isWithinRange(item.createdAt, dateFilter.start, dateFilter.end)
+        isWithinRange(item.createdAt, dateFilter.start, dateFilter.end),
       );
     }
 
@@ -59,7 +59,7 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
         return (
           status === "DELIVERED" &&
           ["NONE", "REQUESTED", "APPROVED", "PICKUP_SCHEDULED"].includes(
-            returnStatus
+            returnStatus,
           )
         );
       })
@@ -68,17 +68,17 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
     // Today's Orders
     const todayStr = new Date().toISOString().split("T")[0];
     const todayOrders = orders.filter(
-      (item) => item.createdAt && item.createdAt.startsWith(todayStr)
+      (item) => item.createdAt && item.createdAt.startsWith(todayStr),
     ).length;
 
     // Pending Orders
     const pendingOrders = orders.filter((item) =>
-      ["PENDING", "PROCESSING"].includes(item.status?.toUpperCase())
+      ["PENDING", "PROCESSING"].includes(item.status?.toUpperCase()),
     ).length;
 
     // Active Returns Count
     const returnsCount = orders.filter(
-      (item) => item.returnStatus && item.returnStatus !== "NONE"
+      (item) => item.returnStatus && item.returnStatus !== "NONE",
     ).length;
 
     return {

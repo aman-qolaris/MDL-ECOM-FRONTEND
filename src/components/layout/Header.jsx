@@ -30,16 +30,25 @@ const Header = () => {
 
     // Navigate to shop with search query after user stops typing
     if (debouncedSearch.trim()) {
-      const query = `?search=${encodeURIComponent(debouncedSearch)}`;
-      const nextUrl = `/shop${query}`;
+      const params = new URLSearchParams(location.search);
+      params.set("search", debouncedSearch.trim());
+
+      const nextSearch = params.toString();
+      const nextUrl = `/shop${nextSearch ? `?${nextSearch}` : ""}`;
       const currentUrl = `${location.pathname}${location.search}`;
-      if (currentUrl !== nextUrl) {
-        navigate(nextUrl, { replace: true });
-      }
+      if (currentUrl !== nextUrl) navigate(nextUrl, { replace: true });
       setIsMobileMenuOpen(false);
-    } else if (location.pathname === "/shop" && location.search) {
-      // Clear search params if query is empty while on shop page
-      navigate("/shop", { replace: true });
+    } else if (location.pathname === "/shop") {
+      // Only clear the `search` param when the input is empty.
+      // Do NOT wipe other shop filters like `category`, `minPrice`, etc.
+      const params = new URLSearchParams(location.search);
+      if (!params.has("search")) return;
+
+      params.delete("search");
+      const nextSearch = params.toString();
+      const nextUrl = `/shop${nextSearch ? `?${nextSearch}` : ""}`;
+      const currentUrl = `${location.pathname}${location.search}`;
+      if (currentUrl !== nextUrl) navigate(nextUrl, { replace: true });
     }
   }, [
     debouncedSearch,

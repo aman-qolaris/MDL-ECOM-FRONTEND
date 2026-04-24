@@ -12,6 +12,7 @@ import {
   FaUserTie,
   FaBox,
   FaArrowLeft,
+  FaEye,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -132,67 +133,90 @@ const AdminVendors = () => {
             </tr>
           </thead>
           <tbody className="text-gray-600 text-sm">
-            {filteredVendors.map((vendor) => (
-              <tr
-                key={vendor.id}
-                className="border-b hover:bg-gray-50 transition"
-              >
-                <td className="py-3 px-6 font-mono">#{vendor.id}</td>
-                <td className="py-3 px-6 font-medium text-gray-800">
-                  {vendor.businessName}
-                </td>
-                <td className="py-3 px-6 flex items-center gap-2">
-                  <FaUserTie className="text-gray-400" /> {vendor.name}
-                </td>
-                <td className="py-3 px-6">
-                  <div>{vendor.email}</div>
-                  <div className="text-xs text-gray-400">{vendor.phone}</div>
-                </td>
-                {/* 👇 5. ADD THIS CELL */}
-                <td className="py-3 px-6 text-center">
-                  <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">
-                    <FaBox className="text-blue-500" />
-                    <span>{inventoryCounts[vendor.id] || 0} Items</span>
-                  </div>
-                </td>
-                <td className="py-3 px-6">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      vendor.status === "APPROVED"
-                        ? "bg-green-100 text-green-700"
-                        : vendor.status === "REJECTED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+            {filteredVendors.map((vendor) => {
+              // 🟢 1. Define the navigation function
+              const navigateToDetails = () => {
+                navigate(`/admin/vendors/${vendor.id}`, { state: { vendor } });
+              };
+
+              return (
+                <tr
+                  key={vendor.id}
+                  className="border-b hover:bg-gray-50 transition"
+                >
+                  {/* 🟢 2. Add onClick and cursor-pointer to the data columns */}
+                  <td
+                    onClick={navigateToDetails}
+                    className="py-3 px-6 font-mono cursor-pointer hover:text-blue-600"
                   >
-                    {vendor.status}
-                  </span>
-                </td>
-                <td className="py-3 px-6 text-center">
-                  {vendor.status === "PENDING" && (
-                    <div className="flex justify-center gap-2">
-                      <button
-                        onClick={() => handleAction(vendor.id, "approve")}
-                        className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200 cursor-pointer"
-                        title="Approve"
-                      >
-                        <FaCheck />
-                      </button>
-                      <button
-                        onClick={() => handleAction(vendor.id, "reject")}
-                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 cursor-pointer"
-                        title="Reject"
-                      >
-                        <FaTimes />
-                      </button>
+                    #{vendor.id}
+                  </td>
+                  <td
+                    onClick={navigateToDetails}
+                    className="py-3 px-6 font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                  >
+                    {vendor.businessName}
+                  </td>
+                  <td
+                    onClick={navigateToDetails}
+                    className="py-3 px-6 flex items-center gap-2 cursor-pointer hover:text-blue-600"
+                  >
+                    <FaUserTie className="text-gray-400" /> {vendor.name}
+                  </td>
+                  <td
+                    onClick={navigateToDetails}
+                    className="py-3 px-6 cursor-pointer hover:text-blue-600"
+                  >
+                    <div>{vendor.email}</div>
+                    <div className="text-xs text-gray-400">{vendor.phone}</div>
+                  </td>
+                  <td className="py-3 px-6 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">
+                      <FaBox className="text-blue-500" />
+                      <span>{inventoryCounts[vendor.id] || 0} Items</span>
                     </div>
-                  )}
-                  {vendor.status !== "PENDING" && (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="py-3 px-6">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        vendor.status === "APPROVED"
+                          ? "bg-green-100 text-green-700"
+                          : vendor.status === "REJECTED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {vendor.status}
+                    </span>
+                  </td>
+
+                  {/* 🟢 3. Remove the Eye button from Actions. Only keep Approve/Reject */}
+                  <td className="py-3 px-6 text-center">
+                    {vendor.status === "PENDING" && (
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleAction(vendor.id, "approve")}
+                          className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200 cursor-pointer"
+                          title="Approve"
+                        >
+                          <FaCheck />
+                        </button>
+                        <button
+                          onClick={() => handleAction(vendor.id, "reject")}
+                          className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 cursor-pointer"
+                          title="Reject"
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    )}
+                    {vendor.status !== "PENDING" && (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {filteredVendors.length === 0 && (
               <tr>
                 <td colSpan="6" className="py-8 text-center text-gray-500">

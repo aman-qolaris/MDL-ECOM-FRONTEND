@@ -57,7 +57,7 @@ const AdminInventory = () => {
   };
 
   const filteredVendors = vendors.filter((v) =>
-    v.businessName.toLowerCase().includes(searchTerm.toLowerCase())
+    v.businessName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) return <div className="p-6">Loading inventory...</div>;
@@ -98,17 +98,26 @@ const AdminInventory = () => {
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
+                <div
+                  className="flex items-center gap-3 cursor-pointer group"
+                  onClick={() =>
+                    navigate(`/admin/vendors/${vendor.id}`, {
+                      state: { vendor },
+                    })
+                  }
+                  title="View Vendor Details"
+                >
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl group-hover:bg-blue-200 transition">
                     <FaStore />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800">
+                    <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition">
                       {vendor.businessName}
                     </h3>
                     <p className="text-sm text-gray-500">{vendor.name}</p>
                   </div>
                 </div>
+
                 <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
                   ID: {vendor.id}
                 </span>

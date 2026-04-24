@@ -136,11 +136,6 @@ export const updateOrderItemStatus = async (orderId, itemId, status) => {
   return response.data;
 };
 
-export const getAllVendors = async () => {
-  const response = await api.get("/admin/vendors");
-  return response.data;
-};
-
 export const getAdminVendorSales = async (vendorId, type = "monthly") => {
   const response = await api.get(`/orders/admin/sales/vendor/${vendorId}`, {
     params: { type },

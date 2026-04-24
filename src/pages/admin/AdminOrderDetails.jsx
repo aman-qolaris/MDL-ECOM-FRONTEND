@@ -4,11 +4,11 @@ import { FaArrowLeft, FaCalendarAlt, FaHashtag } from "react-icons/fa";
 import {
   getAdminOrderDetails,
   updateOrderStatus,
-  getAllVendors,
   updateOrderItemStatus,
   getReassignmentOptions,
   reassignDeliveryBoy,
 } from "../../services/orderService";
+import { getAllVendors } from "../../services/vendorService";
 import { getProductById } from "../../services/productService";
 
 // Sub-components

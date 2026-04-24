@@ -33,28 +33,31 @@ const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminSales = lazy(() => import("./pages/admin/AdminSales"));
 const AdminTodaysOrders = lazy(() => import("./pages/admin/AdminTodaysOrders"));
-const AdminPendingOrders = lazy(() =>
-  import("./pages/admin/AdminPendingOrders")
+const AdminPendingOrders = lazy(
+  () => import("./pages/admin/AdminPendingOrders"),
 );
 const AdminInventory = lazy(() => import("./pages/admin/AdminInventory"));
-const AdminVendorInventory = lazy(() =>
-  import("./pages/admin/AdminVendorInventory")
+const AdminVendorInventory = lazy(
+  () => import("./pages/admin/AdminVendorInventory"),
 );
 const AdminVendorSales = lazy(() => import("./pages/admin/AdminVendorSales"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminOrderDetails = lazy(() => import("./pages/admin/AdminOrderDetails"));
-const AdminReturnRequests = lazy(() =>
-  import("./pages/admin/AdminReturnRequests")
+const AdminReturnRequests = lazy(
+  () => import("./pages/admin/AdminReturnRequests"),
 );
 const AdminVendors = lazy(() => import("./pages/admin/AdminVendors"));
+const AdminVendorDetails = lazy(
+  () => import("./pages/admin/AdminVendorDetails"),
+);
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AssignedOrders = lazy(() => import("./pages/admin/AssignedOrders"));
-const AdminDeliveryBoyDetails = lazy(() =>
-  import("./pages/admin/AdminDeliveryBoyDetails")
+const AdminDeliveryBoyDetails = lazy(
+  () => import("./pages/admin/AdminDeliveryBoyDetails"),
 );
 const AdminDeliveryBoys = lazy(() => import("./pages/admin/AdminDeliveryBoys"));
-const AdminCODReconciliation = lazy(() =>
-  import("./pages/admin/AdminCODReconciliation")
+const AdminCODReconciliation = lazy(
+  () => import("./pages/admin/AdminCODReconciliation"),
 );
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 
@@ -71,8 +74,8 @@ const VendorProfile = lazy(() => import("./pages/vendor/VendorProfile"));
 
 // --- DELIVERY PAGES ---
 const DeliveryLogin = lazy(() => import("./pages/delivery/DeliveryLogin"));
-const DeliveryDashboard = lazy(() =>
-  import("./pages/delivery/DeliveryDashboard")
+const DeliveryDashboard = lazy(
+  () => import("./pages/delivery/DeliveryDashboard"),
 );
 
 // Simple Loading Component
@@ -111,6 +114,7 @@ function App() {
               <Route path="orders/:id" element={<AdminOrderDetails />} />
               <Route path="returns" element={<AdminReturnRequests />} />
               <Route path="vendors" element={<AdminVendors />} />
+              <Route path="vendors/:id" element={<AdminVendorDetails />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="assigned-orders" element={<AssignedOrders />} />
               <Route

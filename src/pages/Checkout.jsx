@@ -4,9 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { clearCartThunk } from "../store/thunks/cartThunks";
 import { selectCartItems } from "../store/slices/cartSlice";
 import { initiatePayment } from "../services/paymentService";
-// 🟢 UPDATED: Import the new helper function
 import { createOrder, getShippingRateForArea } from "../services/orderService";
-import { getWalletBalance } from "../services/walletService";
 
 import CheckoutOrderSummary from "./checkout/CheckoutOrderSummary";
 import CheckoutPaymentStep from "./checkout/CheckoutPaymentStep";
@@ -23,9 +21,6 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(0);
-
-  // 🟢 UPDATED: Add State for dynamic shipping rate
   const [shippingRate, setShippingRate] = useState(0);
 
   const {
@@ -39,71 +34,48 @@ const Checkout = () => {
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
 
-  // Fetch Wallet Balance on Mount
-  useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        const data = await getWalletBalance();
-        setWalletBalance(data.balance || 0);
-      } catch (err) {
-        console.error("Failed to load wallet", err);
-      }
-    };
-    if (user) loadWallet();
-  }, [user]);
-
-  // 🟢 UPDATED: New Effect to Fetch Shipping Rate when Address Changes
+  // 🟢 Fetch Shipping Rate when Address Changes
   useEffect(() => {
     const fetchShipping = async () => {
       let area = "";
 
-      // Case 1: User selected a saved address from the list
       if (selectedAddressId) {
         const addr = savedAddresses.find((a) => a.id === selectedAddressId);
         if (addr) area = addr.area;
-      }
-      // Case 2: User entered a new address manually
-      else if (shippingAddress?.area) {
+      } else if (shippingAddress?.area) {
         area = shippingAddress.area;
       }
 
-      // If we have an area, ask backend for the rate
       if (area) {
         const rate = await getShippingRateForArea(area);
         setShippingRate(rate);
       } else {
-        setShippingRate(0); // Reset if no area selected
+        setShippingRate(0);
       }
     };
 
     fetchShipping();
   }, [selectedAddressId, shippingAddress, savedAddresses]);
 
-  // 🟢 UPDATED: Calculate Totals using dynamic 'shippingRate'
-  const { subtotal, shippingCost, total, walletUsed, payableAmount } =
-    useMemo(() => {
-      const sub = items.reduce((acc, item) => {
-        const product = item.Product || item.product || {};
-        const price = product.price || item.price || 0;
-        return acc + price * item.quantity;
-      }, 0);
+  // 🟢 Calculate Totals (Wallet logic removed to prevent crashes)
+  const { subtotal, shippingCost, total, payableAmount } = useMemo(() => {
+    const sub = items.reduce((acc, item) => {
+      const product = item.Product || item.product || {};
+      const price = product.price || item.price || 0;
+      return acc + price * item.quantity;
+    }, 0);
 
-      // 🟢 UPDATED: Use the state value instead of hardcoded logic
-      const ship = shippingRate;
+    const ship = shippingRate;
+    const grandTotal = sub + ship;
 
-      const grandTotal = sub + ship;
-
-      const used = Math.min(grandTotal, walletBalance);
-      const toPay = grandTotal - used;
-
-      return {
-        subtotal: sub,
-        shippingCost: ship,
-        total: grandTotal,
-        walletUsed: used,
-        payableAmount: toPay,
-      };
-    }, [items, walletBalance, shippingRate]); // 🟢 Added shippingRate dependency
+    return {
+      subtotal: sub,
+      shippingCost: ship,
+      total: grandTotal,
+      walletUsed: 0,
+      payableAmount: grandTotal,
+    };
+  }, [items, shippingRate]);
 
   if (isInitializing) {
     return (
@@ -124,7 +96,7 @@ const Checkout = () => {
 
   const handleSavedAddressSubmit = () => {
     const selected = savedAddresses.find(
-      (addr) => addr.id === selectedAddressId
+      (addr) => addr.id === selectedAddressId,
     );
     if (selected) {
       setShippingAddress(selected);
@@ -136,14 +108,11 @@ const Checkout = () => {
     try {
       setLoading(true);
 
-// 🟢 FIX START: Ensure Name and Phone are always present in the address
-      // If shippingAddress (saved address) lacks name/phone, fallback to logged-in user details
       const finalShippingAddress = {
         ...shippingAddress,
         fullName: shippingAddress?.fullName || user?.name,
         phone: shippingAddress?.phone || user?.phone,
       };
-      // 🟢 FIX END
 
       const payload = {
         userId: user?.id,
@@ -153,34 +122,10 @@ const Checkout = () => {
           quantity: item.quantity,
           price: item.Product?.price || item.price,
         })),
-        // 🟢 UPDATED: Send 'subtotal' (Item Total) instead of 'total'.
-        // The backend logic you shared adds 'shippingCharge' to this amount.
-        // If we sent 'total', the customer would be charged shipping twice.
         amount: subtotal,
-        address: finalShippingAddress
+        address: finalShippingAddress,
       };
 
-      // --- 1. FULL WALLET PAYMENT ---
-      if (payableAmount === 0) {
-        const orderPayload = {
-          ...payload,
-          paymentMethod: "WALLET",
-          payment: true,
-        };
-        const response = await createOrder(orderPayload);
-
-        setIsPaymentSuccess(true);
-        navigate("/order-success", {
-          state: {
-            orderId: response.orderId || response.id,
-            orderDetails: { itemCount: items.length, totalAmount: total },
-          },
-        });
-        dispatch(clearCartThunk());
-        return;
-      }
-
-      // --- 2. PARTIAL / NORMAL PAYMENT ---
       if (paymentData.method === "cod") {
         const orderPayload = {
           ...payload,
@@ -222,14 +167,14 @@ const Checkout = () => {
               },
             });
             dispatch(clearCartThunk());
-          }
+          },
         );
       }
     } catch (error) {
       console.error("Order Failed:", error);
       alert(
         "Order processing failed: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
     } finally {
       setLoading(false);
@@ -270,7 +215,7 @@ const Checkout = () => {
           <CheckoutPaymentStep
             step={step}
             payableAmount={payableAmount}
-            walletUsed={walletUsed}
+            walletUsed={0}
             onSubmit={handleOrderSubmit}
             onBack={() => setStep(1)}
           />
@@ -282,7 +227,7 @@ const Checkout = () => {
             subtotal={subtotal}
             shippingCost={shippingCost}
             total={total}
-            walletUsed={walletUsed}
+            walletUsed={0}
             payableAmount={payableAmount}
           />
         </div>

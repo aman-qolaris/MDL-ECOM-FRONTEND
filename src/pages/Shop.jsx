@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaArrowLeft, FaFilter } from "react-icons/fa";
@@ -21,6 +21,8 @@ const Shop = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
   // 1. Optimized Data Subscription
   const displayItems = useSelector(selectFilteredProducts);
   const loading = useSelector(selectProductLoading);
@@ -29,35 +31,40 @@ const Shop = () => {
 
   const renderProductCard = useCallback(
     (product) => <ProductCard product={product} />,
-    []
+    [],
   );
 
-  // 2. URL Params Sync (Keep existing logic)
+  // 🟢 2. Clean URL Params Sync
   useEffect(() => {
-    const categoryFromURL = searchParams.get("category");
-    const searchFromURL = searchParams.get("search");
+    const categoriesFromURL = searchParams.getAll("category").filter(Boolean);
+    const searchFromURL = searchParams.get("search") || "";
 
-    const nextCategory = categoryFromURL || "";
-    const nextSearch = searchFromURL || "";
-
-    // Prevent redundant dispatches (keeps workflow the same, reduces rerenders).
-    if (filters.category === nextCategory && filters.search === nextSearch) {
-      return;
-    }
-
-    // Keep Redux filters in sync with the URL, including when params are cleared.
-    // This ensures clearing the search term shows all products again.
+    // Safely update Redux based on the URL so products fetch automatically
     dispatch(
       setFilters({
-        category: nextCategory,
-        search: nextSearch,
-      })
+        categories: categoriesFromURL,
+        search: searchFromURL,
+      }),
     );
-  }, [searchParams, dispatch, filters.category, filters.search]);
+  }, [searchParams, dispatch]); // 🚨 Notice filters.category is GONE from this array!
 
   // 3. Data Fetching
   useEffect(() => {
-    dispatch(getAllProducts(debouncedFilters));
+    // Keep API params backward-compatible: only send a single `category`.
+    // Multi-select categories are handled client-side via selectFilteredProducts.
+    const serverParams = { ...debouncedFilters };
+    const activeCategories = Array.isArray(serverParams.categories)
+      ? serverParams.categories.filter(Boolean)
+      : [];
+
+    delete serverParams.categories;
+    delete serverParams.category;
+
+    if (activeCategories.length === 1) {
+      serverParams.category = activeCategories[0];
+    }
+
+    dispatch(getAllProducts(serverParams));
   }, [dispatch, debouncedFilters]);
 
   const handleSortChange = (e) => {
@@ -75,14 +82,19 @@ const Shop = () => {
 
       {/* Mobile Filter Toggle */}
       <div className="md:hidden mb-4">
-        <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md active:scale-95 transition">
+        <button
+          onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md active:scale-95 transition cursor-pointer"
+        >
           <FaFilter /> <span>Filters</span>
         </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
-        <aside className="w-full md:w-1/4 hidden md:block">
+        <aside
+          className={`w-full md:w-1/4 ${isMobileFiltersOpen ? "block" : "hidden md:block"}`}
+        >
           <ProductFilters />
         </aside>
 
@@ -129,7 +141,6 @@ const Shop = () => {
               ))}
             </div>
           ) : displayItems.length > 0 ? (
-            // Virtualize only when list is large to avoid changing UX for small sets.
             displayItems.length >= 30 ? (
               <VirtualizedProductGrid
                 items={displayItems}

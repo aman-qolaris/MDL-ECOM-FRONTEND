@@ -36,11 +36,7 @@ const AdminVendorInventory = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token =
-        localStorage.getItem("token") ||
-        localStorage.getItem("adminToken") ||
-        JSON.parse(localStorage.getItem("userInfo") || "{}").token;
-
+      const token = localStorage.getItem("adminToken");
       // 1. Fetch Vendors (to get the name)
       const vendorsData = await getAllVendors();
       const vendor = vendorsData.find((v) => v.id.toString() === vendorId);
@@ -51,7 +47,7 @@ const AdminVendorInventory = () => {
         `http://localhost:5007/api/products/vendor/${vendorId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       setProducts(response.data);
@@ -76,17 +72,13 @@ const AdminVendorInventory = () => {
     }
     if (warehouseVal > totalStock) {
       setErrorMsg(
-        `Warehouse stock (${warehouseVal}) cannot exceed Total Stock (${totalStock}).`
+        `Warehouse stock (${warehouseVal}) cannot exceed Total Stock (${totalStock}).`,
       );
       return;
     }
 
     try {
-      const token =
-        localStorage.getItem("token") ||
-        localStorage.getItem("adminToken") ||
-        JSON.parse(localStorage.getItem("userInfo") || "{}").token;
-
+      const token = localStorage.getItem("adminToken");
       // 2. Call API (Using the specific Admin Warehouse Update endpoint)
       const response = await axios.put(
         `http://localhost:5007/api/products/admin/inventory/update`,
@@ -96,7 +88,7 @@ const AdminVendorInventory = () => {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       // 3. Optimistic Update
@@ -106,8 +98,8 @@ const AdminVendorInventory = () => {
         prev.map((p) =>
           p.id === editingProduct.id
             ? { ...p, warehouseStock: updatedData.warehouseStock }
-            : p
-        )
+            : p,
+        ),
       );
 
       closeModal();
@@ -150,7 +142,7 @@ const AdminVendorInventory = () => {
   const categories = [
     "all",
     ...new Set(
-      products.map((p) => p.Category?.name || p.category || "Uncategorized")
+      products.map((p) => p.Category?.name || p.category || "Uncategorized"),
     ),
   ];
 

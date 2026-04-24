@@ -45,7 +45,7 @@ const AdminVendorSales = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/admin/vendors")} // Adjust path if needed (e.g. /admin/inventory)
+            onClick={() => navigate(-1)} // Adjust path if needed (e.g. /admin/inventory)
             className="p-2 rounded-full hover:bg-gray-200 transition"
           >
             <FaArrowLeft className="text-gray-600" />
