@@ -82,8 +82,15 @@ const OrderItemsList = ({
                 ) : (
                   item.refundStatus &&
                   item.refundStatus !== "NONE" && (
-                    <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200">
-                      RETURN: {item.refundStatus}
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
+                        item.status === "CANCELLED"
+                          ? "bg-blue-100 text-blue-700 border-blue-200"
+                          : "bg-orange-100 text-orange-700 border-orange-200"
+                      }`}
+                    >
+                      {item.status === "CANCELLED" ? "REFUND" : "RETURN"}:{" "}
+                      {item.refundStatus}
                     </span>
                   )
                 )}

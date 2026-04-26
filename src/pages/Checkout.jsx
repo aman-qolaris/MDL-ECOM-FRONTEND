@@ -18,6 +18,8 @@ const Checkout = () => {
   const items = useSelector(selectCartItems);
   const { user } = useSelector((state) => state.auth);
 
+  const cartLoading = useSelector((state) => state.cart.loading);
+
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,15 @@ const Checkout = () => {
   } = useCheckoutInitialization({ user, dispatch });
 
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+
+  const handleAreaChange = async (selectedArea) => {
+    if (selectedArea) {
+      const rate = await getShippingRateForArea(selectedArea);
+      setShippingRate(rate);
+    } else {
+      setShippingRate(0);
+    }
+  };
 
   // 🟢 Fetch Shipping Rate when Address Changes
   useEffect(() => {
@@ -77,7 +88,7 @@ const Checkout = () => {
     };
   }, [items, shippingRate]);
 
-  if (isInitializing) {
+  if (isInitializing || cartLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center text-gray-500">
         Loading...
@@ -210,6 +221,7 @@ const Checkout = () => {
             onBackToSavedAddresses={() => setShowNewAddressForm(false)}
             onSubmitNewAddress={handleNewAddressSubmit}
             onDeliverSavedAddress={handleSavedAddressSubmit}
+            onAreaChange={handleAreaChange}
           />
 
           <CheckoutPaymentStep

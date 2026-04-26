@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // 🟢 ADD THIS
-import { addItemToCart, getCartItems } from "../../store/thunks/cartThunks";
+import { toast } from "react-toastify";
+import {
+  addItemToCart,
+  getCartItems,
+  clearCartThunk,
+} from "../../store/thunks/cartThunks";
 import {
   cancelOrder,
   cancelOrderItem,
-  requestReturn, // ✅ Import this
+  requestReturn,
 } from "../../services/orderService";
 
 import { createPortal } from "react-dom";
@@ -45,7 +49,6 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // ✅ HANDLER: Return Entire Order
   const handleReturnOrder = async () => {
     const returnableItems = enrichedItems.filter(isReturnable);
 
@@ -56,14 +59,14 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
 
     // Simple prompt for reason (you can replace with a modal if preferred)
     const reason = prompt(
-      `Returning ${returnableItems.length} items. Please enter a reason for the return:`
+      `Returning ${returnableItems.length} items. Please enter a reason for the return:`,
     );
 
     if (!reason) return; // User cancelled
 
     if (
       !window.confirm(
-        `Are you sure you want to return ${returnableItems.length} items?`
+        `Are you sure you want to return ${returnableItems.length} items?`,
       )
     )
       return;
@@ -73,8 +76,8 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
       // Loop through all returnable items and send request
       await Promise.all(
         returnableItems.map((item) =>
-          requestReturn(order.id, item.id, { reason })
-        )
+          requestReturn(order.id, item.id, { reason }),
+        ),
       );
 
       alert("Return request submitted for all eligible items.");
@@ -91,13 +94,24 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const handleOrderAgain = async () => {
     setAddingToCart(true);
     try {
-      const addPromises = enrichedItems.map((item) =>
+      await dispatch(clearCartThunk()).unwrap();
+      const itemsToOrder = enrichedItems;
+
+      if (!itemsToOrder || itemsToOrder.length === 0) {
+        toast.warning("No items available to re-order.");
+        setAddingToCart(false);
+        return;
+      }
+
+      const addPromises = itemsToOrder.map((item) =>
         dispatch(
-          addItemToCart({ productId: item.productId, quantity: item.quantity })
-        ).unwrap()
+          addItemToCart({ productId: item.productId, quantity: item.quantity }),
+        ).unwrap(),
       );
+
       await Promise.all(addPromises);
       await dispatch(getCartItems()).unwrap();
+
       onClose();
       navigate("/checkout");
     } catch (error) {
@@ -109,7 +123,6 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     }
   };
 
-  // 🟢 1. Open Modal for Item Cancellation
   const handleCancelItemClick = (itemId) => {
     setCancelModal({
       isOpen: true,
@@ -118,7 +131,6 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     });
   };
 
-  // 🟢 2. Open Modal for Full Order Cancellation
   const handleCancelOrderClick = () => {
     setCancelModal({
       isOpen: true,
@@ -127,7 +139,6 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     });
   };
 
-  // 🟢 3. Handle the actual API Call (Passed to CancelRequestModal)
   const handleConfirmCancel = async (reason) => {
     setCancelling(true);
     try {
@@ -197,7 +208,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         }
       />
     </div>,
-    document.body
+    document.body,
   );
 };
 

@@ -15,15 +15,15 @@ export const getAllProducts = createAsyncThunk(
     try {
       const cleanedParams = Object.fromEntries(
         Object.entries(params || {}).filter(
-          ([, value]) => value !== "" && value !== null && value !== undefined
-        )
+          ([, value]) => value !== "" && value !== null && value !== undefined,
+        ),
       );
 
       const data = await getProducts(cleanedParams);
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch products"
+        error.response?.data?.message || "Failed to fetch products",
       );
     }
   },
@@ -37,8 +37,8 @@ export const getAllProducts = createAsyncThunk(
 
       const cleanedParams = Object.fromEntries(
         Object.entries(params || {}).filter(
-          ([, value]) => value !== "" && value !== null && value !== undefined
-        )
+          ([, value]) => value !== "" && value !== null && value !== undefined,
+        ),
       );
 
       // If caller didn't pass any filters, and we already have items,
@@ -47,7 +47,7 @@ export const getAllProducts = createAsyncThunk(
 
       return true;
     },
-  }
+  },
 );
 
 // 2. Fetch featured products (Public)
@@ -61,7 +61,7 @@ export const getFeaturedProducts = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch products"
+        error.response?.data?.message || "Failed to fetch products",
       );
     }
   },
@@ -72,7 +72,7 @@ export const getFeaturedProducts = createAsyncThunk(
       if (hasFeatured) return false;
       return true;
     },
-  }
+  },
 );
 
 // 3. Fetch single product (Public)
@@ -84,10 +84,10 @@ export const getProduct = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch product"
+        error.response?.data?.message || "Failed to fetch product",
       );
     }
-  }
+  },
 );
 
 // --- VENDOR & ADMIN THUNKS ---
@@ -101,10 +101,10 @@ export const fetchVendorProducts = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch your products"
+        error.response?.data?.message || "Failed to fetch your products",
       );
     }
-  }
+  },
 );
 
 // 5. Create New Product
@@ -117,10 +117,10 @@ export const createProductThunk = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to create product"
+        error.response?.data?.message || "Failed to create product",
       );
     }
-  }
+  },
 );
 
 // 6. Update Product
@@ -132,10 +132,10 @@ export const updateProductThunk = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update product"
+        error.response?.data?.message || "Failed to update product",
       );
     }
-  }
+  },
 );
 
 // 7. Delete Product
@@ -147,8 +147,8 @@ export const deleteProductThunk = createAsyncThunk(
       return id; // Return ID so reducer can remove it from state
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to delete product"
+        error.response?.data?.message || "Failed to delete product",
       );
     }
-  }
+  },
 );

@@ -277,7 +277,7 @@ const AdminReturnRequests = () => {
                   }
                   className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
                 >
-                  View Credit Note
+                  View Refund Details
                 </button>
               ) : (
                 <button
@@ -448,7 +448,7 @@ const AdminReturnRequests = () => {
                   onClick={() => setSelectedForRefund(req)}
                   className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
                 >
-                  Create Credit Note
+                  Process Refund
                 </button>
               )}
               {(req.status === "REFUNDED" || req.status === "CREDITED") && (
@@ -456,7 +456,7 @@ const AdminReturnRequests = () => {
                   onClick={() => setSelectedCreditNote(req)}
                   className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
                 >
-                  View Credit Note
+                  View Refund Details
                 </button>
               )}
             </td>

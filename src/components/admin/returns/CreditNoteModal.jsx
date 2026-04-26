@@ -1,26 +1,30 @@
 import React from "react";
-import { FaTimes, FaPrint, FaCheckCircle, FaWallet } from "react-icons/fa";
+import { FaTimes, FaPrint, FaCheckCircle, FaLandmark } from "react-icons/fa";
 
 const CreditNoteModal = ({ data, onClose }) => {
   if (!data) return null;
 
-  const creditNoteId = `CN-${data.orderId}-${data.itemId}`;
-  const creditDate = new Date(data.lastUpdated).toLocaleDateString("en-IN", {
+  // Change ID prefix from CN (Credit Note) to REF (Refund)
+  const refundId = `REF-${data.orderId}-${data.itemId}`;
+  const refundDate = new Date(data.lastUpdated).toLocaleDateString("en-IN", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z- p-4"
+      style={{ zIndex: 9999 }}
+    >
       <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95">
         {/* Header */}
         <div className="bg-gray-900 text-white p-6 flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold uppercase tracking-widest">
-              Credit Note
+              Refund Receipt
             </h2>
-            <p className="text-gray-400 text-sm mt-1">Ref: {creditNoteId}</p>
+            <p className="text-gray-400 text-sm mt-1">Ref: {refundId}</p>
           </div>
           <button
             onClick={onClose}
@@ -35,21 +39,21 @@ const CreditNoteModal = ({ data, onClose }) => {
           {/* Status Badge */}
           <div className="flex justify-center mb-8">
             <div className="bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 border border-green-200">
-              <FaCheckCircle /> SUCCESSFULLY CREDITED
+              <FaCheckCircle /> SUCCESSFULLY REFUNDED
             </div>
           </div>
 
           {/* Amount Section */}
           <div className="text-center mb-8">
             <p className="text-gray-500 uppercase text-xs font-bold tracking-wider mb-2">
-              Credit Amount
+              Refund Amount
             </p>
             <div className="text-5xl font-extrabold text-gray-900 flex justify-center items-start">
               <span className="text-2xl mt-2 mr-1">₹</span>
               {data.amountToRefund}
             </div>
-            <p className="text-purple-600 text-sm font-medium mt-2 flex items-center justify-center gap-1">
-              <FaWallet /> Added to {data.customerName}'s Wallet
+            <p className="text-blue-600 text-sm font-medium mt-3 flex items-center justify-center gap-1.5">
+              <FaLandmark /> Refunded to Original Payment Method
             </p>
           </div>
 
@@ -62,8 +66,8 @@ const CreditNoteModal = ({ data, onClose }) => {
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-200">
-              <span className="text-gray-500">Date Issued</span>
-              <span className="font-semibold text-gray-800">{creditDate}</span>
+              <span className="text-gray-500">Date Processed</span>
+              <span className="font-semibold text-gray-800">{refundDate}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-200">
               <span className="text-gray-500">Item</span>

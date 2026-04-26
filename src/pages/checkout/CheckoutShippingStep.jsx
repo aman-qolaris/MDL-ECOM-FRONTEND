@@ -14,6 +14,7 @@ const CheckoutShippingStep = ({
   onBackToSavedAddresses,
   onSubmitNewAddress,
   onDeliverSavedAddress,
+  onAreaChange,
 }) => {
   // 🟢 2. Get User Data for Name/Phone Fallback
   const { user } = useSelector((state) => state.auth);
@@ -131,6 +132,7 @@ const CheckoutShippingStep = ({
               )}
               <AddressForm
                 onSubmit={onSubmitNewAddress}
+                onAreaChange={onAreaChange}
                 buttonText="Deliver Here"
               />
             </div>

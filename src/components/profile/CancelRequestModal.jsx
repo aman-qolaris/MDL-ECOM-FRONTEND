@@ -1,11 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaTimes, FaExclamationTriangle } from "react-icons/fa";
 
-import { cancelOrder } from "../../services/orderService";
-
-const CancelRequestModal = ({ order, onClose, onSuccess }) => {
+const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
   const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const cancelReasons = [
@@ -16,7 +13,17 @@ const CancelRequestModal = ({ order, onClose, onSuccess }) => {
     "Other",
   ];
 
-  const handleSubmit = async (e) => {
+  // Optional: Reset reason when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setReason("");
+      setError("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!reason) {
@@ -24,29 +31,22 @@ const CancelRequestModal = ({ order, onClose, onSuccess }) => {
       return;
     }
 
-    setLoading(true);
     setError("");
-
-    try {
-      await cancelOrder(order?.id, reason);
-      onSuccess();
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to cancel order. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
+    onSubmit(reason);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+    <div
+      className="fixed inset-0 z- flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+      style={{ zIndex: 9999 }}
+    >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-red-50/50">
-          <h3 className="text-xl font-bold text-gray-800">Cancel Order</h3>
+          {/* 🟢 4. Use the dynamic title passed from parent */}
+          <h3 className="text-xl font-bold text-gray-800">
+            {title || "Cancel Order"}
+          </h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-red-500 transition-colors"
@@ -61,8 +61,7 @@ const CancelRequestModal = ({ order, onClose, onSuccess }) => {
           <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl flex items-start gap-3 mb-6 text-sm border border-yellow-200/50">
             <FaExclamationTriangle className="mt-0.5 shrink-0 text-yellow-600" />
             <p>
-              Are you sure you want to cancel Order{" "}
-              <strong>#{order?.id}</strong>?
+              Are you sure you want to proceed with this cancellation?
               <br className="mb-1" />
               <span className="opacity-90">
                 Refunds for pre-paid orders will be processed automatically to
@@ -116,7 +115,7 @@ const CancelRequestModal = ({ order, onClose, onSuccess }) => {
               disabled={loading}
               className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              Keep Order
+              Keep It
             </button>
 
             <button

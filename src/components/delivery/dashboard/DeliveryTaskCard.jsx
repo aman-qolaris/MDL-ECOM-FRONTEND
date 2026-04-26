@@ -12,11 +12,16 @@ import {
   FaQrcode,
   FaMoneyBillWave,
 } from "react-icons/fa";
+import api from "../../../services/api"; // 🟢 ADDED API IMPORT
 
 const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   const [paymentMode, setPaymentMode] = useState("CASH");
   const [utrNumber, setUtrNumber] = useState("");
+
+  // 🟢 NEW STATES FOR QR CODE
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const isReturn = task.type === "RETURN_PICKUP";
   const address = task.address || {};
@@ -27,12 +32,9 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
   const mapQuery = `${address.addressLine1}, ${address.city}, ${address.state}`;
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=$$${encodeURIComponent(mapQuery)}`;
 
-  // 🟢 SMART LOGIC: Listen for Webhook Updates
   useEffect(() => {
-    // If the 5-second background refresh detects that the webhook marked the order as paid,
-    // cashToCollect will drop to 0. We automatically close the manual UTR flow!
     if (showPaymentFlow && task.cashToCollect === 0) {
-      setShowPaymentFlow(false);
+      setShowPaymentFlow(false); // Auto-closes when webhook updates the DB!
     }
   }, [task.cashToCollect, showPaymentFlow]);
 
@@ -40,8 +42,28 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
     if (requiresPaymentCollection) {
       setShowPaymentFlow(true);
     } else {
-      // If prepaid, or if the webhook already handled it, skip straight to delivery!
       onStatusUpdate(task.assignmentId, "DELIVERED");
+    }
+  };
+
+  const handleSelectQRMode = async () => {
+    setPaymentMode("QR");
+
+    // Only fetch if we haven't already generated it for this session
+    if (!qrCodeUrl) {
+      setQrLoading(true);
+      try {
+        const { data } = await api.post("/orders/payment/delivery-qr", {
+          orderId: task.orderId,
+        });
+        if (data.success) {
+          setQrCodeUrl(data.qrCodeUrl);
+        }
+      } catch (error) {
+        console.error("Failed to fetch Razorpay QR", error);
+      } finally {
+        setQrLoading(false);
+      }
     }
   };
 
@@ -177,7 +199,6 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
         {/* Active Tab Actions */}
         {activeTab === "active" && (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            {/* STAGE 1: ASSIGNED -> PICKED */}
             {task.status === "ASSIGNED" && (
               <button
                 onClick={() => onStatusUpdate(task.assignmentId, "PICKED")}
@@ -192,7 +213,6 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
               </button>
             )}
 
-            {/* STAGE 2: PICKED -> DELIVERED (Or Return Dropped) */}
             {(task.status === "PICKED" ||
               task.status === "OUT_FOR_DELIVERY") && (
               <>
@@ -216,7 +236,6 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                     )}
                   </button>
                 ) : (
-                  /* INLINE PAYMENT COLLECTION UI FOR COD */
                   <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
                     <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                       <FaRupeeSign className="text-orange-600" /> Collect ₹
@@ -235,7 +254,7 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                         <FaMoneyBillWave /> Cash
                       </button>
                       <button
-                        onClick={() => setPaymentMode("QR")}
+                        onClick={handleSelectQRMode}
                         className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors ${
                           paymentMode === "QR"
                             ? "bg-blue-600 text-white border-blue-600 shadow-sm"
@@ -248,13 +267,38 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
 
                     {paymentMode === "QR" && (
                       <div className="mb-4 animate-fade-in">
+                        {qrLoading ? (
+                          <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-white/50">
+                            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                            <span className="text-xs text-gray-500 font-medium">
+                              Generating Secure QR...
+                            </span>
+                          </div>
+                        ) : qrCodeUrl ? (
+                          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-4 text-center">
+                            <img
+                              src={qrCodeUrl}
+                              alt="Razorpay Payment QR"
+                              className="w-48 h-48 mx-auto object-contain"
+                            />
+                            <p className="text-[11px] text-blue-600 font-bold mt-2 uppercase tracking-wide">
+                              Scan with PhonePe, GPay, Paytm
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-red-500 mb-4 text-center italic">
+                            Failed to load QR. Please use manual UTR or collect
+                            Cash.
+                          </p>
+                        )}
+
                         <label className="block text-xs font-bold text-gray-600 mb-1">
-                          Enter UTR Number *
+                          Manual UTR (Optional fallback)
                         </label>
                         <p className="text-[10px] text-gray-500 mb-2">
-                          If the customer paid via a Razorpay link, this screen
-                          will auto-close when verified. If they paid a shop QR,
-                          enter the UTR below.
+                          If customer pays this QR, this screen will auto-close
+                          when verified. If they pay a shop QR instead, enter
+                          the UTR below.
                         </p>
                         <input
                           type="text"
@@ -275,7 +319,7 @@ const DeliveryTaskCard = ({ task, activeTab, onStatusUpdate }) => {
                       </button>
                       <button
                         onClick={handleConfirmPaymentAndDeliver}
-                        className="flex- py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1 shadow-sm"
+                        className="flex-1 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1 shadow-sm"
                       >
                         <FaCheckCircle /> Confirm & Deliver
                       </button>

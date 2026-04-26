@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaTrash,
   FaBoxOpen,
@@ -7,17 +7,35 @@ import {
   FaSave,
   FaTimes,
   FaUserSecret,
+  FaChevronDown,
 } from "react-icons/fa";
 import {
   deleteDeliveryBoy,
   updateDeliveryBoy,
+  getDeliveryLocations,
 } from "../../../services/orderService";
 
 const DeliveryBoyTable = ({ boys, setBoys }) => {
   const [editingId, setEditingId] = useState(null);
   const [editStatus, setEditStatus] = useState(true);
   const [editMaxOrders, setEditMaxOrders] = useState(20);
-  const [editAssignedAreas, setEditAssignedAreas] = useState("");
+
+  const [editAssignedAreas, setEditAssignedAreas] = useState([]);
+  const [availableAreas, setAvailableAreas] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const data = await getDeliveryLocations();
+        const activeAreaNames = data.map((item) => item.areaName);
+        setAvailableAreas(activeAreaNames);
+      } catch (error) {
+        console.error("Failed to load areas for table edit", error);
+      }
+    };
+    fetchAreas();
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure?")) return;
@@ -34,24 +52,39 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
     setEditingId(boy.id);
     setEditStatus(boy.active ?? true);
     setEditMaxOrders(boy.maxOrders);
-    setEditAssignedAreas(boy.assignedAreas ? boy.assignedAreas.join(", ") : "");
+    // Initialize the array directly
+    setEditAssignedAreas(boy.assignedAreas || []);
+    setIsDropdownOpen(false);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
+    setIsDropdownOpen(false);
+  };
+
+  const toggleAreaSelection = (area) => {
+    if (editAssignedAreas.includes(area)) {
+      setEditAssignedAreas(editAssignedAreas.filter((a) => a !== area));
+    } else {
+      setEditAssignedAreas([...editAssignedAreas, area]);
+    }
+  };
+
+  const removeArea = (areaToRemove) => {
+    setEditAssignedAreas(editAssignedAreas.filter((a) => a !== areaToRemove));
   };
 
   const handleSaveEdit = async (id) => {
-    try {
-      const areaArray = editAssignedAreas
-        .split(",")
-        .map((area) => area.trim())
-        .filter((area) => area !== "");
+    if (editAssignedAreas.length === 0) {
+      alert("Please assign at least one delivery area.");
+      return;
+    }
 
+    try {
       await updateDeliveryBoy(id, {
         active: editStatus,
         maxOrders: parseInt(editMaxOrders),
-        assignedAreas: areaArray,
+        assignedAreas: editAssignedAreas, // Pass the array directly
       });
 
       setBoys(
@@ -61,12 +94,13 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
                 ...b,
                 active: editStatus,
                 maxOrders: parseInt(editMaxOrders),
-                assignedAreas: areaArray,
+                assignedAreas: editAssignedAreas,
               }
-            : b
-        )
+            : b,
+        ),
       );
       setEditingId(null);
+      setIsDropdownOpen(false);
     } catch (error) {
       console.error(error);
       alert("Failed to update delivery boy");
@@ -80,7 +114,7 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
           <tr>
             <th className="p-4 border-b">Details</th>
             <th className="p-4 border-b">Contact</th>
-            <th className="p-4 border-b w-1/3">Coverage Areas</th>
+            <th className="p-4 border-b w-[40%]">Coverage Areas</th>
             <th className="p-4 border-b text-center">Status</th>
             <th className="p-4 border-b text-center">Capacity</th>
             <th className="p-4 border-b text-center">Actions</th>
@@ -102,21 +136,79 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
                 </div>
               </td>
 
-              <td className="p-4">
+              <td className="p-4 align-top">
                 {editingId === boy.id ? (
-                  <textarea
-                    value={editAssignedAreas}
-                    onChange={(e) => setEditAssignedAreas(e.target.value)}
-                    className="w-full border rounded p-1 text-sm h-16"
-                    placeholder="Separate with commas..."
-                  />
+                  // 🟢 NEW EDIT UI: Multi-Select Pill Dropdown
+                  <div className="relative">
+                    <div
+                      className="min-h-[38px] w-full border border-gray-300 p-1.5 rounded bg-white flex flex-wrap gap-1.5 items-center pr-8 cursor-pointer"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      {editAssignedAreas.length === 0 ? (
+                        <span className="text-gray-400 pl-1 text-sm">
+                          Select areas...
+                        </span>
+                      ) : (
+                        editAssignedAreas.map((area) => (
+                          <span
+                            key={area}
+                            className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2 py-0.5 rounded"
+                          >
+                            {area}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeArea(area);
+                              }}
+                              className="hover:text-red-500 transition-colors focus:outline-none"
+                            >
+                              <FaTimes size={10} />
+                            </button>
+                          </span>
+                        ))
+                      )}
+                      <FaChevronDown
+                        className={`absolute right-2 text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                        size={10}
+                      />
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
+                        {availableAreas.length === 0 ? (
+                          <div className="p-2 text-xs text-gray-500 text-center italic">
+                            No active areas found.
+                          </div>
+                        ) : (
+                          availableAreas.map((area) => (
+                            <label
+                              key={area}
+                              className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-50 last:border-none ${editAssignedAreas.includes(area) ? "bg-blue-50/50" : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={editAssignedAreas.includes(area)}
+                                onChange={() => toggleAreaSelection(area)}
+                                className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {area}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="flex flex-wrap gap-1">
+                  // STANDARD VIEW UI
+                  <div className="flex flex-wrap gap-1.5">
                     {boy.assignedAreas && boy.assignedAreas.length > 0 ? (
                       boy.assignedAreas.map((area, idx) => (
                         <span
                           key={idx}
-                          className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                          className="bg-blue-50 border border-blue-100 text-blue-700 text-[11px] px-2 py-1 rounded-md font-medium"
                         >
                           {area}
                         </span>
@@ -130,22 +222,22 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
                 )}
               </td>
 
-              <td className="p-4 text-center">
+              <td className="p-4 text-center align-top">
                 {editingId === boy.id ? (
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value === "true")}
-                    className="border rounded px-2 py-1 text-sm bg-white"
+                    className="border border-gray-300 rounded px-2 py-1.5 text-sm bg-white outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
                   </select>
                 ) : (
                   <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                    className={`inline-block px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${
                       boy.active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                   >
                     {boy.active ? "Active" : "Inactive"}
@@ -153,53 +245,57 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
                 )}
               </td>
 
-              <td className="p-4 text-center">
+              <td className="p-4 text-center align-top">
                 {editingId === boy.id ? (
                   <input
                     type="number"
                     min="1"
                     value={editMaxOrders}
                     onChange={(e) => setEditMaxOrders(e.target.value)}
-                    className="w-20 border rounded px-2 py-1 text-center"
+                    className="w-16 border border-gray-300 rounded px-2 py-1.5 text-center text-sm outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 ) : (
-                  <div className="flex items-center justify-center gap-1 text-gray-600">
-                    <FaBoxOpen className="text-gray-400" />
-                    <span className="font-semibold">{boy.maxOrders}</span>
+                  <div className="flex items-center justify-center gap-1.5 text-gray-700 bg-gray-50 rounded-md py-1 px-2 border border-gray-100 w-max mx-auto">
+                    <FaBoxOpen className="text-gray-400" size={14} />
+                    <span className="font-bold text-sm">{boy.maxOrders}</span>
                   </div>
                 )}
               </td>
 
-              <td className="p-4 text-center">
+              <td className="p-4 text-center align-top">
                 <div className="flex items-center justify-center gap-2">
                   {editingId === boy.id ? (
                     <>
                       <button
                         onClick={() => handleSaveEdit(boy.id)}
-                        className="text-green-600 hover:text-green-700 p-2 rounded-full hover:bg-green-50"
+                        className="text-green-600 hover:text-white p-2.5 rounded-lg hover:bg-green-600 transition-colors border border-green-200 hover:border-transparent"
+                        title="Save Changes"
                       >
-                        <FaSave />
+                        <FaSave size={14} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                        className="text-gray-500 hover:text-white p-2.5 rounded-lg hover:bg-gray-500 transition-colors border border-gray-200 hover:border-transparent"
+                        title="Cancel"
                       >
-                        <FaTimes />
+                        <FaTimes size={14} />
                       </button>
                     </>
                   ) : (
                     <>
                       <button
                         onClick={() => handleEdit(boy)}
-                        className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 cursor-pointer"
+                        className="text-blue-600 hover:text-white p-2.5 rounded-lg hover:bg-blue-600 transition-colors border border-blue-100 hover:border-transparent"
+                        title="Edit Partner"
                       >
-                        <FaEdit />
+                        <FaEdit size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(boy.id)}
-                        className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 cursor-pointer"
+                        className="text-red-600 hover:text-white p-2.5 rounded-lg hover:bg-red-600 transition-colors border border-red-100 hover:border-transparent"
+                        title="Delete Partner"
                       >
-                        <FaTrash />
+                        <FaTrash size={14} />
                       </button>
                     </>
                   )}
@@ -209,9 +305,21 @@ const DeliveryBoyTable = ({ boys, setBoys }) => {
           ))}
           {boys.length === 0 && (
             <tr>
-              <td colSpan="6" className="p-8 text-center text-gray-500">
-                <FaUserSecret className="mx-auto text-4xl mb-2 text-gray-300" />
-                <p>No delivery partners registered yet.</p>
+              <td
+                colSpan="6"
+                className="p-12 text-center text-gray-500 bg-gray-50/50"
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <div className="bg-gray-100 p-4 rounded-full mb-3">
+                    <FaUserSecret size={32} className="text-gray-400" />
+                  </div>
+                  <p className="font-medium text-gray-700">
+                    No delivery partners registered yet.
+                  </p>
+                  <p className="text-sm mt-1">
+                    Use the form above to add your first partner.
+                  </p>
+                </div>
               </td>
             </tr>
           )}

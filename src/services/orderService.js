@@ -68,7 +68,7 @@ export const requestReturn = async (orderId, itemId, data) => {
 };
 
 export const getDeliveryLocations = async () => {
-  const response = await api.get("/orders/locations");
+  const response = await api.get("/orders/shipping/shipping-rates/active");
   return response.data;
 };
 

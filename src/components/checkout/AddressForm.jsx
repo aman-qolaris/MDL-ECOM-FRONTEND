@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux"; // 🟢 CHANGED: Import Redux Hook
 import { getDeliveryLocations } from "../../services/orderService";
 
-const AddressForm = ({ onSubmit, initialData, buttonText }) => {
+const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
   // 🟢 CHANGED: Get Logged-in User Data
   const { user } = useSelector((state) => state.auth);
 
@@ -38,9 +38,8 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
     const fetchAreas = async () => {
       try {
         const data = await getDeliveryLocations();
-        // Expected Backend Structure: { "Chhattisgarh": { "Raipur": ["Area1", "Area2"] } }
-        const raipurAreas = data?.[FIXED_STATE]?.[FIXED_CITY] || [];
-        setAvailableAreas(raipurAreas);
+        const activeAreaNames = data.map((item) => item.areaName);
+        setAvailableAreas(activeAreaNames);
       } catch (error) {
         console.error("Failed to load areas", error);
       } finally {
@@ -52,7 +51,13 @@ const AddressForm = ({ onSubmit, initialData, buttonText }) => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setFormData({ ...formData, [name]: value });
+
+    if (name === "area" && onAreaChange) {
+      onAreaChange(value);
+    }
   };
 
   const handleSubmit = (e) => {

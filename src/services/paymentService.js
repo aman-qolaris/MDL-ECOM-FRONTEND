@@ -13,9 +13,9 @@ export const initiatePayment = async (amount, user, orderId, onSuccess) => {
     }
 
     // 1. Create Razorpay Order (Calls your backend)
-    const { data } = await api.post("/payment/create", {
+    const { data } = await api.post("/orders/payment/create", {
       amount: amount,
-      orderId: orderId, // We pass the DB Order ID here
+      orderId: orderId,
     });
 
     if (!data.success) throw new Error("Failed to create payment order");
@@ -40,7 +40,7 @@ export const initiatePayment = async (amount, user, orderId, onSuccess) => {
       // 3. Handle Success Payment
       handler: async function (response) {
         try {
-          const verifyRes = await api.post("/payment/verify", {
+          const verifyRes = await api.post("/orders/payment/verify", {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,

@@ -10,7 +10,10 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
   const isPrepaid = request.paymentMethod && request.paymentMethod !== "COD";
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z- p-4">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z- p-4"
+      style={{ zIndex: 9999 }}
+    >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
         {/* Header */}
         <div className="bg-blue-600 p-6 text-white flex justify-between items-start">

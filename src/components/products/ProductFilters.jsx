@@ -21,14 +21,19 @@ const ProductFilters = () => {
   const [categories, setCategories] = useState([]);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // Fetch categories from DB
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        setIsLoading(true);
         const data = await getAllCategories();
         setCategories(data);
       } catch (error) {
         console.error("Failed to load categories", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCategories();
@@ -80,8 +85,14 @@ const ProductFilters = () => {
       {/* Collapsible List with Checkboxes */}
       {isCategoriesOpen && (
         <ul className="space-y-2 mb-6 transition-all duration-300">
-          {categories.length === 0 ? (
-            <li className="text-sm text-gray-400 italic">Loading...</li>
+          {isLoading ? (
+            <li className="text-sm text-gray-400 italic">
+              Loading categories...
+            </li>
+          ) : categories.length === 0 ? (
+            <li className="text-sm text-gray-500 italic">
+              No categories found.
+            </li>
           ) : (
             categories.map((cat) => (
               <li key={cat.id}>
