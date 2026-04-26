@@ -12,6 +12,7 @@ import {
   FaArrowLeft,
   FaCalendarAlt,
   FaBox,
+  FaStore,
 } from "react-icons/fa";
 
 import RefundModal from "../../components/admin/returns/RefundModal";
@@ -36,6 +37,9 @@ const AdminReturnRequests = () => {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "returns",
   );
+
+  const [approveModalData, setApproveModalData] = useState(null);
+  const [dropMethod, setDropMethod] = useState("DELIVERY_BOY");
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,8 +76,7 @@ const AdminReturnRequests = () => {
         data = await getCancelledRefundOrders(1, 10000);
       }
 
-      // 🟢 FIX: Explicit De-duplication on Frontend
-      // This ensures that even if the API sends duplicates, the UI won't show them.
+      // 🟢 Explicit De-duplication on Frontend
       const uniqueItems = [];
       const seenIds = new Set();
       const idKey = activeTab === "returns" ? "itemId" : "id";
@@ -151,7 +154,7 @@ const AdminReturnRequests = () => {
     }
   };
 
-  const handleAction = async (orderId, itemId, status) => {
+  const handleAction = async (orderId, itemId, status, extraPayload = {}) => {
     if (
       status === "REJECTED" &&
       !window.confirm("Are you sure you want to REJECT?")
@@ -159,9 +162,13 @@ const AdminReturnRequests = () => {
       return;
 
     try {
-      // 🟢 FIX: Capture response to get the assigned delivery boy
-      const response = await updateReturnStatus(orderId, itemId, status);
-      const newPickupBoy = response.pickupBoy; // Access the name returned by backend
+      const response = await updateReturnStatus(
+        orderId,
+        itemId,
+        status,
+        extraPayload,
+      );
+      const newPickupBoy = response.pickupBoy;
 
       toast.success(
         status === "CREDITED"
@@ -170,7 +177,6 @@ const AdminReturnRequests = () => {
       );
       setSelectedForRefund(null);
 
-      // 🟢 FIX: Update Local State with the new Delivery Boy immediately
       setItems((prev) =>
         prev.map((item) => {
           const currentId = activeTab === "returns" ? item.itemId : item.id;
@@ -179,8 +185,9 @@ const AdminReturnRequests = () => {
               ...item,
               status: status,
               refundStatus: status,
-              // If backend sent a name, use it. Otherwise keep existing (or fallback)
               pickupBoy: newPickupBoy || item.pickupBoy,
+              returnDropMethod:
+                extraPayload.returnDropMethod || item.returnDropMethod,
             };
           }
           return item;
@@ -314,154 +321,187 @@ const AdminReturnRequests = () => {
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100">
-        {filteredItems.map((req, index) => (
-          <tr key={req.itemId || index} className="hover:bg-gray-50 transition">
-            <td className="p-4 align-top">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
-                  {req.productImage ? (
-                    <img
-                      src={req.productImage}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <FaBox className="text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-gray-800 line-clamp-1">
-                    {req.productName || "Product Name N/A"}
-                  </p>
-                  <p className="text-xs text-gray-500">Qty: {req.quantity}</p>
-                </div>
-              </div>
-            </td>
-            <td className="p-4 align-top">
-              <div
-                className="text-sm text-gray-600 max-w-[150px] truncate"
-                title={req.reason}
-              >
-                {req.reason || "No Reason"}
-              </div>
-            </td>
-            <td className="p-4 align-top">
-              <div className="flex flex-col gap-1">
-                <span className="font-bold text-gray-800">#{req.orderId}</span>
-                <Link
-                  to={`/admin/orders/${req.orderId}`}
-                  className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
-                >
-                  View Order <FaExternalLinkAlt size={8} />
-                </Link>
-                <div className="text-xs text-blue-700 font-bold">
-                  Refund: ₹{req.amountToRefund}
-                </div>
-              </div>
-            </td>
-            <td className="p-4 max-w-xs align-top">
-              <div className="font-medium text-sm">{req.customerName}</div>
-              <div className="text-xs text-gray-500">{req.customerPhone}</div>
-            </td>
-            <td className="p-4 align-top">
-              {req.status === "REQUESTED" && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">
-                  Pending
-                </span>
-              )}
-              {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-500">
-                    <FaTruck className="inline mr-1" />{" "}
-                    {/* Display the assigned name immediately */}
-                    {req.pickupBoy || "Unassigned"}
+        {filteredItems.map((req, index) => {
+          // 🟢 FIX IS HERE: This robust variable protects against backend strings changing on refresh!
+          const isWarehouseDrop =
+            req.returnDropMethod === "WAREHOUSE_DROP" ||
+            req.pickupBoy === "Warehouse Drop-off" ||
+            req.pickupBoy === "WAREHOUSE_DROP";
+
+          return (
+            <tr
+              key={req.itemId || index}
+              className="hover:bg-gray-50 transition"
+            >
+              <td className="p-4 align-top">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 flex-shrink-0">
+                    {req.productImage ? (
+                      <img
+                        src={req.productImage}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FaBox className="text-gray-400" />
+                    )}
                   </div>
-                  {req.status === "PICKUP_SCHEDULED" && (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
-                      In Transit
-                    </span>
-                  )}
+                  <div>
+                    <p className="font-medium text-sm text-gray-800 line-clamp-1">
+                      {req.productName || "Product Name N/A"}
+                    </p>
+                    <p className="text-xs text-gray-500">Qty: {req.quantity}</p>
+                  </div>
                 </div>
-              )}
-              {req.status === "RETURNED" && (
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
-                  Warehouse
-                </span>
-              )}
-              {req.status === "COMPLETED" && (
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">
-                  Verified
-                </span>
-              )}
-              {(req.status === "REFUNDED" || req.status === "CREDITED") && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold flex items-center gap-1 w-fit">
-                  <FaCheck size={10} /> Credited
-                </span>
-              )}
-              {req.status === "REJECTED" && (
-                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">
-                  Rejected
-                </span>
-              )}
-            </td>
-            <td className="p-4 text-right align-top">
-              {req.status === "REQUESTED" && (
-                <div className="flex justify-end gap-2">
+              </td>
+              <td className="p-4 align-top">
+                <div
+                  className="text-sm text-gray-600 max-w-[150px] truncate"
+                  title={req.reason}
+                >
+                  {req.reason || "No Reason"}
+                </div>
+              </td>
+              <td className="p-4 align-top">
+                <div className="flex flex-col gap-1">
+                  <span className="font-bold text-gray-800">
+                    #{req.orderId}
+                  </span>
+                  <Link
+                    to={`/admin/orders/${req.orderId}`}
+                    className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
+                  >
+                    View Order <FaExternalLinkAlt size={8} />
+                  </Link>
+                  <div className="text-xs text-blue-700 font-bold">
+                    Refund: ₹{req.amountToRefund}
+                  </div>
+                </div>
+              </td>
+              <td className="p-4 max-w-xs align-top">
+                <div className="font-medium text-sm">{req.customerName}</div>
+                <div className="text-xs text-gray-500">{req.customerPhone}</div>
+              </td>
+              <td className="p-4 align-top">
+                {req.status === "REQUESTED" && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-bold">
+                    Pending
+                  </span>
+                )}
+                {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-gray-500">
+                      {/* 🟢 Applying the variable here */}
+                      {isWarehouseDrop ? (
+                        <span className="text-orange-600 flex items-center gap-1">
+                          <FaStore /> Awaiting Drop-off
+                        </span>
+                      ) : (
+                        <span>
+                          <FaTruck className="inline mr-1" />
+                          {req.pickupBoy || "Unassigned Rider"}
+                        </span>
+                      )}
+                    </div>
+                    {req.status === "PICKUP_SCHEDULED" && !isWarehouseDrop && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
+                        In Transit
+                      </span>
+                    )}
+                  </div>
+                )}
+                {req.status === "RETURNED" && (
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
+                    Warehouse
+                  </span>
+                )}
+                {req.status === "COMPLETED" && (
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold">
+                    Verified
+                  </span>
+                )}
+                {(req.status === "REFUNDED" || req.status === "CREDITED") && (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold flex items-center gap-1 w-fit">
+                    <FaCheck size={10} /> Credited
+                  </span>
+                )}
+                {req.status === "REJECTED" && (
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold">
+                    Rejected
+                  </span>
+                )}
+              </td>
+              <td className="p-4 text-right align-top">
+                {req.status === "REQUESTED" && (
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setApproveModalData(req)}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleAction(req.orderId, req.itemId, "REJECTED")
+                      }
+                      className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+                {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
+                  <>
+                    {/* 🟢 Applying the variable to the Actions column */}
+                    {isWarehouseDrop ? (
+                      <button
+                        onClick={() =>
+                          handleAction(req.orderId, req.itemId, "RETURNED")
+                        }
+                        className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs font-bold ml-auto block hover:bg-orange-700 shadow-sm"
+                      >
+                        Mark as Received
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenReassign(req)}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700"
+                      >
+                        Reassign Rider
+                      </button>
+                    )}
+                  </>
+                )}
+                {req.status === "RETURNED" && (
                   <button
                     onClick={() =>
-                      handleAction(req.orderId, req.itemId, "APPROVED")
+                      handleAction(req.orderId, req.itemId, "COMPLETED")
                     }
-                    className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700"
                   >
-                    Approve
+                    Verify Item
                   </button>
+                )}
+                {req.status === "COMPLETED" && (
                   <button
-                    onClick={() =>
-                      handleAction(req.orderId, req.itemId, "REJECTED")
-                    }
-                    className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50"
+                    onClick={() => setSelectedForRefund(req)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
                   >
-                    Reject
+                    Process Refund
                   </button>
-                </div>
-              )}
-              {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
-                <button
-                  onClick={() => handleOpenReassign(req)}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700"
-                >
-                  Reassign
-                </button>
-              )}
-              {req.status === "RETURNED" && (
-                <button
-                  onClick={() =>
-                    handleAction(req.orderId, req.itemId, "COMPLETED")
-                  }
-                  className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700"
-                >
-                  Verify Item
-                </button>
-              )}
-              {req.status === "COMPLETED" && (
-                <button
-                  onClick={() => setSelectedForRefund(req)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
-                >
-                  Process Refund
-                </button>
-              )}
-              {(req.status === "REFUNDED" || req.status === "CREDITED") && (
-                <button
-                  onClick={() => setSelectedCreditNote(req)}
-                  className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
-                >
-                  View Refund Details
-                </button>
-              )}
-            </td>
-          </tr>
-        ))}
+                )}
+                {(req.status === "REFUNDED" || req.status === "CREDITED") && (
+                  <button
+                    onClick={() => setSelectedCreditNote(req)}
+                    className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
+                  >
+                    View Refund Details
+                  </button>
+                )}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
@@ -563,6 +603,73 @@ const AdminReturnRequests = () => {
           data={selectedCreditNote}
           onClose={() => setSelectedCreditNote(null)}
         />
+      )}
+
+      {/* Approval Modal for Return Logistics */}
+      {approveModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 transform transition-all">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Approve Return Request
+            </h3>
+            <p className="text-sm text-gray-600 mb-5">
+              How will this item be returned to the facility?
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <label
+                className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${dropMethod === "DELIVERY_BOY" ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
+              >
+                <input
+                  type="radio"
+                  checked={dropMethod === "DELIVERY_BOY"}
+                  onChange={() => setDropMethod("DELIVERY_BOY")}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Auto-Assign Delivery Partner
+                </span>
+              </label>
+
+              <label
+                className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${dropMethod === "WAREHOUSE_DROP" ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
+              >
+                <input
+                  type="radio"
+                  checked={dropMethod === "WAREHOUSE_DROP"}
+                  onChange={() => setDropMethod("WAREHOUSE_DROP")}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Customer Drop-off at Warehouse
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button
+                onClick={() => setApproveModalData(null)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleAction(
+                    approveModalData.orderId,
+                    approveModalData.itemId,
+                    "APPROVED",
+                    { returnDropMethod: dropMethod },
+                  );
+                  setApproveModalData(null);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-green-700 transition-colors"
+              >
+                Confirm Approval
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ReassignmentModal

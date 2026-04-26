@@ -1,4 +1,4 @@
-import { FaRedo, FaUndo } from "react-icons/fa";
+import { FaRedo } from "react-icons/fa";
 import ReturnRequestModal from "../ReturnRequestModal";
 
 const OrderDetailFooter = ({
@@ -6,11 +6,9 @@ const OrderDetailFooter = ({
   addingToCart,
   isOrderActive,
   onCancelOrder,
-  canReturnOrder,
-  onReturnOrder,
-  returningOrder,
   onClose,
   selectedReturnItem,
+  order,
   orderId,
   onReturnItemClose,
   onReturnItemSuccess,
@@ -41,11 +39,10 @@ const OrderDetailFooter = ({
           </button>
         )}
 
-        {/* Return Order Button Removed */}
-
         {selectedReturnItem && (
           <ReturnRequestModal
-            orderId={orderId}
+            order={order}
+            orderId={orderId || order?.id}
             item={selectedReturnItem}
             onClose={onReturnItemClose}
             onSuccess={onReturnItemSuccess}

@@ -1,8 +1,25 @@
 /* eslint-disable react/prop-types */
 import { FaUserSecret, FaExchangeAlt, FaPhone } from "react-icons/fa";
 
+const getActiveAssignment = (order) => {
+  if (!order) return null;
+
+  if (
+    Array.isArray(order.DeliveryAssignments) &&
+    order.DeliveryAssignments.length > 0
+  ) {
+    return (
+      order.DeliveryAssignments.find(
+        (a) => !["FAILED", "REASSIGNED", "CANCELLED"].includes(a.status),
+      ) || order.DeliveryAssignments[order.DeliveryAssignments.length - 1]
+    );
+  }
+
+  return order.DeliveryAssignment;
+};
+
 const OrderDeliveryPartner = ({ order, onReassign, isPackingAllowed }) => {
-  const assignment = order?.DeliveryAssignment;
+  const assignment = getActiveAssignment(order);
   const deliveryBoy = assignment?.DeliveryBoy;
 
   return (

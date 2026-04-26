@@ -183,6 +183,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         </div>
 
         <OrderDetailFooter
+          order={order}
           onOrderAgain={handleOrderAgain}
           addingToCart={addingToCart}
           isOrderActive={isOrderActive}
