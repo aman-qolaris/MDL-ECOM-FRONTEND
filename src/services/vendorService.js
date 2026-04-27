@@ -29,6 +29,24 @@ const isWithinRange = (dateString, start, end) => {
 };
 
 // --- VENDOR DASHBOARD STATS ---
+
+export const loginVendor = async (credentials) => {
+  try {
+    // 1. Fetch fresh Vendor CSRF token
+    const csrfRes = await api.get("/vendor/csrf-token");
+    api.defaults.headers.common["X-CSRF-Token"] = csrfRes.data.csrfToken;
+
+    // 2. Proceed with login
+    const response = await api.post("/vendor/login", credentials);
+
+    // Return the data (which includes the JWT token)
+    return response.data;
+  } catch (error) {
+    // Re-throw the error so the component can catch it and display messages
+    throw error;
+  }
+};
+
 export const getVendorDashboardStats = async (dateFilter = null) => {
   try {
     // 🟢 REPLACED direct axios calls with api.get()

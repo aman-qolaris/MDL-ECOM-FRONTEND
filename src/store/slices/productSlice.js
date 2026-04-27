@@ -34,7 +34,7 @@ const productSlice = createSlice({
       })
       .addCase(getAllProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        state.items = action.payload?.rows || action.payload || [];
       })
       .addCase(getAllProducts.rejected, (state, action) => {
         state.loading = false;
@@ -43,7 +43,7 @@ const productSlice = createSlice({
 
       // Handle getFeaturedProducts
       .addCase(getFeaturedProducts.fulfilled, (state, action) => {
-        state.featured = action.payload;
+        state.featured = action.payload?.rows || action.payload || [];
       })
 
       // Handle getProduct
@@ -110,20 +110,20 @@ const selectProductState = (state) => state.products;
 
 export const selectAllProducts = createSelector(
   [selectProductState],
-  (products) => products.items
+  (products) => products.items,
 );
 
 export const selectFeaturedProducts = createSelector(
   [selectProductState],
-  (products) => products.featured
+  (products) => products.featured,
 );
 
 export const selectCurrentProduct = createSelector(
   [selectProductState],
-  (products) => products.currentProduct
+  (products) => products.currentProduct,
 );
 
 export const selectProductLoading = createSelector(
   [selectProductState],
-  (products) => products.loading
+  (products) => products.loading,
 );

@@ -9,14 +9,14 @@ const api = axios.create({
   },
   withCredentials: true,
 
-  xsrfCookieName: "XSRF-TOKEN",
-  xsrfHeaderName: "X-XSRF-TOKEN",
+  xsrfCookieName: "_csrf",
+  xsrfHeaderName: "X-CSRF-Token",
 });
 
 api.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const customerToken = state.auth.token;
+    const customerToken = state.auth?.token || localStorage.getItem("token");
     const adminToken = localStorage.getItem("adminToken");
     const vendorToken = localStorage.getItem("vendorToken");
     const deliveryToken = localStorage.getItem("deliveryToken");

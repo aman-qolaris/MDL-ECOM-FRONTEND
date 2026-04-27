@@ -9,7 +9,6 @@ import {
   FaUser,
 } from "react-icons/fa";
 import api from "../../services/api";
-import axios from "axios"; // Direct axios for manual token control
 
 const VendorLayout = () => {
   const navigate = useNavigate();
@@ -28,12 +27,7 @@ const VendorLayout = () => {
       try {
         // 2. Fetch Profile
         // We use direct axios to ensure we send the VENDOR token, not the customer one
-        const response = await axios.get(
-          "http://localhost:5007/api/vendor/me",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await api.get("/vendor/me");
 
         if (response.data && response.data.businessName) {
           setShopName(response.data.businessName);

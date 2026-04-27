@@ -90,11 +90,19 @@ function App() {
   useEffect(() => {
     const initializeCsrf = async () => {
       try {
-        const response = await api.get("/auth/csrf-token");
+        const isVendorRoute = window.location.pathname.startsWith("/vendor");
+
+        const csrfEndpoint = isVendorRoute
+          ? "/vendor/csrf-token"
+          : "/auth/csrf-token";
+
+        const response = await api.get(csrfEndpoint);
 
         api.defaults.headers.common["X-CSRF-Token"] = response.data.csrfToken;
 
-        console.log("🔒 CSRF Protection initialized successfully.");
+        console.log(
+          `🔒 CSRF Protection initialized successfully for ${isVendorRoute ? "Vendor" : "User"}.`,
+        );
       } catch (error) {
         console.error("⚠️ Failed to initialize CSRF token:", error.message);
       }

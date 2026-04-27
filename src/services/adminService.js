@@ -1,7 +1,10 @@
 import api from "./api";
 
-// 🟢 FIX: Call the Backend Stats Endpoint directly
-// Do not fetch "all orders" and calculate locally.
+export const getAllUsers = async () => {
+  const response = await api.get("/auth/users");
+  return response.data;
+};
+
 export const getDashboardStats = async (dateFilter = null) => {
   try {
     let query = "";

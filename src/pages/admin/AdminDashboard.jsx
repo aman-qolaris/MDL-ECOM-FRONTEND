@@ -60,15 +60,18 @@ const AdminDashboard = () => {
   };
 
   const cardConfig = [
-   {
+    {
       title: "Total Sales",
       key: "totalSales",
       formatter: (val) => `₹${val?.toLocaleString()}`,
       icon: <FaMoneyBillWave />,
       color: "bg-green-500",
       // 🟢 CHANGE LINK: Add '?filter=revenue' to match Net Sales logic
-      link: "/admin/sales?filter=revenue", 
-      desc: filterType === "all" ? "All time revenue (Net)" : "Revenue in selected range",
+      link: "/admin/sales?filter=revenue",
+      desc:
+        filterType === "all"
+          ? "All time revenue (Net)"
+          : "Revenue in selected range",
     },
     {
       title: "Total Orders",
@@ -191,8 +194,8 @@ const AdminDashboard = () => {
                 title={card.title}
                 value={
                   card.formatter
-                    ? card.formatter(stats[card.key])
-                    : stats[card.key]
+                    ? card.formatter(stats?.[card.key])
+                    : stats?.[card.key]
                 }
                 icon={card.icon}
                 color={card.color}

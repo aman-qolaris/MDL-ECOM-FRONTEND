@@ -32,6 +32,7 @@ const initialState = USE_MOCK_AUTH
     }
   : {
       user: getUserFromStorage(),
+      token: localStorage.getItem("token") || null,
       isAuthenticated: !!getUserFromStorage(),
       loading: false,
       error: null,
@@ -52,6 +53,7 @@ const authSlice = createSlice({
       state.loading = false;
       state.isAuthenticated = true;
       state.user = action.payload.user;
+      state.token = action.payload.token;
 
       localStorage.setItem("user", JSON.stringify(action.payload.user));
     },
@@ -64,6 +66,7 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
 
       if (USE_MOCK_AUTH) {
         window.location.reload();
@@ -74,9 +77,6 @@ const authSlice = createSlice({
       if (localStorage.getItem("user")) {
         localStorage.setItem("user", JSON.stringify(state.user));
       }
-    },
-    clearError: (state) => {
-      state.error = null;
     },
   },
 });

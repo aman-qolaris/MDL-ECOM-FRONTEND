@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // Added FaPhoneAlt and FaLock for the inputs
 import { FaStore, FaPhoneAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import api from "../../services/api"; // Uses port 5007
+import { loginVendor } from "../../services/vendorService";
 
 const VendorLogin = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const VendorLogin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
@@ -35,29 +35,26 @@ const VendorLogin = () => {
 
     setLoading(true);
 
-    // Hit the VENDOR service
-    api
-      .post("/vendor/login", formData)
-      .then((response) => {
-        // Save token specific to vendor
-        localStorage.setItem("vendorToken", response.data.token);
-        alert("Login Successful!");
-        navigate("/vendor/dashboard");
-      })
-      .catch((err) => {
-        console.error("Vendor Login Error:", err);
-        if (err.validationErrors) {
-          const formattedErrors = err.validationErrors
-            .map((zError) => zError.message)
-            .join(" | ");
-          setError(formattedErrors);
-        } else {
-          setError(err.response?.data?.message || "Login failed");
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const data = await loginVendor(formData);
+
+      localStorage.setItem("vendorToken", data.token);
+
+      alert("Login Successful!");
+      navigate("/vendor/dashboard");
+    } catch (err) {
+      console.error("Vendor Login Error:", err);
+      if (err.validationErrors) {
+        const formattedErrors = err.validationErrors
+          .map((zError) => zError.message)
+          .join(" | ");
+        setError(formattedErrors);
+      } else {
+        setError(err.response?.data?.message || "Login failed");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

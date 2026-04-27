@@ -19,7 +19,9 @@ const FeaturedProducts = () => {
     dispatch(getFeaturedProducts());
   }, [dispatch]);
 
-  const displayProducts = featured;
+  const displayProducts = Array.isArray(featured)
+    ? featured
+    : featured?.rows || [];
 
   return (
     <section className="py-5 sm:py-6">

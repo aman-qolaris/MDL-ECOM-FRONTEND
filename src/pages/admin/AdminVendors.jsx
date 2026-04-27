@@ -29,26 +29,31 @@ const AdminVendors = () => {
     loadData();
   }, []);
 
-  // 👇 3. REPLACE 'fetchVendors' WITH 'loadData'
   const loadData = async () => {
     try {
-      // Fetch Vendors and Products simultaneously
       const [vendorsData, productsData] = await Promise.all([
         getAllVendors(),
         getProducts(),
       ]);
 
-      setVendors(vendorsData);
+      const vendorsList = Array.isArray(vendorsData)
+        ? vendorsData
+        : vendorsData?.rows || [];
+      const productsList = Array.isArray(productsData)
+        ? productsData
+        : productsData?.rows || [];
 
-      // Calculate how many products each vendor has
+      setVendors(vendorsList);
+
       const counts = {};
-      productsData.forEach((product) => {
+      productsList.forEach((product) => {
         if (product.vendorId) {
           counts[product.vendorId] = (counts[product.vendorId] || 0) + 1;
         }
       });
       setInventoryCounts(counts);
     } catch (err) {
+      console.error("AdminVendors fetch error:", err);
       setError("Failed to fetch data");
     } finally {
       setLoading(false);

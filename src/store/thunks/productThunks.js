@@ -57,7 +57,7 @@ export const getFeaturedProducts = createAsyncThunk(
   "products/getFeatured",
   async (_, { rejectWithValue }) => {
     try {
-      const data = await getProducts({ sort: "desc" }); // Example: Get newest
+      const data = await getProducts({ sort: "newest" });
       return data;
     } catch (error) {
       return rejectWithValue(

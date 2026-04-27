@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { FaStore, FaUniversity, FaSave, FaUser } from "react-icons/fa";
-// 👇 CHANGE 1: Import axios directly to bypass 'api.js' interceptors
-import axios from "axios";
+import api from "../../services/api";
 
 const VendorProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -32,13 +31,7 @@ const VendorProfile = () => {
           return;
         }
 
-        // 👇 CHANGE 2: Use direct axios call with full URL
-        const response = await axios.get(
-          "http://localhost:5007/api/vendor/me",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await api.get("/vendor/me");
 
         // 3. Map Backend Data to Frontend State
         const data = response.data;

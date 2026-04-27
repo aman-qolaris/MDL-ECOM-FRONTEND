@@ -20,12 +20,17 @@ export const registerUser = async (userData) => {
 export const loginUser = async ({ phone, password }) => {
   if (USE_MOCK) return;
 
-  await api.post("/auth/login", { phone, password });
+  const csrfRes = await api.get("/auth/csrf-token");
+  api.defaults.headers.common["X-CSRF-Token"] = csrfRes.data.csrfToken;
+
+  const response = await api.post("/auth/login", { phone, password });
+
+  localStorage.setItem("token", response.data.token);
 
   const profileResponse = await api.get("/auth/me");
-  console.log("Backend user profile data:", profileResponse.data);
   return {
     user: profileResponse.data,
+    token: response.data.token,
   };
 };
 

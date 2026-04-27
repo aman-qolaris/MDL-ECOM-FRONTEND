@@ -8,6 +8,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { getAllUsers } from "../../services/adminService";
 
 const AdminUsers = () => {
   const navigate = useNavigate();
@@ -25,12 +26,8 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const token =
-        localStorage.getItem("adminToken") || localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5007/api/auth/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsers(res.data);
+      const data = await getAllUsers();
+      setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users", err);
     } finally {
@@ -42,7 +39,7 @@ const AdminUsers = () => {
   const filteredUsers = users.filter(
     (user) =>
       (user.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()),
   );
 
   const indexOfLastUser = currentPage * usersPerPage;

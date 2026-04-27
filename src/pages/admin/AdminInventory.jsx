@@ -29,28 +29,33 @@ const AdminInventory = () => {
         getProducts(),
       ]);
 
-      // Only show Approved vendors
-      setVendors(vendorsData.filter((v) => v.status === "APPROVED"));
+      const vendorsList = Array.isArray(vendorsData)
+        ? vendorsData
+        : vendorsData?.rows || [];
 
-      // Calculate stats (Count + Total Stock)
+      setVendors(vendorsList.filter((v) => v.status === "APPROVED"));
+
+      const productsList = Array.isArray(productsData)
+        ? productsData
+        : productsData?.rows || [];
+
       const stats = {};
-      productsData.forEach((product) => {
+
+      productsList.forEach((product) => {
         if (product.vendorId) {
           if (!stats[product.vendorId]) {
             stats[product.vendorId] = { count: 0, stock: 0 };
           }
 
-          // 1. Increment Product Count
           stats[product.vendorId].count += 1;
 
-          // 2. Add Stock (Check new stockDetails structure first, fallback to vendortotalstock)
           const stockQty = product.totalStock || 0;
           stats[product.vendorId].stock += stockQty;
         }
       });
       setInventoryStats(stats);
     } catch (err) {
-      console.error("Failed to load inventory data");
+      console.error("Failed to load inventory data", err);
     } finally {
       setLoading(false);
     }
