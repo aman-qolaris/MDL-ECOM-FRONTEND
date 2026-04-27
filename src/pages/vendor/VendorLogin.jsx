@@ -46,7 +46,14 @@ const VendorLogin = () => {
       })
       .catch((err) => {
         console.error("Vendor Login Error:", err);
-        setError(err.response?.data?.message || "Login failed");
+        if (err.validationErrors) {
+          const formattedErrors = err.validationErrors
+            .map((zError) => zError.message)
+            .join(" | ");
+          setError(formattedErrors);
+        } else {
+          setError(err.response?.data?.message || "Login failed");
+        }
       })
       .finally(() => {
         setLoading(false);

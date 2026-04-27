@@ -35,8 +35,9 @@ const Home = () => {
 
   // useDeferredRender handles idle scheduling + cleanup
 
-  const allProducts = items;
-
+  const allProducts = Array.isArray(items)
+    ? items
+    : items?.products || items?.data || [];
   // --- LOGIC: Group Products & Calculate Derived Lists ---
   const { trendingProducts, newArrivals, categoryRows } = useMemo(() => {
     if (!renderBelowFold) {

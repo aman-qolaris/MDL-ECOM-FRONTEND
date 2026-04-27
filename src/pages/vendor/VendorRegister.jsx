@@ -14,6 +14,7 @@ const VendorRegister = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(registrationSchema),
@@ -52,10 +53,22 @@ const VendorRegister = () => {
       }
     } catch (error) {
       console.error("Registration Error:", error);
-      const errorMsg =
-        error.response?.data?.message ||
-        "Registration failed. Please try again.";
-      alert(errorMsg);
+      if (error.validationErrors) {
+        error.validationErrors.forEach((zodError) => {
+          if (zodError.path && zodError.path.length > 0) {
+            setError(zodError.path, {
+              type: "server",
+              message: zodError.message,
+            });
+          }
+        });
+        alert("Please correct the highlighted errors in the form.");
+      } else {
+        const errorMsg =
+          error.response?.data?.message ||
+          "Registration failed. Please try again.";
+        alert(errorMsg);
+      }
     }
   };
 

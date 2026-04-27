@@ -20,23 +20,12 @@ export const registerUser = async (userData) => {
 export const loginUser = async ({ phone, password }) => {
   if (USE_MOCK) return;
 
-  // 1. Login to get Token
-  // Backend: POST /auth/login
-  const { data } = await api.post("/auth/login", { phone, password });
-  const token = data.token;
+  await api.post("/auth/login", { phone, password });
 
-  // 2. Fetch User Profile (to get 'role')
-  // Backend: GET /auth/me
-  // We manually pass the header here because the Redux store isn't updated yet
-  const profileResponse = await api.get("/auth/me", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
+  const profileResponse = await api.get("/auth/me");
   console.log("Backend user profile data:", profileResponse.data);
-
   return {
-    token,
-    user: profileResponse.data, // Contains id, name, role, email, etc.
+    user: profileResponse.data,
   };
 };
 

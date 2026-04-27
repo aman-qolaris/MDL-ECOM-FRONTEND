@@ -49,9 +49,17 @@ const DeliveryLogin = () => {
       navigate("/delivery/dashboard");
     } catch (err) {
       console.error(err);
-      setError(
-        err.response?.data?.message || "Invalid Credentials. Please try again."
-      );
+      if (err.validationErrors) {
+        const formattedErrors = err.validationErrors
+          .map((zError) => zError.message)
+          .join(" | ");
+        setError(formattedErrors);
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Invalid Credentials. Please try again.",
+        );
+      }
     } finally {
       setLoading(false);
     }

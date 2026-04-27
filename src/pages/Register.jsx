@@ -81,6 +81,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -95,9 +96,21 @@ const Register = () => {
       dispatch(authSuccess(result));
       navigate("/");
     } catch (err) {
-      dispatch(
-        authFailure(err.response?.data?.message || "Registration failed"),
-      );
+      if (err.validationErrors) {
+        err.validationErrors.forEach((zodError) => {
+          if (zodError.path && zodError.path.length > 0) {
+            setError(zodError.path, {
+              type: "server",
+              message: zodError.message,
+            });
+          }
+        });
+        dispatch(authFailure("Please check the highlighted fields below."));
+      } else {
+        const errorMessage =
+          err.response?.data?.message || err.message || "Registration failed";
+        dispatch(authFailure(errorMessage));
+      }
     }
   };
 

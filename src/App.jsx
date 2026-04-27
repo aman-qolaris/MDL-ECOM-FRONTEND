@@ -1,5 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import api from "./services/api";
 
 // Layouts - Keep these static or lazy depending on preference.
 // Since they define the structure, keeping them static or eager is often fine,
@@ -86,6 +87,22 @@ const PageLoader = () => (
 );
 
 function App() {
+  useEffect(() => {
+    const initializeCsrf = async () => {
+      try {
+        const response = await api.get("/auth/csrf-token");
+
+        api.defaults.headers.common["X-CSRF-Token"] = response.data.csrfToken;
+
+        console.log("🔒 CSRF Protection initialized successfully.");
+      } catch (error) {
+        console.error("⚠️ Failed to initialize CSRF token:", error.message);
+      }
+    };
+
+    initializeCsrf();
+  }, []);
+
   return (
     <BrowserRouter>
       <ScrollToTop />

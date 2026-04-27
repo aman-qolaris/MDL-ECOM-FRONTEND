@@ -33,14 +33,14 @@ const schema = yup
 const AdminLogin = () => {
   const navigate = useNavigate();
 
-  // ✅ Local state handles UI updates now (No Redux)
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [globalError, setGlobalError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -49,7 +49,7 @@ const AdminLogin = () => {
   const onSubmit = async (data) => {
     // 1. Start Loading & Clear Errors
     setLoading(true);
-    setError(null);
+    setGlobalError(null); // Updated
 
     try {
       const result = await loginAdmin(data);
@@ -62,8 +62,23 @@ const AdminLogin = () => {
       navigate("/admin/dashboard");
     } catch (err) {
       console.error("Admin Login Error:", err);
+
       // 4. Handle Error Locally
-      setError(err.response?.data?.message || "Invalid phone or password");
+      if (err.validationErrors) {
+        err.validationErrors.forEach((zodError) => {
+          if (zodError.path && zodError.path.length > 0) {
+            setError(zodError.path, {
+              type: "server",
+              message: zodError.message,
+            });
+          }
+        });
+        setGlobalError("Please check the highlighted fields."); // Updated
+      } else {
+        setGlobalError(
+          err.response?.data?.message || "Invalid phone or password",
+        ); // Updated
+      }
     } finally {
       // 5. Stop Loading (Always runs)
       setLoading(false);
@@ -90,10 +105,9 @@ const AdminLogin = () => {
           Sign in to manage your store
         </p>
 
-        {/* ✅ Display Local Error State */}
-        {error && (
+        {globalError && (
           <div className="mb-4 p-3 bg-red-100/80 border border-red-200 text-red-700 rounded-lg text-sm backdrop-blur-sm relative z-10">
-            {error}
+            {globalError}
           </div>
         )}
 
@@ -112,7 +126,7 @@ const AdminLogin = () => {
                 type="tel"
                 maxLength={10}
                 placeholder="e.g. 9999999999"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
+                className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border ${errors.phone ? "border-red-500" : "border-gray-200"} focus:bg-white focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner`}
               />
             </div>
             <p className="text-red-500 text-xs mt-1 pl-1">
@@ -130,7 +144,7 @@ const AdminLogin = () => {
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
+                className={`w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border ${errors.password ? "border-red-500" : "border-gray-200"} focus:bg-white focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner`}
               />
               <button
                 type="button"

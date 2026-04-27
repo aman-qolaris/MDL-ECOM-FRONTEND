@@ -67,7 +67,14 @@ const ProfileTab = ({ user }) => {
       alert("Profile Updated Successfully!");
     } catch (error) {
       console.error(error);
-      alert("Failed to update profile.");
+      if (error.validationErrors) {
+        const formattedErrors = error.validationErrors
+          .map((zError) => zError.message)
+          .join("\n");
+        alert("Validation Failed:\n" + formattedErrors);
+      } else {
+        alert(error.response?.data?.message || "Failed to update profile.");
+      }
     } finally {
       setSaving(false);
     }

@@ -57,10 +57,17 @@ const SecurityTab = ({ userId }) => {
       // Clear form
       setPasswordData({ current: "", new: "", confirm: "" });
     } catch (error) {
-      setPasswordError(
-        error.response?.data?.message ||
-          "Failed to update password. Please check your current password."
-      );
+      if (error.validationErrors) {
+        const formattedErrors = error.validationErrors
+          .map((zError) => zError.message)
+          .join(" | ");
+        setPasswordError(formattedErrors);
+      } else {
+        setPasswordError(
+          error.response?.data?.message ||
+            "Failed to update password. Please check your current password.",
+        );
+      }
     } finally {
       setSaving(false);
     }

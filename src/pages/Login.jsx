@@ -35,7 +35,6 @@ const schema = yup
 const Login = () => {
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
-  // 🟢 ADD THIS BLOCK
   useEffect(() => {
     dispatch(clearError());
   }, [dispatch]);
@@ -45,6 +44,7 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -68,11 +68,23 @@ const Login = () => {
         navigate("/"); // Customers go to Home/Shop
       }
     } catch (err) {
-      dispatch(
-        authFailure(
-          err.response?.data?.message || "Invalid phone number or password",
-        ),
-      );
+      if (err.validationErrors) {
+        err.validationErrors.forEach((zodError) => {
+          if (zodError.path && zodError.path.length > 0) {
+            setError(zodError.path, {
+              type: "server",
+              message: zodError.message,
+            });
+          }
+        });
+        dispatch(authFailure("Please check the highlighted fields below."));
+      } else {
+        const errorMessage =
+          err.response?.data?.message ||
+          err.message ||
+          "Invalid phone number or password";
+        dispatch(authFailure(errorMessage));
+      }
     }
   };
 
