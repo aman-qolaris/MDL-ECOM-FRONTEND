@@ -53,12 +53,12 @@ export const updateReturnStatus = async (
 };
 
 export const searchUserByPhone = async (phone) => {
-  const response = await api.get(`/admin/users/search?phone=${phone}`);
+  const response = await api.get(`/auth/admin/search?phone=${phone}`);
   return response.data;
 };
 
 export const registerUserOnBehalf = async (userData) => {
-  const response = await api.post("/admin/users/register", userData);
+  const response = await api.post("/auth/register", userData);
   return response.data;
 };
 

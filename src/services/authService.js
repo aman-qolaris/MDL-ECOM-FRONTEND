@@ -82,7 +82,6 @@ export const deleteUser = async (userId) => {
   return userId;
 };
 
-// 👇 ADD THIS FUNCTION
 export const changeAdminPassword = async (oldPassword, newPassword) => {
   const response = await api.post("/admin/change-password", {
     oldPassword,

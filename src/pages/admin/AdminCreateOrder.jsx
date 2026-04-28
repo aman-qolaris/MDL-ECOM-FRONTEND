@@ -71,8 +71,10 @@ const AdminCreateOrder = () => {
     const fetchAreas = async () => {
       try {
         const data = await getDeliveryLocations();
-        const raipurAreas = data?.[FIXED_STATE]?.[FIXED_CITY] || [];
-        setAvailableAreas(raipurAreas);
+        const areasArray = Array.isArray(data)
+          ? data.map((rate) => rate.areaName)
+          : [];
+        setAvailableAreas(areasArray);
       } catch (error) {
         console.error("Failed to load delivery areas", error);
         toast.error("Could not load delivery areas");
@@ -189,7 +191,9 @@ const AdminCreateOrder = () => {
     try {
       const res = await api.get(`/products?search=${query}&limit=5`);
       const products =
-        res.data.products || (Array.isArray(res.data) ? res.data : []);
+        res.data.rows ||
+        res.data.products ||
+        (Array.isArray(res.data) ? res.data : []);
       setSearchResults(products);
     } catch (err) {
       console.error("Product Search Error:", err);
@@ -203,7 +207,7 @@ const AdminCreateOrder = () => {
       const existing = prev.find((p) => p.id === product.id);
       if (existing) {
         return prev.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p,
         );
       }
       return [...prev, { ...product, quantity: 1 }];
@@ -231,7 +235,7 @@ const AdminCreateOrder = () => {
       // Calculate Subtotal only
       const subtotal = cart.reduce(
         (sum, item) => sum + item.price * item.quantity,
-        0
+        0,
       );
 
       // 🟢 REMOVED ZIP CODE FROM PAYLOAD

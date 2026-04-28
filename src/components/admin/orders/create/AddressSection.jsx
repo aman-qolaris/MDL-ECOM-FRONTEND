@@ -28,7 +28,7 @@ const AddressSection = ({
             value={selectedAddress?.id || ""}
             onChange={(e) =>
               setSelectedAddress(
-                user.addresses.find((a) => a.id == e.target.value)
+                user.addresses.find((a) => a.id == e.target.value),
               )
             }
             className="w-full p-2 border rounded-lg bg-gray-50"
@@ -87,11 +87,15 @@ const AddressSection = ({
               className="w-full p-2 border rounded-lg text-sm bg-white"
             >
               <option value="">-- Select Area --</option>
-              {availableAreas.map((area, idx) => (
-                <option key={idx} value={area}>
-                  {area}
-                </option>
-              ))}
+              {availableAreas && availableAreas.length > 0 ? (
+                availableAreas.map((area, idx) => (
+                  <option key={idx} value={area}>
+                    {area}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Loading areas...</option>
+              )}
             </select>
             {addrErrors.area && (
               <p className="text-red-500 text-xs">{addrErrors.area.message}</p>

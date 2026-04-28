@@ -65,7 +65,8 @@ const Cart = () => {
     const fetchTrending = async () => {
       try {
         const res = await api.get("/products?sort=price_high");
-        setTrendingProducts(res.data.slice(0, 4)); // Take top 4
+        const productList = res.data.rows || res.data;
+        setTrendingProducts(productList.slice(0, 4));
       } catch (err) {
         console.error("Failed to fetch trending in cart:", err);
       }
@@ -90,14 +91,14 @@ const Cart = () => {
     (cartItemId, quantity) => {
       dispatch(updateItemQuantity({ cartItemId, quantity }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleRemove = useCallback(
     (cartItemId) => {
       dispatch(removeItem(cartItemId));
     },
-    [dispatch]
+    [dispatch],
   );
 
   // --- Early Returns (Auth & Loading) ---
