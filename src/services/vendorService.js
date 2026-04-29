@@ -112,3 +112,13 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
     throw error;
   }
 };
+
+// --- VENDOR PROFILE & SECURITY ---
+export const changeVendorPassword = async (passwordData) => {
+  try {
+    const response = await api.put("/vendor/change-password", passwordData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

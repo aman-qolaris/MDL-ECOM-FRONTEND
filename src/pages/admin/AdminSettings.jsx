@@ -8,6 +8,7 @@ import {
 } from "react-icons/fa";
 import { changeAdminPassword } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
+import { validatePassword } from "../../utils/passwordValidator";
 
 const AdminSettings = () => {
   const navigate = useNavigate();
@@ -51,6 +52,12 @@ const AdminSettings = () => {
       !adminData.confirmPassword
     ) {
       setErrorMessage("Please fill in all password fields.");
+      return;
+    }
+
+    const validationError = validatePassword(adminData.newPassword);
+    if (validationError) {
+      setErrorMessage(validationError);
       return;
     }
 

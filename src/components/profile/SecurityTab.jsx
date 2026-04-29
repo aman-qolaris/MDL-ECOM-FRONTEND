@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { changePassword } from "../../services/authService";
 import { FaInfoCircle } from "react-icons/fa";
+import { validatePassword } from "../../utils/passwordValidator";
 
 const SecurityTab = ({ userId }) => {
   const [passwordData, setPasswordData] = useState({
@@ -11,26 +12,6 @@ const SecurityTab = ({ userId }) => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // ✅ Password Validation Logic
-  const validatePassword = (password) => {
-    if (password.length < 8 || password.length > 16) {
-      return "Password must be between 8 and 16 characters.";
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return "Password must contain at least one Uppercase letter (A-Z).";
-    }
-    if (!/(?=.*[a-z])/.test(password)) {
-      return "Password must contain at least one Lowercase letter (a-z).";
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return "Password must contain at least one Number (0-9).";
-    }
-    if (!/(?=.*[@$!%*?&])/.test(password)) {
-      return "Password must contain at least one Special Character (@$!%*?&).";
-    }
-    return null; // No error
-  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();

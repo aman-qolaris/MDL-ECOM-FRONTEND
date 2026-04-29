@@ -78,6 +78,7 @@ const DeliveryLogin = lazy(() => import("./pages/delivery/DeliveryLogin"));
 const DeliveryDashboard = lazy(
   () => import("./pages/delivery/DeliveryDashboard"),
 );
+const DeliveryProfile = lazy(() => import("./pages/delivery/DeliveryProfile"));
 
 // Simple Loading Component
 const PageLoader = () => (
@@ -159,6 +160,7 @@ function App() {
           {/* === DELIVERY ROUTES === */}
           <Route path="/delivery/login" element={<DeliveryLogin />} />
           <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+          <Route path="/delivery/profile" element={<DeliveryProfile />} />
 
           {/* Vendor Auth Public Routes */}
           <Route path="vendor/register" element={<VendorRegister />} />

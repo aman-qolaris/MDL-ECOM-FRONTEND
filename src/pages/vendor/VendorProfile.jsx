@@ -1,11 +1,22 @@
 import { useState, useEffect } from "react";
-import { FaStore, FaUniversity, FaSave, FaUser } from "react-icons/fa";
+import {
+  FaStore,
+  FaUniversity,
+  FaSave,
+  FaUser,
+  FaLock,
+  FaKey,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
 import api from "../../services/api";
+import { changeVendorPassword } from "../../services/vendorService"; // Import the new service
+import { validatePassword } from "../../utils/passwordValidator";
 
 const VendorProfile = () => {
   const [loading, setLoading] = useState(true);
 
-  // Initial State
+  // Initial State for Profile
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -18,6 +29,17 @@ const VendorProfile = () => {
     ifsc: "",
   });
 
+  // State for Password Change
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   // Fetch Vendor Data on Page Load
   useEffect(() => {
     const fetchProfile = async () => {
@@ -25,16 +47,13 @@ const VendorProfile = () => {
         const token = localStorage.getItem("vendorToken");
 
         if (!token) {
-          // If no token, we can't fetch.
-          // (The Layout usually handles redirect, but good to be safe)
           setLoading(false);
           return;
         }
 
         const response = await api.get("/vendor/me");
-
-        // 3. Map Backend Data to Frontend State
         const data = response.data;
+
         setProfile({
           name: data.name,
           email: data.email,
@@ -48,7 +67,6 @@ const VendorProfile = () => {
         });
       } catch (error) {
         console.error("Error fetching profile:", error);
-        // Optional: specific handling for 403
         if (error.response && error.response.status === 403) {
           alert("Session expired or unauthorized. Please login again.");
         }
@@ -60,13 +78,53 @@ const VendorProfile = () => {
     fetchProfile();
   }, []);
 
-  const handleChange = (e) => {
+  const handleProfileChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handlePasswordChange = (e) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+  };
+
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
     alert("Profile Update feature coming soon!");
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    const validationError = validatePassword(passwordData.newPassword);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New passwords do not match!");
+      return;
+    }
+
+    try {
+      await changeVendorPassword({
+        oldPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+      alert("Password updated successfully!");
+
+      // Clear the form fields after successful update
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      alert(
+        error.response?.data?.error ||
+          "Failed to update password. Please check your current password.",
+      );
+    }
   };
 
   if (loading) {
@@ -74,10 +132,11 @@ const VendorProfile = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Shop Settings</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* --- FORM 1: PROFILE & BANKING --- */}
+      <form onSubmit={handleProfileSubmit} className="space-y-6">
         {/* Card 1: Business Details */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -110,7 +169,7 @@ const VendorProfile = () => {
                 type="text"
                 name="businessName"
                 value={profile.businessName}
-                onChange={handleChange}
+                onChange={handleProfileChange}
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
@@ -162,7 +221,7 @@ const VendorProfile = () => {
               <textarea
                 name="businessAddress"
                 value={profile.businessAddress}
-                onChange={handleChange}
+                onChange={handleProfileChange}
                 className="w-full border p-2 rounded mt-1"
               ></textarea>
             </div>
@@ -183,7 +242,7 @@ const VendorProfile = () => {
                 type="text"
                 name="bankName"
                 value={profile.bankName}
-                onChange={handleChange}
+                onChange={handleProfileChange}
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
@@ -195,7 +254,7 @@ const VendorProfile = () => {
                 type="text"
                 name="ifsc"
                 value={profile.ifsc}
-                onChange={handleChange}
+                onChange={handleProfileChange}
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
@@ -207,7 +266,7 @@ const VendorProfile = () => {
                 type="text"
                 name="bankAccount"
                 value={profile.bankAccount}
-                onChange={handleChange}
+                onChange={handleProfileChange}
                 className="w-full border p-2 rounded mt-1"
               />
             </div>
@@ -218,7 +277,105 @@ const VendorProfile = () => {
           type="submit"
           className="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
         >
-          <FaSave /> Save Changes
+          <FaSave /> Save Profile Changes
+        </button>
+      </form>
+
+      <hr className="border-gray-300 my-8" />
+
+      {/* --- FORM 2: SECURITY & PASSWORD --- */}
+      <form onSubmit={handlePasswordSubmit} className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <FaLock className="text-red-500" /> Security
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Update your account password. Ensure it is at least 6 characters
+            long.
+          </p>
+
+          <div className="grid grid-cols-1 gap-6 max-w-lg">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-600">
+                Current Password
+              </label>
+              <div className="relative mt-1 w-full md:w-1/2">
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  name="currentPassword"
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  className="w-full border p-2 pr-10 rounded"
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-purple-600 focus:outline-none"
+                >
+                  {showCurrent ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600">
+                New Password
+              </label>
+              <div className="relative mt-1">
+                <input
+                  type={showNew ? "text" : "password"}
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  minLength="6"
+                  className="w-full border p-2 pr-10 rounded"
+                  placeholder="Enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-purple-600 focus:outline-none"
+                >
+                  {showNew ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600">
+                Confirm New Password
+              </label>
+              <div className="relative mt-1">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  minLength="6"
+                  className="w-full border p-2 pr-10 rounded"
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-purple-600 focus:outline-none"
+                >
+                  {showConfirm ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="px-6 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+        >
+          <FaKey /> Update Password
         </button>
       </form>
     </div>
