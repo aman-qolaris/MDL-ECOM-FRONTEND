@@ -64,6 +64,10 @@ const Shop = () => {
       serverParams.category = activeCategories[0];
     }
 
+    if (serverParams.sort === "default") {
+      delete serverParams.sort;
+    }
+
     dispatch(getAllProducts(serverParams));
   }, [dispatch, debouncedFilters]);
 
@@ -122,7 +126,7 @@ const Shop = () => {
               </label>
               <select
                 className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer w-full sm:w-auto"
-                value={filters.sort || "default"}
+                value={filters.sort || "newest"}
                 onChange={handleSortChange}
               >
                 <option value="default">Relevance</option>

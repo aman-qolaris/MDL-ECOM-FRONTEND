@@ -126,8 +126,18 @@ const ProductDetails = () => {
 
         if (signal.aborted) return;
 
+        // Helper function to safely extract the array from the API response
+        const extractArray = (res) => {
+          if (!res || !res.data) return [];
+          if (Array.isArray(res.data)) return res.data;
+          if (Array.isArray(res.data.products)) return res.data.products;
+          if (Array.isArray(res.data.data)) return res.data.data;
+          return [];
+        };
+
         if (categoryName) {
-          const filteredRelated = (relatedRes.data || [])
+          const relatedItems = extractArray(relatedRes);
+          const filteredRelated = relatedItems
             .filter((p) => p.id !== product.id)
             .filter((p) => {
               const pCat = p.Category?.name || p.category?.name;
@@ -138,14 +148,16 @@ const ProductDetails = () => {
         }
 
         if (searchTerm) {
-          const filteredSimilar = (similarRes.data || [])
+          const similarItems = extractArray(similarRes);
+          const filteredSimilar = similarItems
             .filter((p) => p.id !== product.id)
             .filter((p) => p.Category?.name !== categoryName)
             .slice(0, 4);
           setSimilarProducts(filteredSimilar);
         }
 
-        const filteredTrending = (trendingRes.data || [])
+        const trendingItems = extractArray(trendingRes);
+        const filteredTrending = trendingItems
           .filter((p) => p.id !== product.id)
           .slice(0, 4);
         setTrendingProducts(filteredTrending);
@@ -180,14 +192,14 @@ const ProductDetails = () => {
 
     if (currentQtyInCart + quantity > product.availableStock) {
       alert(
-        `Stock Limit Reached! You already have ${currentQtyInCart} in cart. Only ${product.availableStock} available.`
+        `Stock Limit Reached! You already have ${currentQtyInCart} in cart. Only ${product.availableStock} available.`,
       );
       return;
     }
 
     if (quantity > 0) {
       const res = await dispatch(
-        addItemToCart({ productId: product.id, quantity })
+        addItemToCart({ productId: product.id, quantity }),
       ).unwrap();
 
       const nextItems = res?.items || res?.cart?.items || res?.data?.items;
@@ -232,7 +244,7 @@ const ProductDetails = () => {
                         <button
                           onClick={() =>
                             setCurrentImageIndex((prev) =>
-                              prev === 0 ? images.length - 1 : prev - 1
+                              prev === 0 ? images.length - 1 : prev - 1,
                             )
                           }
                           className="absolute left-3 sm:left-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
@@ -242,7 +254,7 @@ const ProductDetails = () => {
                         <button
                           onClick={() =>
                             setCurrentImageIndex((prev) =>
-                              prev === images.length - 1 ? 0 : prev + 1
+                              prev === images.length - 1 ? 0 : prev + 1,
                             )
                           }
                           className="absolute right-3 sm:right-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
@@ -336,7 +348,7 @@ const ProductDetails = () => {
                       className="px-4 py-2 text-lg hover:bg-gray-100 transition"
                       onClick={() =>
                         setQuantity((q) =>
-                          Math.min(product.availableStock, q + 1)
+                          Math.min(product.availableStock, q + 1),
                         )
                       }
                     >
