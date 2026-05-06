@@ -1,5 +1,10 @@
 /* eslint-disable react/prop-types */
-import { FaUserSecret, FaExchangeAlt, FaPhone } from "react-icons/fa";
+import {
+  FaUserSecret,
+  FaExchangeAlt,
+  FaPhone,
+  FaUserPlus,
+} from "react-icons/fa";
 
 const getActiveAssignment = (order) => {
   if (!order) return null;
@@ -29,16 +34,22 @@ const OrderDeliveryPartner = ({ order, onReassign, isPackingAllowed }) => {
           <FaUserSecret className="text-blue-600" /> Delivery Partner
         </h3>
         {/* Reassign allowed only if not yet delivered */}
-        {deliveryBoy &&
-          order.status !== "DELIVERED" &&
-          order.status !== "CANCELLED" && (
-            <button
-              onClick={onReassign}
-              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded transition"
-            >
-              <FaExchangeAlt /> Reassign
-            </button>
-          )}
+        {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+          <button
+            onClick={onReassign}
+            className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded transition"
+          >
+            {deliveryBoy ? (
+              <>
+                <FaExchangeAlt /> Reassign
+              </>
+            ) : (
+              <>
+                <FaUserPlus /> Assign Partner
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {deliveryBoy ? (
@@ -66,10 +77,17 @@ const OrderDeliveryPartner = ({ order, onReassign, isPackingAllowed }) => {
       ) : (
         <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <p className="font-medium">No Partner Assigned</p>
-          {isPackingAllowed && (
+          {isPackingAllowed ? (
             <p className="text-xs mt-2 text-blue-500">
               Partner will be auto-assigned when you click <br />
               <strong>&quot;Complete Packing&quot;</strong>
+            </p>
+          ) : (
+            <p className="text-xs mt-2 text-red-500">
+              No partner was automatically found for this area. <br />
+              <strong>
+                Please assign one manually using the button above.
+              </strong>
             </p>
           )}
         </div>
