@@ -1,3 +1,5 @@
+import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import {
   FaUndo,
   FaCheckCircle,
@@ -170,6 +172,33 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
       </div>
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping the nested 'request' object
+RefundModal.propTypes = {
+  request: PropTypes.shape({
+    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    quantity: PropTypes.number.isRequired,
+    amountToRefund: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    paymentMethod: PropTypes.string,
+    refundMethod: PropTypes.string,
+    customerName: PropTypes.string,
+    orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    itemId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    // Safely handles bankDetails whether it's a JSON string or an already parsed object
+    bankDetails: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        bankName: PropTypes.string,
+        accountNo: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        ifsc: PropTypes.string,
+      }),
+    ]),
+  }),
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
 };
 
 export default RefundModal;

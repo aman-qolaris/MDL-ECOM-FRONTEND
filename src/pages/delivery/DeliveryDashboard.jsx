@@ -21,21 +21,25 @@ const DeliveryDashboard = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [historyFilterType, setHistoryFilterType] = useState("date");
   const [historyDate, setHistoryDate] = useState(
-    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T"),
   );
   const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split("T")[0],
-    end: new Date().toISOString().split("T")[0],
+    start: new Date().toISOString().split("T"),
+    end: new Date().toISOString().split("T"),
   });
 
   const navigate = useNavigate();
-  const deliveryBoy = JSON.parse(localStorage.getItem("deliveryBoy") || "{}");
+  // 🟢 FIX: Safely accessing localStorage via globalThis
+  const deliveryBoy = JSON.parse(
+    globalThis.localStorage.getItem("deliveryBoy") || "{}",
+  );
 
   // --- Effects ---
   useEffect(() => {
     let isMounted = true;
 
-    const fetchTasks = async ({ showLoading } = { showLoading: true }) => {
+    // 🟢 FIX: Removed object literal default in favor of a clean boolean parameter
+    const fetchTasks = async (showLoading = true) => {
       if (showLoading) setLoading(true);
       try {
         const data = await getDeliveryTasks();
@@ -55,23 +59,23 @@ const DeliveryDashboard = () => {
     };
 
     // Initial blocking load
-    fetchTasks({ showLoading: true });
+    fetchTasks(true);
 
     // Background refresh so newly assigned orders show up quickly.
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      fetchTasks({ showLoading: false });
+      fetchTasks(false);
     }, 5000);
 
     return () => {
       isMounted = false;
-      window.clearInterval(intervalId);
+      globalThis.clearInterval(intervalId);
     };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("deliveryToken");
-    localStorage.removeItem("deliveryBoy");
+    globalThis.localStorage.removeItem("deliveryToken");
+    globalThis.localStorage.removeItem("deliveryBoy");
     navigate("/delivery/login");
   };
 
@@ -81,7 +85,8 @@ const DeliveryDashboard = () => {
     extraPayload = {},
   ) => {
     const actionName = newStatus === "PICKED" ? "Pick Up" : "Complete Job";
-    if (!window.confirm(`Confirm ${actionName}?`)) return;
+
+    if (!globalThis.confirm(`Confirm ${actionName}?`)) return;
 
     try {
       await updateDeliveryStatus(assignmentId, {
@@ -98,7 +103,9 @@ const DeliveryDashboard = () => {
       }
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.message || "Failed to update status");
+      globalThis.alert(
+        error.response?.data?.message || "Failed to update status",
+      );
     }
   };
 

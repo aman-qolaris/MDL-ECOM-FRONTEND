@@ -4,7 +4,7 @@ import {
   approveVendor,
   rejectVendor,
 } from "../../services/vendorService";
-import { getProducts } from "../../services/productService"; // 👈 1. ADD THIS IMPORT
+import { getProducts } from "../../services/productService";
 import {
   FaCheck,
   FaTimes,
@@ -12,7 +12,6 @@ import {
   FaUserTie,
   FaBox,
   FaArrowLeft,
-  FaEye,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -70,15 +69,25 @@ const AdminVendors = () => {
       // Refresh list
       loadData();
     } catch (err) {
-      alert(`Failed to ${action} vendor`);
+      console.error(`Failed to ${action} vendor:`, err);
+      globalThis.alert(`Failed to ${action} vendor`);
     }
   };
 
-  // 👇 2. ADD THIS FILTER LOGIC
   const filteredVendors = vendors.filter((vendor) => {
     if (filter === "pending") return vendor.status === "PENDING";
     return true; // Show all
   });
+
+  const getStatusBadgeStyles = (status) => {
+    if (status === "APPROVED") {
+      return "bg-green-100 text-green-700";
+    }
+    if (status === "REJECTED") {
+      return "bg-red-100 text-red-700";
+    }
+    return "bg-yellow-100 text-yellow-700";
+  };
 
   if (loading) return <div className="p-6">Loading vendors...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
@@ -87,8 +96,9 @@ const AdminVendors = () => {
     <div className="animate-fadeIn">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>
@@ -96,11 +106,12 @@ const AdminVendors = () => {
           <FaStore /> Vendor Verification
         </h2>
       </div>
-      {/* 👇 3. ADD THESE BUTTONS HERE */}
+
       <div className="flex gap-4 mb-6">
         <button
+          type="button"
           onClick={() => setFilter("all")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
+          className={`px-4 py-2 rounded-lg font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-300 ${
             filter === "all"
               ? "bg-blue-600 text-white shadow-md"
               : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
@@ -109,15 +120,15 @@ const AdminVendors = () => {
           All Vendors
         </button>
         <button
+          type="button"
           onClick={() => setFilter("pending")}
-          className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
             filter === "pending"
               ? "bg-blue-600 text-white shadow-md"
               : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
           }`}
         >
-          Pending Requests
-          {/* Optional: Show count badge */}
+          <span>Pending Requests</span>
           <span className="bg-yellow-400 text-yellow-900 text-xs py-0.5 px-2 rounded-full">
             {vendors.filter((v) => v.status === "PENDING").length}
           </span>
@@ -139,7 +150,6 @@ const AdminVendors = () => {
           </thead>
           <tbody className="text-gray-600 text-sm">
             {filteredVendors.map((vendor) => {
-              // 🟢 1. Define the navigation function
               const navigateToDetails = () => {
                 navigate(`/admin/vendors/${vendor.id}`, { state: { vendor } });
               };
@@ -149,31 +159,44 @@ const AdminVendors = () => {
                   key={vendor.id}
                   className="border-b hover:bg-gray-50 transition"
                 >
-                  {/* 🟢 2. Add onClick and cursor-pointer to the data columns */}
-                  <td
-                    onClick={navigateToDetails}
-                    className="py-3 px-6 font-mono cursor-pointer hover:text-blue-600"
-                  >
-                    #{vendor.id}
+                  <td className="py-3 px-6">
+                    <button
+                      type="button"
+                      onClick={navigateToDetails}
+                      className="font-mono text-left w-full hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                    >
+                      #{vendor.id}
+                    </button>
                   </td>
-                  <td
-                    onClick={navigateToDetails}
-                    className="py-3 px-6 font-medium text-gray-800 cursor-pointer hover:text-blue-600"
-                  >
-                    {vendor.businessName}
+                  <td className="py-3 px-6">
+                    <button
+                      type="button"
+                      onClick={navigateToDetails}
+                      className="font-medium text-gray-800 text-left w-full hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                    >
+                      {vendor.businessName}
+                    </button>
                   </td>
-                  <td
-                    onClick={navigateToDetails}
-                    className="py-3 px-6 flex items-center gap-2 cursor-pointer hover:text-blue-600"
-                  >
-                    <FaUserTie className="text-gray-400" /> {vendor.name}
+                  <td className="py-3 px-6">
+                    <button
+                      type="button"
+                      onClick={navigateToDetails}
+                      className="flex items-center gap-2 w-full text-left hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                    >
+                      <FaUserTie className="text-gray-400" /> {vendor.name}
+                    </button>
                   </td>
-                  <td
-                    onClick={navigateToDetails}
-                    className="py-3 px-6 cursor-pointer hover:text-blue-600"
-                  >
-                    <div>{vendor.email}</div>
-                    <div className="text-xs text-gray-400">{vendor.phone}</div>
+                  <td className="py-3 px-6">
+                    <button
+                      type="button"
+                      onClick={navigateToDetails}
+                      className="text-left w-full hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                    >
+                      <div>{vendor.email}</div>
+                      <div className="text-xs text-gray-400">
+                        {vendor.phone}
+                      </div>
+                    </button>
                   </td>
                   <td className="py-3 px-6 text-center">
                     <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">
@@ -183,32 +206,26 @@ const AdminVendors = () => {
                   </td>
                   <td className="py-3 px-6">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        vendor.status === "APPROVED"
-                          ? "bg-green-100 text-green-700"
-                          : vendor.status === "REJECTED"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeStyles(vendor.status)}`}
                     >
                       {vendor.status}
                     </span>
                   </td>
-
-                  {/* 🟢 3. Remove the Eye button from Actions. Only keep Approve/Reject */}
                   <td className="py-3 px-6 text-center">
                     {vendor.status === "PENDING" && (
                       <div className="flex justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => handleAction(vendor.id, "approve")}
-                          className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200 cursor-pointer"
+                          className="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-400"
                           title="Approve"
                         >
                           <FaCheck />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleAction(vendor.id, "reject")}
-                          className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 cursor-pointer"
+                          className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400"
                           title="Reject"
                         >
                           <FaTimes />
@@ -224,7 +241,7 @@ const AdminVendors = () => {
             })}
             {filteredVendors.length === 0 && (
               <tr>
-                <td colSpan="6" className="py-8 text-center text-gray-500">
+                <td colSpan="7" className="py-8 text-center text-gray-500">
                   No vendors found.
                 </td>
               </tr>

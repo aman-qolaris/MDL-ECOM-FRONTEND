@@ -42,6 +42,7 @@ const AdminShippingRates = () => {
       const { data } = await api.get("/orders/shipping/shipping-rates");
       setRates(data);
     } catch (error) {
+      console.error("Failed to fetch shipping rates:", error);
       toast.error("Failed to load shipping rates");
     } finally {
       setLoading(false);
@@ -73,7 +74,9 @@ const AdminShippingRates = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this shipping rate?"))
+    if (
+      !globalThis.confirm("Are you sure you want to delete this shipping rate?")
+    )
       return;
 
     try {
@@ -105,7 +108,7 @@ const AdminShippingRates = () => {
     setRateValue(rate.rate);
     setIsActive(rate.isActive);
     setIsEditing(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    globalThis.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const resetForm = () => {
@@ -125,8 +128,9 @@ const AdminShippingRates = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>
@@ -210,14 +214,14 @@ const AdminShippingRates = () => {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200 transition"
+                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200 transition focus:outline-none focus:ring-2 focus:ring-gray-300"
                   >
                     Cancel
                   </button>
                 )}
                 <button
                   type="submit"
-                  className={`flex-1 text-white py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-md ${isEditing ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
+                  className={`flex-1 text-white py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 ${isEditing ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}
                 >
                   <FaSave /> {isEditing ? "Update Rate" : "Save Rate"}
                 </button>
@@ -243,20 +247,23 @@ const AdminShippingRates = () => {
               {/* Toggles */}
               <div className="flex bg-white border border-gray-300 rounded-lg overflow-hidden text-sm font-medium">
                 <button
+                  type="button"
                   onClick={() => setFilter("ALL")}
-                  className={`px-4 py-2 ${filter === "ALL" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                  className={`px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 ${filter === "ALL" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
                 >
                   All
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFilter("ACTIVE")}
-                  className={`px-4 py-2 border-l border-gray-300 ${filter === "ACTIVE" ? "bg-green-600 text-white border-green-600" : "text-gray-600 hover:bg-gray-50"}`}
+                  className={`px-4 py-2 border-l border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-300 ${filter === "ACTIVE" ? "bg-green-600 text-white border-green-600" : "text-gray-600 hover:bg-gray-50"}`}
                 >
                   Active
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFilter("INACTIVE")}
-                  className={`px-4 py-2 border-l border-gray-300 ${filter === "INACTIVE" ? "bg-gray-600 text-white border-gray-600" : "text-gray-600 hover:bg-gray-50"}`}
+                  className={`px-4 py-2 border-l border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 ${filter === "INACTIVE" ? "bg-gray-600 text-white border-gray-600" : "text-gray-600 hover:bg-gray-50"}`}
                 >
                   Inactive
                 </button>
@@ -304,31 +311,34 @@ const AdminShippingRates = () => {
                         <td className="p-4 flex justify-end gap-2">
                           {/* Toggle Status Action */}
                           <button
+                            type="button"
                             onClick={() => handleToggleStatus(rate.id)}
                             title={
                               rate.isActive
                                 ? "Deactivate Area"
                                 : "Activate Area"
                             }
-                            className={`p-2 rounded-lg transition ${rate.isActive ? "bg-orange-50 text-orange-600 hover:bg-orange-100" : "bg-green-50 text-green-600 hover:bg-green-100"}`}
+                            className={`p-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-gray-300 ${rate.isActive ? "bg-orange-50 text-orange-600 hover:bg-orange-100" : "bg-green-50 text-green-600 hover:bg-green-100"}`}
                           >
                             <FaPowerOff size={14} />
                           </button>
 
                           {/* Edit Action */}
                           <button
+                            type="button"
                             onClick={() => handleEditClick(rate)}
                             title="Edit Rate"
-                            className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                            className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
                           >
                             <FaEdit size={14} />
                           </button>
 
                           {/* Delete Action */}
                           <button
+                            type="button"
                             onClick={() => handleDelete(rate.id)}
                             title="Delete Area"
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition focus:outline-none focus:ring-2 focus:ring-red-300"
                           >
                             <FaTrash size={14} />
                           </button>

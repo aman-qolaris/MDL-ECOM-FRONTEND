@@ -55,12 +55,12 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!/^\d{10}$/.test(newPhone)) {
-      alert("Phone number must be exactly 10 digits");
+      globalThis.alert("Phone number must be exactly 10 digits");
       return;
     }
 
     if (assignedAreas.length === 0) {
-      alert("Please assign at least one delivery area.");
+      globalThis.alert("Please assign at least one delivery area.");
       return;
     }
 
@@ -71,7 +71,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
       password: newPassword,
       city,
       state,
-      maxOrders: parseInt(maxOrders),
+      maxOrders: Number.parseInt(maxOrders, 10),
       assignedAreas: assignedAreas,
     };
 
@@ -86,14 +86,16 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
       setAssignedAreas([]); // Reset to empty array
       setMaxOrders(20);
       setIsDropdownOpen(false);
-      alert("Delivery Partner Registered Successfully!");
+      globalThis.alert("Delivery Partner Registered Successfully!");
 
       if (onBoyAdded) {
         onBoyAdded(response.deliveryBoy);
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to add delivery boy. Check if Email/Phone already exists.");
+      globalThis.alert(
+        "Failed to add delivery boy. Check if Email/Phone already exists.",
+      );
     }
   };
 
@@ -153,7 +155,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none rounded"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
@@ -177,7 +179,9 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
               pattern="\d{10}"
               className="w-full border border-gray-300 p-2.5 rounded-r-lg focus:ring-2 focus:ring-blue-500 outline-none"
               value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                setNewPhone(e.target.value.replaceAll(/\D/g, ""))
+              }
             />
           </div>
         </div>
@@ -215,39 +219,39 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
           </label>
 
           <div className="relative">
-            {/* Custom Input Field displaying selected pills */}
-            <div
-              className="min-h-[46px] w-full border border-gray-300 p-2 rounded-lg cursor-pointer bg-white flex flex-wrap gap-2 items-center pr-10"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              {assignedAreas.length === 0 ? (
-                <span className="text-gray-400 pl-1 text-sm">
-                  Select assigned areas...
-                </span>
-              ) : (
-                assignedAreas.map((area) => (
-                  <span
-                    key={area}
-                    className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2.5 py-1 rounded-md"
+            <div className="min-h-[46px] w-full border border-gray-300 p-2 rounded-lg bg-white flex flex-wrap gap-2 items-center focus-within:ring-2 focus-within:ring-blue-500 transition-shadow">
+              {/* Selected Pills */}
+              {assignedAreas.map((area) => (
+                <span
+                  key={area}
+                  className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2.5 py-1 rounded-md"
+                >
+                  {area}
+                  <button
+                    type="button"
+                    onClick={() => removeArea(area)}
+                    className="hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300 rounded"
+                    aria-label={`Remove ${area}`}
                   >
-                    {area}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeArea(area);
-                      }}
-                      className="hover:text-red-500 transition-colors"
-                    >
-                      <FaTimes size={10} />
-                    </button>
-                  </span>
-                ))
-              )}
-              <FaChevronDown
-                className={`absolute right-3 text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-                size={12}
-              />
+                    <FaTimes size={10} />
+                  </button>
+                </span>
+              ))}
+
+              {/* Toggle Dropdown Button */}
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex-1 min-w-[150px] text-left bg-transparent focus:outline-none text-sm text-gray-400 flex justify-between items-center py-1"
+              >
+                <span>
+                  {assignedAreas.length === 0 ? "Select assigned areas..." : ""}
+                </span>
+                <FaChevronDown
+                  className={`text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  size={12}
+                />
+              </button>
             </div>
 
             {/* Dropdown Menu */}
@@ -287,7 +291,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
         <div className="md:col-span-2 lg:col-span-3 flex justify-end mt-2 pt-4 border-t border-gray-100">
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <FaPlus size={14} /> Register Partner
           </button>

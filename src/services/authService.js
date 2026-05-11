@@ -1,8 +1,4 @@
 import api from "./api";
-import axios from "axios";
-
-// Ensure this matches your running Backend Port (usually 5000 or 5001)
-const API_URL = "http://localhost:5007/api";
 
 // ==========================================
 // CONFIGURATION: REAL BACKEND CONNECTION

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { FaShoppingCart, FaEye } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addItemToCart, getCartItems } from "../../store/thunks/cartThunks";
@@ -13,7 +14,7 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const currentQty = useSelector((state) =>
-    selectCartQuantityByProductId(state, product?.id)
+    selectCartQuantityByProductId(state, product?.id),
   );
 
   const handleAddToCart = async (e) => {
@@ -31,7 +32,7 @@ const ProductCard = ({ product }) => {
 
     try {
       const res = await dispatch(
-        addItemToCart({ productId: product.id, quantity: 1 })
+        addItemToCart({ productId: product.id, quantity: 1 }),
       ).unwrap();
 
       const nextItems = res?.items || res?.cart?.items || res?.data?.items;
@@ -127,13 +128,14 @@ const ProductCard = ({ product }) => {
             ₹{product.price}
           </span>
 
+          {/* 🟢 Fix: Flipped negated condition (!isSoldOut) to positive condition first */}
           <button
             onClick={handleAddToCart}
             disabled={isSoldOut}
             className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 ${
-              !isSoldOut
-                ? "bg-gray-900 text-white hover:bg-indigo-600"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              isSoldOut
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gray-900 text-white hover:bg-indigo-600"
             }`}
             title={isSoldOut ? "Out of Stock" : "Add to Cart"}
           >
@@ -143,6 +145,24 @@ const ProductCard = ({ product }) => {
       </div>
     </div>
   );
+};
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    availableStock: PropTypes.number.isRequired,
+    images: PropTypes.arrayOf(PropTypes.string),
+    imageUrl: PropTypes.string,
+    Category: PropTypes.shape({
+      name: PropTypes.string,
+    }),
+    category: PropTypes.shape({
+      name: PropTypes.string,
+    }),
+  }).isRequired,
 };
 
 export default ProductCard;

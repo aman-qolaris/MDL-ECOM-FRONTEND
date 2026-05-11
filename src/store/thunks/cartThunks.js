@@ -22,7 +22,7 @@ export const getCartItems = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to load cart"
+        error.response?.data?.message || "Failed to load cart",
       );
     }
   },
@@ -30,10 +30,10 @@ export const getCartItems = createAsyncThunk(
     condition: (_, { getState }) => {
       const state = getState();
       // Skip if we already have a request in flight.
-      if (state?.cart?.loading) return false;
-      return true;
+      // 🟢 FIX: Replaced if-then-else with a single boolean return statement
+      return !state?.cart?.loading;
     },
-  }
+  },
 );
 
 export const addItemToCart = createAsyncThunk(
@@ -48,10 +48,10 @@ export const addItemToCart = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to add item"
+        error.response?.data?.message || "Failed to add item",
       );
     }
-  }
+  },
 );
 
 // updateItemQuantity and removeItem thunks remain largely the same
@@ -64,10 +64,10 @@ export const updateItemQuantity = createAsyncThunk(
       return { cartItemId, quantity, data };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update quantity"
+        error.response?.data?.message || "Failed to update quantity",
       );
     }
-  }
+  },
 );
 
 export const removeItem = createAsyncThunk(
@@ -78,10 +78,10 @@ export const removeItem = createAsyncThunk(
       return cartItemId;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to remove item"
+        error.response?.data?.message || "Failed to remove item",
       );
     }
-  }
+  },
 );
 
 export const clearCartThunk = createAsyncThunk(
@@ -97,8 +97,8 @@ export const clearCartThunk = createAsyncThunk(
       return { success: true };
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to clear cart"
+        error.response?.data?.message || "Failed to clear cart",
       );
     }
-  }
+  },
 );

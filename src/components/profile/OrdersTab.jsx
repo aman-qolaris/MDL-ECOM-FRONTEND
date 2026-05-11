@@ -12,7 +12,7 @@ const OrdersTab = () => {
 
   useEffect(() => {
     fetchOrders();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    globalThis.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
   const fetchOrders = async () => {
@@ -32,7 +32,6 @@ const OrdersTab = () => {
     }
   };
 
-  // Status mapping matching backend Enums
   const getStatusStyle = (status) => {
     switch (status) {
       case "PROCESSING":
@@ -55,7 +54,129 @@ const OrdersTab = () => {
 
   const formatStatus = (status) => {
     if (!status) return "Processing";
-    return status.replace(/_/g, " ").toUpperCase();
+    return status.replaceAll("_", " ").toUpperCase();
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="text-center py-10 text-gray-500">Loading orders...</div>
+      );
+    }
+
+    if (orders.length === 0) {
+      return (
+        <div className="text-center py-10 bg-gray-50 rounded-lg">
+          <p className="text-gray-600">No orders found.</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="space-y-4 mb-6">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="border border-gray-100 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:shadow-sm transition-shadow bg-white gap-4"
+            >
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-gray-800">
+                    Order #{order.id}
+                  </span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getStatusStyle(
+                      order.status,
+                    )}`}
+                  >
+                    {formatStatus(order.status)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Placed on {new Date(order.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between w-full sm:w-auto sm:block text-right">
+                <p className="font-bold text-gray-900 text-lg">
+                  ₹{order.amount?.toLocaleString()}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrder(order)}
+                  className="text-sm text-blue-600 font-medium hover:underline mt-1 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded px-1"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <FaChevronLeft />
+            </button>
+
+            <div className="flex gap-2">
+              {/* 🟢 FIX: Replaced spread clone with Array.from and used stable keys */}
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNum = i + 1;
+                if (
+                  totalPages > 7 &&
+                  Math.abs(currentPage - pageNum) > 2 &&
+                  pageNum !== 1 &&
+                  pageNum !== totalPages
+                ) {
+                  if (Math.abs(currentPage - pageNum) === 3)
+                    return (
+                      <span
+                        key={`ellipsis-${totalPages}-${pageNum}`}
+                        className="pt-1 text-gray-400"
+                      >
+                        ...
+                      </span>
+                    );
+                  return null;
+                }
+
+                return (
+                  <button
+                    key={`page-btn-${totalPages}-${pageNum}`}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                      currentPage === pageNum
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-gray-600 hover:bg-100"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
@@ -67,111 +188,7 @@ const OrdersTab = () => {
         </span>
       </div>
 
-      {loading ? (
-        <div className="text-center py-10 text-gray-500">Loading orders...</div>
-      ) : orders.length === 0 ? (
-        <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-600">No orders found.</p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4 mb-6">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="border border-gray-100 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:shadow-sm transition-shadow bg-white gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-gray-800">
-                      Order #{order.id}
-                    </span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider ${getStatusStyle(
-                        order.status,
-                      )}`}
-                    >
-                      {formatStatus(order.status)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Placed on {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between w-full sm:w-auto sm:block text-right">
-                  <p className="font-bold text-gray-900 text-lg">
-                    ₹{order.amount?.toLocaleString()}
-                  </p>
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="text-sm text-blue-600 font-medium hover:underline mt-1"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* PAGINATION CONTROLS */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-gray-100">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors"
-              >
-                <FaChevronLeft />
-              </button>
-
-              <div className="flex gap-2">
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  if (
-                    totalPages > 7 &&
-                    Math.abs(currentPage - pageNum) > 2 &&
-                    pageNum !== 1 &&
-                    pageNum !== totalPages
-                  ) {
-                    if (Math.abs(currentPage - pageNum) === 3)
-                      return (
-                        <span key={i} className="pt-1 text-gray-400">
-                          ...
-                        </span>
-                      );
-                    return null;
-                  }
-
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-lg text-sm font-semibold transition-colors ${
-                        currentPage === pageNum
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 transition-colors"
-              >
-                <FaChevronRight />
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      {renderContent()}
 
       {selectedOrder && (
         <OrderDetailModal

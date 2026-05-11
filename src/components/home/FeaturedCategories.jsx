@@ -22,14 +22,15 @@ const FeaturedCategories = () => {
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {categories.map((cat) => (
-          <div
+          <button
             key={cat.id}
+            type="button"
             onClick={() => handleCategoryClick(cat.name)}
-            className="flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 cursor-pointer transition"
+            className="w-full flex flex-col items-center justify-center p-6 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-blue-200 cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="text-blue-500 mb-3">{cat.icon}</div>
             <span className="font-medium text-gray-700">{cat.name}</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

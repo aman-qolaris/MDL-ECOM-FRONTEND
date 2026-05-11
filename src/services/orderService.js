@@ -1,23 +1,18 @@
 import api from "./api";
-import axios from "axios";
-
-const BASE_URL = "http://localhost:5007/api";
 
 // ==================================================
 // 🛍️ CUSTOMER
 // ==================================================
 
-// 🟢 NEW: Fetch dynamic shipping rate
 export const getShippingRateForArea = async (areaName) => {
   try {
-    // Calls the backend route we just created
     const { data } = await api.get(
       `/orders/shipping/calculate?area=${encodeURIComponent(areaName)}`,
     );
     return data.rate;
   } catch (error) {
     console.error("Shipping Rate Error:", error);
-    return 0; // Default to 0 if api fails
+    return 0;
   }
 };
 
@@ -36,25 +31,20 @@ export const getOrderById = async (orderId) => {
   return response.data;
 };
 
-// 🟢 FIXED: Added 'reason' as the 3rd argument
-export const cancelOrderItem = async (orderId, itemId, reason) => {
-  console.log("🚀 SERVICE: calling cancelOrderItem", {
-    orderId,
-    itemId,
-    reason,
-  });
-  const safeReason = reason || "Customer Cancelled";
+export const cancelOrderItem = async (
+  orderId,
+  itemId,
+  reason = "Customer Cancelled",
+) => {
   const response = await api.put(`/orders/${orderId}/cancel-item/${itemId}`, {
-    reason: safeReason, // Now this works because 'reason' is passed in
+    reason,
   });
   return response.data;
 };
 
-// 🟢 FIXED: Added 'reason' as the 2nd argument
-export const cancelOrder = async (orderId, reason) => {
-  const safeReason = reason || "Customer Cancelled";
+export const cancelOrder = async (orderId, reason = "Customer Cancelled") => {
   const response = await api.put(`/orders/${orderId}/cancel`, {
-    reason: safeReason, // Now this works because 'reason' is passed in
+    reason,
   });
   return response.data;
 };
@@ -77,38 +67,26 @@ export const getDeliveryLocations = async () => {
 // ==================================================
 
 export const getVendorOrders = async () => {
-  const token = localStorage.getItem("vendorToken");
-  if (!token) {
-    throw new Error("Please log in as a vendor");
-  }
-
-  const response = await axios.get(`${BASE_URL}/orders/vendor/orders`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await api.get("/orders/vendor/orders");
   return response.data;
 };
 
 export const updateVendorItemStatus = async (itemId, status) => {
-  const token = localStorage.getItem("vendorToken");
-
-  const response = await axios.put(
-    `${BASE_URL}/orders/vendor/item/${itemId}/status`,
-    { status },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    },
-  );
+  const response = await api.put(`/orders/vendor/item/${itemId}/status`, {
+    status,
+  });
   return response.data;
 };
 
 export const getVendorStats = async (dateFilter = {}) => {
   let query = "";
-  if (dateFilter.start && dateFilter.end) {
+  if (dateFilter?.start && dateFilter?.end) {
     query = `?start=${dateFilter.start}&end=${dateFilter.end}`;
   }
   const response = await api.get(`/orders/vendor/stats${query}`);
   return response.data;
 };
+
 // ==================================================
 // 🛡️ ADMIN
 // ==================================================

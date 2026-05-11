@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import {
   FaTimes,
   FaUndoAlt,
@@ -8,7 +9,6 @@ import {
 } from "react-icons/fa";
 import { requestReturn } from "../../services/orderService";
 
-// 🟢 FIX 1: Added orderId to the props destructuring here so it isn't undefined
 const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
   const [reason, setReason] = useState("");
   const [comments, setComments] = useState("");
@@ -23,10 +23,8 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🟢 FIX 2: Check ONLY for "COD". All COD orders (whether paid by physical cash or shop QR) require bank details for a refund.
   const isCashPayment = order?.paymentMethod === "COD";
 
-  // 🟢 FIX 3: Foolproof ID fallback. It will grab the orderId directly from the specific item database row if the parent order delays.
   const finalOrderId = item?.orderId || order?.id || orderId;
 
   const returnReasons = [
@@ -70,7 +68,6 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
     setError("");
 
     try {
-      // 🟢 Uses the guaranteed finalOrderId
       await requestReturn(finalOrderId, item?.id, {
         reason: reason === "Other" ? comments : reason,
         refundMethod: isCashPayment ? refundMethod : "ORIGINAL_SOURCE",
@@ -79,7 +76,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
             ? bankDetails
             : null,
       });
-      alert(
+      globalThis.alert(
         "Return requested successfully! Refund will be processed after Admin verification.",
       );
       onSuccess();
@@ -103,7 +100,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-orange-500 transition-colors"
+            className="text-gray-400 hover:text-orange-500 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-200 rounded p-1"
           >
             <FaTimes size={20} />
           </button>
@@ -133,7 +130,11 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
               {returnReasons.map((r) => (
                 <label
                   key={r}
-                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${reason === r ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:bg-gray-50"}`}
+                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                    reason === r
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-gray-200 hover:bg-gray-50"
+                  }`}
                 >
                   <input
                     type="radio"
@@ -141,7 +142,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                     value={r}
                     checked={reason === r}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-4 h-4 text-orange-600"
+                    className="w-4 h-4 text-orange-600 cursor-pointer"
                   />
                   <span className="text-sm font-medium text-gray-700">{r}</span>
                 </label>
@@ -153,7 +154,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                 placeholder="Please specify the reason..."
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none mt-2"
+                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none mt-2 resize-none"
                 rows="3"
                 required
               />
@@ -168,7 +169,11 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label
-                  className={`flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer text-center ${refundMethod === "BANK_TRANSFER" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                  className={`flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer text-center ${
+                    refundMethod === "BANK_TRANSFER"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <input
                     type="radio"
@@ -180,7 +185,11 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                   <span className="text-xs font-bold">Bank Transfer</span>
                 </label>
                 <label
-                  className={`flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer text-center ${refundMethod === "WAREHOUSE_COLLECT" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                  className={`flex flex-col items-center justify-center p-3 border rounded-xl cursor-pointer text-center ${
+                    refundMethod === "WAREHOUSE_COLLECT"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <input
                     type="radio"
@@ -205,7 +214,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                         bankName: e.target.value,
                       })
                     }
-                    className="w-full p-2 border rounded-lg text-sm"
+                    className="w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="text"
@@ -217,7 +226,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                         accountNo: e.target.value,
                       })
                     }
-                    className="w-full p-2 border rounded-lg text-sm"
+                    className="w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="text"
@@ -226,7 +235,7 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
                     onChange={(e) =>
                       setBankDetails({ ...bankDetails, ifsc: e.target.value })
                     }
-                    className="w-full p-2 border rounded-lg text-sm uppercase"
+                    className="w-full p-2 border rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               )}
@@ -244,14 +253,14 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700"
+              className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               {loading ? "Submitting..." : "Submit Request"}
             </button>
@@ -260,6 +269,20 @@ const ReturnRequestModal = ({ order, orderId, item, onClose, onSuccess }) => {
       </div>
     </div>
   );
+};
+
+ReturnRequestModal.propTypes = {
+  order: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    paymentMethod: PropTypes.string,
+  }),
+  item: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }),
+  orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onClose: PropTypes.func.isRequired,
+  onSuccess: PropTypes.func.isRequired,
 };
 
 export default ReturnRequestModal;

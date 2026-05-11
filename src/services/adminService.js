@@ -10,7 +10,7 @@ export const getDashboardStats = async (dateFilter = null) => {
     let query = "";
 
     // Construct Query Parameters if filters exist
-    if (dateFilter && dateFilter.start && dateFilter.end) {
+    if (dateFilter?.start && dateFilter?.end) {
       query = `?start=${dateFilter.start}&end=${dateFilter.end}`;
     }
 

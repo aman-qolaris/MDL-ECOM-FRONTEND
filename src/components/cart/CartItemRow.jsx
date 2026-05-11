@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import { Link } from "react-router-dom";
 import { FaTrash, FaMinus, FaPlus } from "react-icons/fa";
 
@@ -96,6 +97,32 @@ const CartItemRow = ({ item, onUpdateQuantity, onRemove }) => {
       </button>
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping the nested 'item' object
+CartItemRow.propTypes = {
+  item: PropTypes.shape({
+    quantity: PropTypes.number.isRequired,
+    productId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    cartItemId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    price: PropTypes.number,
+    name: PropTypes.string,
+    image: PropTypes.string,
+    Product: PropTypes.shape({
+      availableStock: PropTypes.number,
+      price: PropTypes.number,
+      name: PropTypes.string,
+      imageUrl: PropTypes.string,
+      images: PropTypes.arrayOf(PropTypes.string),
+      Category: PropTypes.shape({
+        name: PropTypes.string,
+      }),
+    }),
+  }).isRequired,
+  onUpdateQuantity: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
 };
 
 export default memo(CartItemRow);

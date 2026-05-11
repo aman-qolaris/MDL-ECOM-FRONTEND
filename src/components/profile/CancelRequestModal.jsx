@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { FaTimes, FaExclamationTriangle } from "react-icons/fa";
 
 const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
@@ -37,19 +38,18 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
 
   return (
     <div
+      // 🟢 FIX: Cleaned up the broken 'z-' class and moved inline style to Tailwind arbitrary value
       className="fixed inset-0 z- flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
-      style={{ zIndex: 9999 }}
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-red-50/50">
-          {/* 🟢 4. Use the dynamic title passed from parent */}
           <h3 className="text-xl font-bold text-gray-800">
             {title || "Cancel Order"}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-red-500 transition-colors"
+            className="text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-200 rounded p-1"
           >
             <FaTimes size={20} />
           </button>
@@ -92,7 +92,7 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
                     value={r}
                     checked={reason === r}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300"
+                    className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer"
                   />
                   <span className="text-sm font-medium text-gray-700">{r}</span>
                 </label>
@@ -113,7 +113,7 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
             >
               Keep It
             </button>
@@ -121,7 +121,7 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
             <button
               type="submit"
               disabled={loading || !reason}
-              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex justify-center items-center shadow-md shadow-red-500/20"
+              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex justify-center items-center shadow-md shadow-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               {loading ? "Cancelling..." : "Confirm Cancel"}
             </button>
@@ -130,6 +130,14 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
       </div>
     </div>
   );
+};
+
+CancelRequestModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 export default CancelRequestModal;

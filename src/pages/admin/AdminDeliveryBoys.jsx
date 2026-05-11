@@ -19,7 +19,8 @@ const AdminDeliveryBoys = () => {
       const data = await getAllDeliveryBoys();
       setBoys(data);
     } catch (error) {
-      alert("Failed to fetch delivery boys");
+      console.error("Failed to fetch delivery boys:", error);
+      globalThis.alert("Failed to fetch delivery boys");
     } finally {
       setLoading(false);
     }
@@ -35,8 +36,9 @@ const AdminDeliveryBoys = () => {
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>

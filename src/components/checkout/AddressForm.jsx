@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux"; // 🟢 CHANGED: Import Redux Hook
+import PropTypes from "prop-types";
+import { useSelector } from "react-redux";
 import { getDeliveryLocations } from "../../services/orderService";
 
 const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
-  // 🟢 CHANGED: Get Logged-in User Data
   const { user } = useSelector((state) => state.auth);
 
-  // 🔒 HARDCODED DEFAULTS (As per your "Raipur" specific logic)
   const FIXED_CITY = "Raipur";
   const FIXED_STATE = "Chhattisgarh";
 
   const [formData, setFormData] = useState({
-    fullName: user?.name || "", // 🟢 CHANGED: Use user.name
-    phone: user?.phone || "", // 🟢 CHANGED: Use user.phone
+    fullName: user?.name || "",
+    phone: user?.phone || "",
     addressLine1: initialData?.addressLine1 || "",
     city: FIXED_CITY,
     state: FIXED_STATE,
@@ -22,7 +21,6 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
   const [availableAreas, setAvailableAreas] = useState([]);
   const [loadingAreas, setLoadingAreas] = useState(true);
 
-  // 🟢 NEW: Sync User Data if it loads after component mount
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -136,8 +134,9 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
             {loadingAreas ? (
               <option disabled>Loading areas...</option>
             ) : (
-              availableAreas.map((area, idx) => (
-                <option key={idx} value={area}>
+              // 🟢 Fix: Replaced 'idx' with the unique 'area' string for the key
+              availableAreas.map((area) => (
+                <option key={area} value={area}>
                   {area}
                 </option>
               ))
@@ -185,6 +184,16 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
       </button>
     </form>
   );
+};
+
+AddressForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    addressLine1: PropTypes.string,
+    area: PropTypes.string,
+  }),
+  buttonText: PropTypes.string,
+  onAreaChange: PropTypes.func,
 };
 
 export default AddressForm;

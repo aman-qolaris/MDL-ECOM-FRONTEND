@@ -16,17 +16,21 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const customerToken = state.auth?.token || localStorage.getItem("token");
-    const adminToken = localStorage.getItem("adminToken");
-    const vendorToken = localStorage.getItem("vendorToken");
-    const deliveryToken = localStorage.getItem("deliveryToken");
+    const customerToken =
+      state.auth?.token || globalThis.localStorage.getItem("token");
+    const adminToken = globalThis.localStorage.getItem("adminToken");
+    const vendorToken = globalThis.localStorage.getItem("vendorToken");
+    const deliveryToken = globalThis.localStorage.getItem("deliveryToken");
 
-    if (window.location.pathname.startsWith("/admin") && adminToken) {
+    if (globalThis.location.pathname.startsWith("/admin") && adminToken) {
       config.headers.Authorization = `Bearer ${adminToken}`;
-    } else if (window.location.pathname.startsWith("/vendor") && vendorToken) {
+    } else if (
+      globalThis.location.pathname.startsWith("/vendor") &&
+      vendorToken
+    ) {
       config.headers.Authorization = `Bearer ${vendorToken}`;
     } else if (
-      window.location.pathname.startsWith("/delivery") &&
+      globalThis.location.pathname.startsWith("/delivery") &&
       deliveryToken
     ) {
       config.headers.Authorization = `Bearer ${deliveryToken}`;
@@ -45,8 +49,8 @@ api.interceptors.response.use(
 
     if (status === 401) {
       if (
-        !window.location.pathname.startsWith("/admin") &&
-        !window.location.pathname.startsWith("/vendor")
+        !globalThis.location.pathname.startsWith("/admin") &&
+        !globalThis.location.pathname.startsWith("/vendor")
       ) {
         store.dispatch(logout());
       }

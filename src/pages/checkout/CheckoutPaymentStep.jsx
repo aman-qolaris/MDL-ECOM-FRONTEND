@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import PaymentForm from "../../components/checkout/PaymentForm";
 
 const CheckoutPaymentStep = ({ step, onSubmit, onBack, payableAmount }) => {
@@ -17,7 +18,7 @@ const CheckoutPaymentStep = ({ step, onSubmit, onBack, payableAmount }) => {
         >
           2
         </span>
-        Payment Method
+        <span>Payment Method</span>
       </h2>
 
       {step === 2 && (
@@ -29,6 +30,13 @@ const CheckoutPaymentStep = ({ step, onSubmit, onBack, payableAmount }) => {
       )}
     </div>
   );
+};
+
+CheckoutPaymentStep.propTypes = {
+  step: PropTypes.number.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onBack: PropTypes.func.isRequired,
+  payableAmount: PropTypes.number.isRequired,
 };
 
 export default CheckoutPaymentStep;

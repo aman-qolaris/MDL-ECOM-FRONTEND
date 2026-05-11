@@ -20,7 +20,6 @@ import {
   FaEyeSlash,
 } from "react-icons/fa"; // Removed Bank Icons
 
-// 🔴 UPDATED SCHEMA: Removed Bank Details
 const schema = yup
   .object({
     name: yup
@@ -52,7 +51,7 @@ const schema = yup
       .max(16, "Password must be 8-16 characters")
       .matches(/[a-z]/, "Password must contain at least one lowercase letter")
       .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .matches(/[0-9]/, "Password must contain at least one number")
+      .matches(/\d/, "Password must contain at least one number")
       .matches(
         /[!@#$%^&*(),.?":{}|<>]/,
         "Password must contain at least one special character",
@@ -188,7 +187,7 @@ const Register = () => {
                 placeholder="9876543210"
                 maxLength={10}
                 onInput={(e) =>
-                  (e.target.value = e.target.value.replace(/[^0-9]/g, ""))
+                  (e.target.value = e.target.value.replaceAll(/\D/g, ""))
                 }
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
@@ -207,12 +206,11 @@ const Register = () => {
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
                 {...register("password")}
-                type={showPassword ? "text" : "password"} // 🔴 Dynamic Type
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 maxLength={16}
-                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner" // 🔴 Changed pr-4 to pr-12
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
-              {/* 🔴 EYE BUTTON */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -235,12 +233,11 @@ const Register = () => {
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
                 {...register("confirmPassword")}
-                type={showConfirmPassword ? "text" : "password"} // 🔴 Dynamic Type
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"
                 maxLength={16}
-                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner" // 🔴 Changed pr-4 to pr-12
+                className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 shadow-inner"
               />
-              {/* 🔴 EYE BUTTON */}
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}

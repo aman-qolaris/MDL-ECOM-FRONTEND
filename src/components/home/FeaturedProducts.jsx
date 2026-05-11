@@ -2,18 +2,14 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getFeaturedProducts } from "../../store/thunks/productThunks";
-import {
-  selectFeaturedProducts,
-  selectProductLoading,
-} from "../../store/slices/productSlice";
+import { selectFeaturedProducts } from "../../store/slices/productSlice";
 import ProductCard from "../common/ProductCard";
-import { FaArrowRight, FaGem } from "react-icons/fa"; // Added FaGem icon
+import { FaArrowRight, FaGem } from "react-icons/fa";
 
 const FeaturedProducts = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const featured = useSelector(selectFeaturedProducts);
-  const loading = useSelector(selectProductLoading);
 
   useEffect(() => {
     dispatch(getFeaturedProducts());

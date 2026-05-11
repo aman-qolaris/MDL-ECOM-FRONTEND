@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import { FiAlertCircle, FiMapPin } from "react-icons/fi";
 
 const AddressSection = ({
@@ -88,8 +89,9 @@ const AddressSection = ({
             >
               <option value="">-- Select Area --</option>
               {availableAreas && availableAreas.length > 0 ? (
-                availableAreas.map((area, idx) => (
-                  <option key={idx} value={area}>
+                // 🟢 Fix: Removed idx from map, used unique area string as key
+                availableAreas.map((area) => (
+                  <option key={area} value={area}>
                     {area}
                   </option>
                 ))
@@ -137,6 +139,39 @@ const AddressSection = ({
       </details>
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping nested objects
+AddressSection.propTypes = {
+  user: PropTypes.shape({
+    addresses: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+          .isRequired,
+        addressLine1: PropTypes.string.isRequired,
+        area: PropTypes.string.isRequired,
+      }),
+    ),
+  }),
+  selectedAddress: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }),
+  setSelectedAddress: PropTypes.func.isRequired,
+  availableAreas: PropTypes.arrayOf(PropTypes.string).isRequired,
+  FIXED_CITY: PropTypes.string.isRequired,
+  FIXED_STATE: PropTypes.string.isRequired,
+  loading: PropTypes.bool.isRequired,
+  registerAddress: PropTypes.func.isRequired,
+  handleNewAddress: PropTypes.func.isRequired,
+  addrErrors: PropTypes.shape({
+    addressLine1: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+    area: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+  }).isRequired,
+  onAddAddress: PropTypes.func.isRequired,
 };
 
 export default AddressSection;

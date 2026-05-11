@@ -62,10 +62,11 @@ const RecentlyViewed = () => {
           ) : (
             <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2">
               {recentProducts.map((product) => (
-                <div
+                <button
                   key={product.id}
+                  type="button"
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="min-w-[150px] sm:min-w-[170px] bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group"
+                  className="text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px] sm:min-w-[170px] bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group"
                 >
                   <div className="h-28 sm:h-32 w-full bg-gray-50 relative overflow-hidden">
                     <img
@@ -87,7 +88,7 @@ const RecentlyViewed = () => {
                       ₹{product.price}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

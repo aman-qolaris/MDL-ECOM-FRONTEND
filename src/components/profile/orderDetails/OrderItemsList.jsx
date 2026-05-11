@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { FaBox, FaInfoCircle } from "react-icons/fa";
 
 const OrderItemsList = ({
@@ -8,7 +9,6 @@ const OrderItemsList = ({
   onCancelItem,
   onSelectReturnItem,
 }) => {
-  // 🟢 NEW: Map Backend Statuses to User-Friendly Messages & Colors
   const getReturnStatusDisplay = (status) => {
     switch (status) {
       case "REQUESTED":
@@ -66,7 +66,7 @@ const OrderItemsList = ({
             Loading item details...
           </div>
         ) : (
-          enrichedItems.map((item, idx) => {
+          enrichedItems.map((item) => {
             const isReturnedItem =
               item.refundStatus &&
               item.refundStatus !== "NONE" &&
@@ -77,7 +77,7 @@ const OrderItemsList = ({
 
             return (
               <div
-                key={idx}
+                key={item.id}
                 className="flex gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition items-center flex-wrap sm:flex-nowrap"
               >
                 {/* Product Image */}
@@ -115,11 +115,11 @@ const OrderItemsList = ({
                     )}
                   </div>
 
-                  {/* 🟢 NEW: Detailed Return Status Tracker under the item name */}
+                  {/* 🟢 Detailed Return Status Tracker under the item name */}
                   {isReturnedItem && (
                     <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold">
                       <FaInfoCircle
-                        className={returnDisplay.color.split(" ")}
+                        className={returnDisplay.color.split(" ")} // Takes just the text color for the icon
                       />
                       <span
                         className={`px-2 py-0.5 rounded border ${returnDisplay.color}`}
@@ -141,7 +141,7 @@ const OrderItemsList = ({
                     item.status !== "PACKED" && (
                       <button
                         onClick={() => onCancelItem(item.id)}
-                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 transition"
+                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 transition focus:outline-none focus:ring-2 focus:ring-red-300"
                       >
                         Cancel Item
                       </button>
@@ -150,7 +150,7 @@ const OrderItemsList = ({
                   {isReturnable(item) && (
                     <button
                       onClick={() => onSelectReturnItem(item)}
-                      className="text-xs px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-gray-700 transition"
+                      className="text-xs px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 text-gray-700 transition focus:outline-none focus:ring-2 focus:ring-gray-300"
                     >
                       Return Item
                     </button>
@@ -172,6 +172,29 @@ const OrderItemsList = ({
       </div>
     </div>
   );
+};
+
+OrderItemsList.propTypes = {
+  enrichedItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      productId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      quantity: PropTypes.number,
+      price: PropTypes.number,
+      status: PropTypes.string,
+      refundStatus: PropTypes.string,
+      Product: PropTypes.shape({
+        name: PropTypes.string,
+        images: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
+        imageUrl: PropTypes.string,
+      }),
+    }),
+  ).isRequired,
+  loadingItems: PropTypes.bool.isRequired,
+  isOrderActive: PropTypes.bool.isRequired,
+  isReturnable: PropTypes.func.isRequired,
+  onCancelItem: PropTypes.func.isRequired,
+  onSelectReturnItem: PropTypes.func.isRequired,
 };
 
 export default OrderItemsList;

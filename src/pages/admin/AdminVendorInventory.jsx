@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import { getAllVendors } from "../../services/vendorService";
 
 // Components
@@ -8,6 +7,10 @@ import InventoryHeader from "../../components/admin/inventory/vendor/InventoryHe
 import InventoryFilters from "../../components/admin/inventory/vendor/InventoryFilters";
 import InventoryTable from "../../components/admin/inventory/vendor/InventoryTable";
 import StockUpdateModal from "../../components/admin/inventory/vendor/StockUpdateModal";
+import {
+  getVendorProductsForAdmin,
+  updateWarehouseStockByAdmin,
+} from "../../services/productService";
 
 const AdminVendorInventory = () => {
   const { vendorId } = useParams();
@@ -36,21 +39,15 @@ const AdminVendorInventory = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
+
       // 1. Fetch Vendors (to get the name)
       const vendorsData = await getAllVendors();
       const vendor = vendorsData.find((v) => v.id.toString() === vendorId);
       if (vendor) setCurrentVendorName(vendor.businessName);
 
-      // 2. Fetch Products for THIS Vendor Only
-      const response = await axios.get(
-        `http://localhost:5007/api/products/vendor/${vendorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      setProducts(response.data);
+      // 2. Fetch Products for THIS Vendor Only (Tokens handled by api.js!)
+      const data = await getVendorProductsForAdmin(vendorId);
+      setProducts(data);
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
@@ -64,7 +61,8 @@ const AdminVendorInventory = () => {
 
     // 1. Validation: Warehouse cannot exceed Total
     const totalStock = editingProduct.totalStock || 0;
-    const warehouseVal = parseInt(newWarehouseStock);
+
+    const warehouseVal = Number.parseInt(newWarehouseStock, 10);
 
     if (warehouseVal < 0) {
       setErrorMsg("Stock cannot be negative.");
@@ -78,21 +76,14 @@ const AdminVendorInventory = () => {
     }
 
     try {
-      const token = localStorage.getItem("adminToken");
-      // 2. Call API (Using the specific Admin Warehouse Update endpoint)
-      const response = await axios.put(
-        `http://localhost:5007/api/products/admin/inventory/update`,
-        {
-          productId: editingProduct.id,
-          warehouseStock: warehouseVal,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+      // 2. Call API (Tokens handled by api.js!)
+      const data = await updateWarehouseStockByAdmin(
+        editingProduct.id,
+        warehouseVal,
       );
 
       // 3. Optimistic Update
-      const updatedData = response.data.product || response.data;
+      const updatedData = data.product || data;
 
       setProducts((prev) =>
         prev.map((p) =>
@@ -104,7 +95,7 @@ const AdminVendorInventory = () => {
 
       closeModal();
     } catch (error) {
-      console.error(error);
+      console.error("Failed to update stock:", error);
       setErrorMsg(error.response?.data?.message || "Failed to update stock.");
     }
   };

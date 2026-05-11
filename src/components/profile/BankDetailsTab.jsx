@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { useDispatch } from "react-redux";
 import { FaEdit, FaUniversity, FaSave, FaTimes } from "react-icons/fa";
 import { updateUserProfile } from "../../services/authService";
@@ -48,11 +49,10 @@ const BankDetailsTab = ({ user }) => {
       dispatch(updateUser(updatedData));
 
       setIsEditing(false);
-      alert("Bank Details Updated Successfully!");
+      globalThis.alert("Bank Details Updated Successfully!");
     } catch (error) {
       console.error(error);
-      alert("Failed to update bank details.");
-    } finally {
+      globalThis.alert("Failed to update bank details.");
       setSaving(false);
     }
   };
@@ -64,14 +64,7 @@ const BankDetailsTab = ({ user }) => {
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <FaUniversity className="text-blue-600" /> Bank Account Details
         </h2>
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition"
-          >
-            <FaEdit /> Edit Details
-          </button>
-        ) : (
+        {isEditing ? (
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -83,18 +76,25 @@ const BankDetailsTab = ({ user }) => {
                   ifscCode: user.ifscCode || "",
                 });
               }}
-              className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition font-medium"
+              className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition font-medium focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               <FaTimes /> Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50"
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <FaSave /> {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+          >
+            <FaEdit /> Edit Details
+          </button>
         )}
       </div>
 
@@ -159,7 +159,7 @@ const BankDetailsTab = ({ user }) => {
           ) : (
             <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2 tracking-wider">
               {user.accountNumber
-                ? `XXXX-XXXX-${user.accountNumber.slice(-4)}`
+                ? `XXXX-XXXX-${String(user.accountNumber).slice(-4)}`
                 : "Not provided"}
             </p>
           )}
@@ -167,6 +167,16 @@ const BankDetailsTab = ({ user }) => {
       </div>
     </div>
   );
+};
+
+BankDetailsTab.propTypes = {
+  user: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string.isRequired,
+    bankName: PropTypes.string,
+    accountNumber: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    ifscCode: PropTypes.string,
+  }).isRequired,
 };
 
 export default BankDetailsTab;

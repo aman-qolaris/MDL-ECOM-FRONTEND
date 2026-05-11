@@ -18,9 +18,10 @@ export default function useDeferredRender(options = {}) {
     let cancelled = false;
 
     const schedule = (cb) => {
-      if (typeof window === "undefined") return setTimeout(cb, 0);
-      if ("requestIdleCallback" in window) {
-        return window.requestIdleCallback(cb, { timeout });
+      if (globalThis.window === undefined) return setTimeout(cb, 0);
+
+      if ("requestIdleCallback" in globalThis) {
+        return globalThis.requestIdleCallback(cb, { timeout });
       }
       return setTimeout(cb, 0);
     };
@@ -31,8 +32,11 @@ export default function useDeferredRender(options = {}) {
 
     return () => {
       cancelled = true;
-      if (typeof window !== "undefined" && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(handle);
+      if (
+        globalThis.window !== undefined &&
+        "cancelIdleCallback" in globalThis
+      ) {
+        globalThis.cancelIdleCallback(handle);
       } else {
         clearTimeout(handle);
       }

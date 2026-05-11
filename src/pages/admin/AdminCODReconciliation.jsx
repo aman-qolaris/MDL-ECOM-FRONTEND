@@ -3,7 +3,6 @@ import {
   FaMoneyBillWave,
   FaUserSecret,
   FaCheckCircle,
-  FaHistory,
   FaArrowRight,
   FaArrowLeft,
 } from "react-icons/fa";
@@ -28,7 +27,8 @@ const AdminCODReconciliation = () => {
       const result = await getCODReconciliation();
       setData(result);
     } catch (error) {
-      alert("Failed to fetch reconciliation data");
+      console.error("Failed to fetch reconciliation data:", error);
+      globalThis.alert("Failed to fetch reconciliation data");
     } finally {
       setLoading(false);
     }
@@ -43,11 +43,12 @@ const AdminCODReconciliation = () => {
 
       await settleCOD(selectedBoy.deliveryBoyId, orderIds);
 
-      alert("Cash settled successfully!");
+      globalThis.alert("Cash settled successfully!");
       setSelectedBoy(null); // Close Modal
       fetchData(); // Refresh Data
     } catch (error) {
-      alert("Settlement failed: " + error.message);
+      console.error("Settlement failed:", error);
+      globalThis.alert("Settlement failed: " + error.message);
     } finally {
       setIsSettling(false);
     }
@@ -59,8 +60,9 @@ const AdminCODReconciliation = () => {
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>
@@ -127,8 +129,9 @@ const AdminCODReconciliation = () => {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setSelectedBoy(boy)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   Review & Settle <FaArrowRight />
                 </button>
@@ -153,8 +156,9 @@ const AdminCODReconciliation = () => {
             <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
               <h3 className="font-bold text-lg">Settle Cash Collection</h3>
               <button
+                type="button"
                 onClick={() => setSelectedBoy(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 rounded p-1"
               >
                 ✕
               </button>
@@ -197,15 +201,17 @@ const AdminCODReconciliation = () => {
 
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => setSelectedBoy(null)}
-                  className="flex-1 px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 cursor-pointer"
+                  className="flex-1 px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-300"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleSettle}
                   disabled={isSettling}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
                   {isSettling ? "Settling..." : "Confirm Deposit"}
                 </button>

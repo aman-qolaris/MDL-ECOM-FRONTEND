@@ -9,7 +9,7 @@ export const loadRazorpayScript = () => {
     // 2. Create script tag
     const script = document.createElement("script");
     script.id = "razorpay-sdk";
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"; // nosonar
     script.async = true;
 
     // 3. Handle load success

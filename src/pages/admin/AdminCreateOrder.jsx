@@ -13,6 +13,7 @@ import {
 } from "../../services/orderService";
 import api from "../../services/api";
 import useDebounce from "../../hooks/useDebounce";
+import { generateTempPassword } from "../../utils/helper";
 
 import CustomerSection from "../../components/admin/orders/create/CustomerSection";
 import AddressSection from "../../components/admin/orders/create/AddressSection";
@@ -92,7 +93,6 @@ const AdminCreateOrder = () => {
     }
   }, [debouncedProductSearch]);
 
-  // 🟢 2. NEW EFFECT: Fetch Shipping when Address Changes
   useEffect(() => {
     const fetchShipping = async () => {
       if (selectedAddress && selectedAddress.area) {
@@ -106,7 +106,7 @@ const AdminCreateOrder = () => {
   }, [selectedAddress]);
 
   const handleNumberInput = (e, maxLength) => {
-    const value = e.target.value.replace(/[^0-9]/g, "");
+    const value = e.target.value.replaceAll(/\D/g, "");
     if (value.length > maxLength) {
       e.target.value = value.slice(0, maxLength);
     } else {
@@ -123,8 +123,7 @@ const AdminCreateOrder = () => {
       toast.success("User found!");
       if (foundUser.addresses?.length > 0) {
         const def =
-          foundUser.addresses.find((a) => a.isDefault) ||
-          foundUser.addresses[0];
+          foundUser.addresses.find((a) => a.isDefault) || foundUser.addresses;
         setSelectedAddress(def);
       }
     } catch (error) {
@@ -143,10 +142,19 @@ const AdminCreateOrder = () => {
   const onRegisterUser = async (data) => {
     setLoading(true);
     try {
-      const payload = { ...data, password: "Password@123" };
+      const tempPassword = generateTempPassword();
+      const payload = { ...data, password: tempPassword };
+
       const res = await registerUserOnBehalf(payload);
       setUser(res.user);
-      toast.success("User registered! Default password: Password@123");
+
+      // Keep the toast open a bit longer (e.g., 8 seconds) so the admin can copy it
+      toast.success(`User registered! Temp password: ${tempPassword}`, {
+        duration: 8000,
+      });
+
+      // Optional: You could also log it safely to the console just for the admin session
+      console.info("Temporary password for new user:", tempPassword);
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed");
     } finally {
@@ -176,6 +184,7 @@ const AdminCreateOrder = () => {
       resetAddressForm({ city: FIXED_CITY, state: FIXED_STATE });
       toast.success("Address added");
     } catch (error) {
+      console.error("Address creation failed:", error);
       toast.error("Failed to add address");
     } finally {
       setLoading(false);
@@ -190,9 +199,10 @@ const AdminCreateOrder = () => {
     }
     try {
       const res = await api.get(`/products?search=${query}&limit=5`);
+
       const products =
-        res.data.rows ||
-        res.data.products ||
+        res.data?.rows ||
+        res.data?.products ||
         (Array.isArray(res.data) ? res.data : []);
       setSearchResults(products);
     } catch (err) {
@@ -238,7 +248,6 @@ const AdminCreateOrder = () => {
         0,
       );
 
-      // 🟢 REMOVED ZIP CODE FROM PAYLOAD
       const finalShippingAddress = {
         fullName: user.name,
         phone: user.phone,
@@ -246,7 +255,6 @@ const AdminCreateOrder = () => {
         area: selectedAddress.area,
         city: selectedAddress.city,
         state: selectedAddress.state,
-        // zipCode field removed
       };
 
       await createOrderOnBehalf({
@@ -278,8 +286,9 @@ const AdminCreateOrder = () => {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>

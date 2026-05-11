@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 
 const SummaryBar = ({
   subtotal,
@@ -50,6 +51,19 @@ const SummaryBar = ({
       </div>
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation
+SummaryBar.propTypes = {
+  subtotal: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    .isRequired,
+  shippingCost: PropTypes.number.isRequired,
+  totalPayable: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    .isRequired,
+  placeOrder: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  cartLength: PropTypes.number.isRequired,
+  hasSelectedAddress: PropTypes.bool.isRequired,
 };
 
 export default SummaryBar;

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import PropTypes from "prop-types";
 import { FaWallet } from "react-icons/fa";
 
 const CheckoutOrderSummary = ({
@@ -70,7 +71,6 @@ const CheckoutOrderSummary = ({
           )}
         </div>
 
-        {/* 🟢 Wallet Deduction Row */}
         {walletUsed > 0 && (
           <div className="flex justify-between text-purple-700 font-medium bg-purple-50 p-2 rounded-lg">
             <span className="flex items-center gap-2">
@@ -82,12 +82,42 @@ const CheckoutOrderSummary = ({
 
         <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-100 mt-2">
           <span>To Pay</span>
-          {/* 🟢 Show Payable Amount */}
           <span>₹{payableAmount.toLocaleString()}</span>
         </div>
       </div>
     </div>
   );
+};
+
+// 🟢 FIX: Added strict PropTypes validation
+CheckoutOrderSummary.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      cartItemId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      quantity: PropTypes.number.isRequired,
+      price: PropTypes.number,
+      name: PropTypes.string,
+      image: PropTypes.string,
+      Product: PropTypes.shape({
+        price: PropTypes.number,
+        name: PropTypes.string,
+        images: PropTypes.arrayOf(PropTypes.string),
+        imageUrl: PropTypes.string,
+      }),
+      product: PropTypes.shape({
+        price: PropTypes.number,
+        name: PropTypes.string,
+        images: PropTypes.arrayOf(PropTypes.string),
+        imageUrl: PropTypes.string,
+      }),
+    }),
+  ).isRequired,
+  subtotal: PropTypes.number.isRequired,
+  shippingCost: PropTypes.number.isRequired,
+  total: PropTypes.number.isRequired,
+  walletUsed: PropTypes.number.isRequired,
+  payableAmount: PropTypes.number.isRequired,
 };
 
 export default CheckoutOrderSummary;

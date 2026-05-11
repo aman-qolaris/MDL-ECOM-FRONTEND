@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import {
   FaMoneyBillWave,
   FaCreditCard,
@@ -136,6 +137,13 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
       </div>
     </form>
   );
+};
+
+PaymentForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  onBack: PropTypes.func.isRequired,
+  walletUsed: PropTypes.number.isRequired,
+  payableAmount: PropTypes.number.isRequired,
 };
 
 export default PaymentForm;

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { clearCurrentProduct } from "../store/slices/productSlice";
+import {
+  clearCurrentProduct,
+  selectFeaturedProducts,
+} from "../store/slices/productSlice";
 import { getProduct, getFeaturedProducts } from "../store/thunks/productThunks";
-import { selectFeaturedProducts } from "../store/slices/productSlice";
 import useDeferredRender from "../hooks/useDeferredRender";
 import useIsAuthenticated from "../hooks/useIsAuthenticated";
 import useCartQuantity from "../hooks/useCartQuantity";
@@ -23,6 +26,10 @@ const SectionHeader = ({ title }) => (
     <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
   </div>
 );
+
+SectionHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+};
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -77,7 +84,8 @@ const ProductDetails = () => {
   useEffect(() => {
     if (!product) return;
     try {
-      const existing = JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+      const existing =
+        JSON.parse(globalThis.localStorage.getItem("recentlyViewed")) || [];
       const filtered = existing.filter((item) => item.id !== product.id);
       const newItem = {
         id: product.id,
@@ -86,7 +94,10 @@ const ProductDetails = () => {
         image: product.images?.[0] || product.imageUrl || product.image,
       };
       const updatedList = [newItem, ...filtered].slice(0, 8);
-      localStorage.setItem("recentlyViewed", JSON.stringify(updatedList));
+      globalThis.localStorage.setItem(
+        "recentlyViewed",
+        JSON.stringify(updatedList),
+      );
     } catch (err) {
       console.error("Failed to save recent view:", err);
     }
@@ -183,7 +194,7 @@ const ProductDetails = () => {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      alert("Please login to add items to cart");
+      globalThis.alert("Please login to add items to cart");
       navigate("/login");
       return;
     }
@@ -191,7 +202,7 @@ const ProductDetails = () => {
     const currentQtyInCart = qtyInCart;
 
     if (currentQtyInCart + quantity > product.availableStock) {
-      alert(
+      globalThis.alert(
         `Stock Limit Reached! You already have ${currentQtyInCart} in cart. Only ${product.availableStock} available.`,
       );
       return;
@@ -206,7 +217,7 @@ const ProductDetails = () => {
       if (!Array.isArray(nextItems)) {
         await dispatch(getCartItems()).unwrap();
       }
-      alert(`${product.name} added to cart!`);
+      globalThis.alert(`${product.name} added to cart!`);
     }
   };
 
@@ -215,7 +226,7 @@ const ProductDetails = () => {
       {/* Back Button */}
       <Link
         to="/shop"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
       >
         <FaArrowLeft /> Back to Shop
       </Link>
@@ -242,22 +253,24 @@ const ProductDetails = () => {
                     {images.length > 1 && (
                       <>
                         <button
+                          type="button"
                           onClick={() =>
                             setCurrentImageIndex((prev) =>
                               prev === 0 ? images.length - 1 : prev - 1,
                             )
                           }
-                          className="absolute left-3 sm:left-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
+                          className="absolute left-3 sm:left-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
                         >
                           <FaChevronLeft size={20} />
                         </button>
                         <button
+                          type="button"
                           onClick={() =>
                             setCurrentImageIndex((prev) =>
                               prev === images.length - 1 ? 0 : prev + 1,
                             )
                           }
-                          className="absolute right-3 sm:right-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100"
+                          className="absolute right-3 sm:right-0 p-2 bg-white/80 rounded-full shadow hover:bg-white text-gray-700 hover:text-blue-600 transition opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
                         >
                           <FaChevronRight size={20} />
                         </button>
@@ -269,9 +282,10 @@ const ProductDetails = () => {
                     <div className="flex justify-center gap-2 overflow-x-auto pb-2">
                       {images.map((img, index) => (
                         <button
-                          key={index}
+                          type="button"
+                          key={`thumb-${product.id}-${index}`}
                           onClick={() => setCurrentImageIndex(index)}
-                          className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
+                          className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                             currentImageIndex === index
                               ? "border-blue-600 ring-2 ring-blue-100"
                               : "border-gray-300 opacity-60 hover:opacity-100"
@@ -303,12 +317,11 @@ const ProductDetails = () => {
               </h1>
 
               <div className="flex items-center gap-1 text-yellow-400 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <FaStar key={`star-${product.id}-${i}`} />
                 ))}
                 <span className="text-sm text-gray-500 ml-2">(4.8)</span>
               </div>
-
               <p className="text-gray-600 leading-relaxed mb-6">
                 {product.description || "No description available."}
               </p>
@@ -338,14 +351,16 @@ const ProductDetails = () => {
 
                   <div className="flex items-center rounded-xl border border-gray-300 overflow-hidden">
                     <button
-                      className="px-4 py-2 text-lg hover:bg-gray-100 transition"
+                      type="button"
+                      className="px-4 py-2 text-lg hover:bg-gray-100 transition focus:outline-none focus:ring-2 focus:ring-gray-300 inset-0"
                       onClick={() => setQuantity((q) => Math.max(0, q - 1))}
                     >
                       −
                     </button>
                     <span className="px-6 font-semibold">{quantity}</span>
                     <button
-                      className="px-4 py-2 text-lg hover:bg-gray-100 transition"
+                      type="button"
+                      className="px-4 py-2 text-lg hover:bg-gray-100 transition focus:outline-none focus:ring-2 focus:ring-gray-300 inset-0"
                       onClick={() =>
                         setQuantity((q) =>
                           Math.min(product.availableStock, q + 1),
@@ -359,9 +374,10 @@ const ProductDetails = () => {
               )}
 
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={quantity === 0 || product.availableStock === 0}
-                className={`w-full py-4 rounded-xl text-lg font-bold transition flex items-center justify-center gap-3 shadow-lg ${
+                className={`w-full py-4 rounded-xl text-lg font-bold transition flex items-center justify-center gap-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
                   quantity === 0 || product.availableStock === 0
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl"
@@ -391,7 +407,7 @@ const ProductDetails = () => {
       {renderBelowFold && similarProducts.length > 0 && (
         <section className="animate-fade-in-up delay-75">
           {/* Dynamic title based on the first word of the product name */}
-          <SectionHeader title={`More like "${product.name.split(" ")[0]}"`} />
+          <SectionHeader title={`More like "${product.name.split(" ")}"`} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {similarProducts.map((p) => (
               <ProductCard key={p.id} product={p} />

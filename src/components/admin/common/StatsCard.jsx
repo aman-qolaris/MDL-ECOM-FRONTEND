@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import PropTypes from "prop-types"; // <-- Imported PropTypes
 
 const StatsCard = ({ title, value, icon, color, link, desc }) => {
   return (
@@ -30,6 +31,16 @@ const StatsCard = ({ title, value, icon, color, link, desc }) => {
       </p>
     </Link>
   );
+};
+
+// Add explicit prop validations
+StatsCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  icon: PropTypes.node.isRequired, // Expects a React element/icon
+  color: PropTypes.string.isRequired,
+  link: PropTypes.string.isRequired,
+  desc: PropTypes.string.isRequired,
 };
 
 export default StatsCard;

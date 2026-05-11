@@ -8,7 +8,7 @@ export const initiatePayment = async (amount, user, orderId, onSuccess) => {
   try {
     const isLoaded = await loadRazorpayScript();
     if (!isLoaded) {
-      alert("Razorpay SDK failed to load.");
+      globalThis.alert("Razorpay SDK failed to load.");
       return;
     }
 
@@ -50,24 +50,24 @@ export const initiatePayment = async (amount, user, orderId, onSuccess) => {
           if (verifyRes.data.success) {
             onSuccess(response);
           } else {
-            alert("Payment verification failed on server.");
+            globalThis.alert("Payment verification failed on server.");
           }
         } catch (error) {
           console.error("Verification Error:", error);
-          alert("Payment verified failed.");
+          globalThis.alert("Payment verified failed.");
         }
       },
     };
 
     // 4. Open Popup
-    const rzp1 = new window.Razorpay(options);
+    const rzp1 = new globalThis.Razorpay(options);
     rzp1.on("payment.failed", function (response) {
-      alert(`Payment Failed: ${response.error.description}`);
+      globalThis.alert(`Payment Failed: ${response.error.description}`);
     });
 
     rzp1.open();
   } catch (error) {
     console.error("Payment Error:", error);
-    alert("Could not initiate payment. Try again.");
+    globalThis.alert("Could not initiate payment. Try again.");
   }
 };

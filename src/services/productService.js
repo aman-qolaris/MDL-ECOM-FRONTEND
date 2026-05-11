@@ -1,5 +1,5 @@
 import api from "./api";
-import axios from "axios"; // Import axios directly to bypass default interceptors
+import axios from "axios";
 
 const PRODUCTS_CACHE_TTL_MS = 15_000;
 const productsListCache = new Map();
@@ -10,7 +10,11 @@ const productByIdInFlight = new Map();
 const stableParamsKey = (params = {}) => {
   const entries = Object.entries(params)
     .filter(([, v]) => v !== "" && v !== null && v !== undefined)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    .sort(([a], [b]) => {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    });
   return JSON.stringify(entries);
 };
 
@@ -92,22 +96,19 @@ export const prefetchProductById = async (id) => {
 // --- VENDOR & ADMIN ROUTES ---
 
 // Helper function to choose the right token and method
-// If a vendor token exists, we prioritize it for creation/updates to support the Vendor Dashboard
 const getAuthHeaders = () => {
-  const vendorToken = localStorage.getItem("vendorToken");
-  const adminToken = localStorage.getItem("token"); // Assuming admin uses the standard auth slice
+  const vendorToken = globalThis.localStorage.getItem("vendorToken");
+  const adminToken = globalThis.localStorage.getItem("token");
 
-  // Logic: Use Vendor Token if available, otherwise fall back to Admin/User Token
   return vendorToken ? `Bearer ${vendorToken}` : `Bearer ${adminToken}`;
 };
 
 // 3. Create Product (Matches: POST /api/products)
 export const createProduct = async (productData) => {
-  // We use direct axios here to ensure we can control the token priority
   const token =
-    localStorage.getItem("vendorToken") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("token");
+    globalThis.localStorage.getItem("vendorToken") ||
+    globalThis.localStorage.getItem("adminToken") ||
+    globalThis.localStorage.getItem("token");
 
   const response = await axios.post(`${BASE_URL}/products`, productData, {
     headers: {
@@ -120,14 +121,14 @@ export const createProduct = async (productData) => {
 
 // 4. Update Product (Matches: PUT /api/products/:id)
 export const updateProduct = async (id, productData) => {
-  // Ensure this matches where you actually save the token (e.g., "token")
   const token =
-    localStorage.getItem("vendorToken") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("token");
+    globalThis.localStorage.getItem("vendorToken") ||
+    globalThis.localStorage.getItem("adminToken") ||
+    globalThis.localStorage.getItem("token");
+
   const response = await axios.put(`${BASE_URL}/products/${id}`, productData, {
     headers: {
-      "Content-Type": "multipart/form-data", // axios sets boundary auto for FormData, but this forces intent
+      "Content-Type": "multipart/form-data",
       Authorization: `Bearer ${token}`,
     },
   });
@@ -137,9 +138,9 @@ export const updateProduct = async (id, productData) => {
 // 5. Delete Product (Matches: DELETE /api/products/:id)
 export const deleteProduct = async (id) => {
   const token =
-    localStorage.getItem("vendorToken") ||
-    localStorage.getItem("adminToken") ||
-    localStorage.getItem("token");
+    globalThis.localStorage.getItem("vendorToken") ||
+    globalThis.localStorage.getItem("adminToken") ||
+    globalThis.localStorage.getItem("token");
 
   const response = await axios.delete(`${BASE_URL}/products/${id}`, {
     headers: {
@@ -153,14 +154,12 @@ export const deleteProduct = async (id) => {
 export const getVendorProducts = async () => {
   if (USE_MOCK) return [];
 
-  // 1. Get the Vendor Token explicitly
-  const token = localStorage.getItem("vendorToken");
+  const token = globalThis.localStorage.getItem("vendorToken");
 
   if (!token) {
     throw new Error("No vendor token found. Please login as a vendor.");
   }
 
-  // 2. Use direct axios call to avoid 'api' interceptor overwriting with customer token
   const response = await axios.get(`${BASE_URL}/products/vendor/my-products`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -170,10 +169,25 @@ export const getVendorProducts = async () => {
   return response.data;
 };
 
-// ... existing code
-
-// 👇 ADD THIS FUNCTION
 export const getAllCategories = async () => {
   const response = await api.get("/products/categories");
+  return response.data;
+};
+
+// 🟢 NEW: Get a specific Vendor's Products (For Admin)
+export const getVendorProductsForAdmin = async (vendorId) => {
+  const response = await api.get(`/products/vendor/${vendorId}`);
+  return response.data;
+};
+
+// 🟢 NEW: Update Warehouse Stock (For Admin)
+export const updateWarehouseStockByAdmin = async (
+  productId,
+  warehouseStock,
+) => {
+  const response = await api.put("/products/admin/inventory/update", {
+    productId,
+    warehouseStock,
+  });
   return response.data;
 };

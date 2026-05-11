@@ -48,12 +48,12 @@ const DeliveryProfile = () => {
     const fetchProfile = async () => {
       try {
         const data = await getDeliveryProfile();
-        if (data && data.profile) {
+        if (data?.profile) {
           setProfile(data.profile);
         }
       } catch (error) {
         console.error("Error fetching delivery profile:", error);
-        alert("Failed to load profile details.");
+        globalThis.alert("Failed to load profile details.");
       } finally {
         setLoading(false);
       }
@@ -71,12 +71,12 @@ const DeliveryProfile = () => {
 
     const validationError = validatePassword(passwordData.newPassword);
     if (validationError) {
-      alert(validationError);
+      globalThis.alert(validationError);
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords do not match!");
+      globalThis.alert("New passwords do not match!");
       return;
     }
 
@@ -86,7 +86,7 @@ const DeliveryProfile = () => {
         newPassword: passwordData.newPassword,
       });
 
-      alert("Password updated successfully!");
+      globalThis.alert("Password updated successfully!");
 
       // Clear form & resets toggles
       setPasswordData({
@@ -99,7 +99,7 @@ const DeliveryProfile = () => {
       setShowConfirm(false);
     } catch (error) {
       console.error("Error updating password:", error);
-      alert(
+      globalThis.alert(
         error.response?.data?.message ||
           "Failed to update password. Check your old password.",
       );
@@ -113,8 +113,9 @@ const DeliveryProfile = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 p-4">
       <button
+        type="button"
         onClick={() => navigate("/delivery/dashboard")}
-        className="text-sm font-bold text-gray-500 hover:text-blue-600 flex items-center gap-2 transition-colors mb-2"
+        className="text-sm font-bold text-gray-500 hover:text-blue-600 flex items-center gap-2 transition-colors mb-2 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded px-1"
       >
         <FaArrowLeft /> Back to Dashboard
       </button>
@@ -221,10 +222,10 @@ const DeliveryProfile = () => {
               Assigned Areas
             </label>
             <div className="flex flex-wrap gap-2">
-              {profile.assignedAreas && profile.assignedAreas.length > 0 ? (
-                profile.assignedAreas.map((area, index) => (
+              {profile.assignedAreas?.length > 0 ? (
+                profile.assignedAreas.map((area) => (
                   <span
-                    key={index}
+                    key={area}
                     className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded text-sm"
                   >
                     {area}
@@ -265,13 +266,13 @@ const DeliveryProfile = () => {
                   value={passwordData.oldPassword}
                   onChange={handlePasswordChange}
                   required
-                  className="w-full border p-2 pr-10 rounded"
+                  className="w-full border p-2 pr-10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter current password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowOld(!showOld)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none focus:text-blue-600"
                 >
                   {showOld ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
@@ -291,13 +292,13 @@ const DeliveryProfile = () => {
                   onChange={handlePasswordChange}
                   required
                   minLength="6"
-                  className="w-full border p-2 pr-10 rounded"
+                  className="w-full border p-2 pr-10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter new password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none focus:text-blue-600"
                 >
                   {showNew ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
@@ -317,13 +318,13 @@ const DeliveryProfile = () => {
                   onChange={handlePasswordChange}
                   required
                   minLength="6"
-                  className="w-full border p-2 pr-10 rounded"
+                  className="w-full border p-2 pr-10 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Confirm new password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 focus:outline-none focus:text-blue-600"
                 >
                   {showConfirm ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
@@ -334,7 +335,7 @@ const DeliveryProfile = () => {
 
         <button
           type="submit"
-          className="px-6 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+          className="px-6 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400 shadow-md"
         >
           <FaKey /> Update Password
         </button>

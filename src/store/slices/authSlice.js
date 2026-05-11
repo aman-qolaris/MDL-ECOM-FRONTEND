@@ -3,15 +3,15 @@ import { createSlice } from "@reduxjs/toolkit";
 const USE_MOCK_AUTH = false;
 
 const getUserFromStorage = () => {
-  if (typeof window !== "undefined") {
-    const user = localStorage.getItem("user");
+  if (globalThis.window !== undefined && globalThis.localStorage) {
+    const user = globalThis.localStorage.getItem("user");
     if (!user || user === "undefined") return null;
 
     try {
       return JSON.parse(user);
     } catch (error) {
       console.error("Error parsing user data:", error);
-      localStorage.removeItem("user");
+      globalThis.localStorage.removeItem("user");
       return null;
     }
   }
@@ -32,7 +32,10 @@ const initialState = USE_MOCK_AUTH
     }
   : {
       user: getUserFromStorage(),
-      token: localStorage.getItem("token") || null,
+      token:
+        globalThis.window !== undefined && globalThis.localStorage
+          ? globalThis.localStorage.getItem("token")
+          : null,
       isAuthenticated: !!getUserFromStorage(),
       loading: false,
       error: null,
@@ -55,7 +58,10 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
 
-      localStorage.setItem("user", JSON.stringify(action.payload.user));
+      globalThis.localStorage.setItem(
+        "user",
+        JSON.stringify(action.payload.user),
+      );
     },
     authFailure: (state, action) => {
       state.loading = false;
@@ -65,17 +71,19 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+
+      globalThis.localStorage.removeItem("user");
+      globalThis.localStorage.removeItem("token");
 
       if (USE_MOCK_AUTH) {
-        window.location.reload();
+        globalThis.location.reload();
       }
     },
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
-      if (localStorage.getItem("user")) {
-        localStorage.setItem("user", JSON.stringify(state.user));
+
+      if (globalThis.localStorage.getItem("user")) {
+        globalThis.localStorage.setItem("user", JSON.stringify(state.user));
       }
     },
   },

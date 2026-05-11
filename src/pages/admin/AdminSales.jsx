@@ -1,14 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getDashboardStats, getAllOrders } from "../../services/adminService";
-import { FaArrowLeft, FaCalendarAlt, FaFilter, FaInfoCircle } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaCalendarAlt,
+  FaFilter,
+  FaInfoCircle,
+} from "react-icons/fa";
+import PropTypes from "prop-types";
+
+const TableMessageRow = ({ message }) => (
+  <tr>
+    <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
+      {message}
+    </td>
+  </tr>
+);
+
+TableMessageRow.propTypes = {
+  message: PropTypes.string.isRequired,
+};
 
 const AdminSales = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const filterMode = searchParams.get("filter"); 
+  const filterMode = searchParams.get("filter");
 
-  const [activeTab, setActiveTab] = useState("all"); 
+  const [activeTab, setActiveTab] = useState("all");
   const [revenue, setRevenue] = useState(0);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,61 +40,69 @@ const AdminSales = () => {
     try {
       // 1. Date Logic
       const now = new Date();
-      let start = null, end = null;
-      if (activeTab === "week") {
-        const lastWeek = new Date(now);
-        lastWeek.setDate(now.getDate() - 7);
-        start = lastWeek.toISOString(); end = now.toISOString();
-      } else if (activeTab === "month") {
-        start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString(); end = now.toISOString();
-      } else if (activeTab === "year") {
-        start = new Date(now.getFullYear(), 0, 1).toISOString(); end = now.toISOString();
+      let start = null;
+      let end = null;
+
+      if (activeTab !== "all") {
+        end = now.toISOString();
+        if (activeTab === "week") {
+          const lastWeek = new Date(now);
+          lastWeek.setDate(now.getDate() - 7);
+          start = lastWeek.toISOString();
+        } else if (activeTab === "month") {
+          start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        } else if (activeTab === "year") {
+          start = new Date(now.getFullYear(), 0, 1).toISOString();
+        }
       }
 
       // 2. Fetch Stats
-      const statsPayload = (start && end) ? { start, end } : {};
+      const statsPayload = start && end ? { start, end } : {};
       const stats = await getDashboardStats(statsPayload);
       setRevenue(stats.totalSales || 0);
 
       // 3. Fetch Orders
-      const allOrdersRes = await getAllOrders(1, 100); 
-      let allOrdersList = Array.isArray(allOrdersRes) ? allOrdersRes : (allOrdersRes.orders || []);
+      const allOrdersRes = await getAllOrders(1, 100);
+      let allOrdersList = Array.isArray(allOrdersRes)
+        ? allOrdersRes
+        : allOrdersRes.orders || [];
 
-      // 🟢 4. HELPER: Calculate Net Revenue per Order
-      // This sums up ONLY the items that are Delivered and NOT returned
+      // 4. HELPER: Calculate Net Revenue per Order
       const getOrderNetRevenue = (order) => {
-       if (!order.OrderItems) return 0;
-        
-        // A. Sum up the Price of valid (kept) items
+        if (!order.OrderItems) return 0;
+
         const itemsRevenue = order.OrderItems.reduce((sum, item) => {
-           // Item must be DELIVERED and NOT fully returned
-           const isKept = item.status === 'DELIVERED' && 
-                          (!item.refundStatus || item.refundStatus === 'NONE' || item.refundStatus === 'REQUESTED');
-           
-           if (isKept) return sum + (parseFloat(item.price) * item.quantity);
-           return sum;
+          const isKept =
+            item.status === "DELIVERED" &&
+            (!item.refundStatus ||
+              item.refundStatus === "NONE" ||
+              item.refundStatus === "REQUESTED");
+
+          if (isKept) {
+            return sum + Number.parseFloat(item.price) * item.quantity;
+          }
+          return sum;
         }, 0);
 
-        // B. Add Shipping Charge (Only if there is at least 1 valid item)
-        // This fixes the discrepancy where Order #28 was missing the ₹20 shipping.
-       const shipping = parseFloat(order.shippingCharge || 0);
+        const shipping = Number.parseFloat(order.shippingCharge || 0);
+        const isShippingRetained =
+          itemsRevenue > 0 ||
+          ["DELIVERED", "RETURN_REQUESTED", "PARTIALLY_RETURNED"].includes(
+            order.status,
+          );
 
-        // Logic: We count shipping if we kept items OR if the order status implies delivery happened
-        // (This ensures we count shipping even if all items are returned but shipping is non-refundable)
-        const isShippingRetained = itemsRevenue > 0 || ["DELIVERED", "RETURN_REQUESTED", "PARTIALLY_RETURNED"].includes(order.status);
-        
         return itemsRevenue + (isShippingRetained ? shipping : 0);
       };
 
       // 5. Transform Data & Filter
-      let processedOrders = allOrdersList.map(order => ({
+      let processedOrders = allOrdersList.map((order) => ({
         ...order,
-        netRevenue: getOrderNetRevenue(order) // Attach calculated revenue
+        netRevenue: getOrderNetRevenue(order),
       }));
 
       // Filter: Show only orders that have > 0 Net Revenue
       if (filterMode === "revenue") {
-        processedOrders = processedOrders.filter(o => o.netRevenue > 0);
+        processedOrders = processedOrders.filter((o) => o.netRevenue > 0);
       }
 
       // 6. Date Filter
@@ -89,12 +115,59 @@ const AdminSales = () => {
       }
 
       setOrders(processedOrders);
-
     } catch (error) {
       console.error("Error fetching sales reports:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderTableBody = () => {
+    if (loading) return <TableMessageRow message="Loading data..." />;
+    if (orders.length === 0)
+      return <TableMessageRow message="No matching sales found." />;
+
+    return (
+      <>
+        {orders.map((order) => (
+          <tr key={order.id} className="hover:bg-green-50/50 transition">
+            <td className="px-6 py-4 whitespace-nowrap">
+              {new Date(order.createdAt).toLocaleDateString("en-IN")}
+            </td>
+            <td className="px-6 py-4 font-mono text-blue-600 font-medium">
+              #{order.id}
+            </td>
+            <td className="px-6 py-4">User {order.userId}</td>
+            <td className="px-6 py-4">
+              <div className="flex flex-col items-start gap-1">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-bold border ${
+                    order.status === "DELIVERED"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-100"
+                  }`}
+                >
+                  {order.status}
+                </span>
+                {order.netRevenue < order.amount && (
+                  <span className="text-[10px] text-orange-500 flex items-center gap-1 font-medium">
+                    <FaInfoCircle /> Partial Return
+                  </span>
+                )}
+              </div>
+            </td>
+            <td className="px-6 py-4 text-right font-bold text-gray-800 text-base">
+              ₹{order.netRevenue.toLocaleString()}
+              {order.netRevenue < order.amount && (
+                <span className="block text-[10px] text-gray-400 line-through">
+                  ₹{Number.parseFloat(order.amount).toLocaleString()}{" "}
+                </span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </>
+    );
   };
 
   return (
@@ -103,18 +176,19 @@ const AdminSales = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => navigate("/admin/dashboard")}
-            className="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition shadow-sm"
+            className="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             <FaArrowLeft />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-               <span className="text-green-600">📈</span> Total Sales Reports
+              <span className="text-green-600">📈</span> Total Sales Reports
             </h1>
             {filterMode === "revenue" && (
               <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-md border border-green-200">
-                <FaFilter className="inline mr-1 mb-0.5"/> Showing Net Revenue
+                <FaFilter className="inline mr-1 mb-0.5" /> Showing Net Revenue
               </span>
             )}
           </div>
@@ -125,15 +199,18 @@ const AdminSales = () => {
       <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-xl border border-gray-200 shadow-sm w-fit">
         {["all", "week", "month", "year"].map((tab) => (
           <button
-            key={tab}
+            type="button"
+            key={`tab-${tab}`} // 🟢 Added robust key
             onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+            className={`px-6 py-2 rounded-lg text-sm font-bold transition-all focus:outline-none focus:ring-2 focus:ring-green-400 ${
               activeTab === tab
                 ? "bg-green-600 text-white shadow-md"
                 : "text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {tab === "all" ? "All Time" : `This ${tab.charAt(0).toUpperCase() + tab.slice(1)}`}
+            {tab === "all"
+              ? "All Time"
+              : `This ${tab.charAt(0).toUpperCase() + tab.slice(1)}`}
           </button>
         ))}
       </div>
@@ -141,12 +218,12 @@ const AdminSales = () => {
       {/* REVENUE CARD */}
       <div className="bg-white p-8 rounded-2xl border border-green-100 shadow-sm mb-8 max-w-md">
         <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-green-100 text-green-600 rounded-lg">
-                <FaCalendarAlt />
-            </div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Total Revenue ({activeTab === 'all' ? 'All Time' : activeTab})
-            </p>
+          <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+            <FaCalendarAlt />
+          </div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Total Revenue ({activeTab === "all" ? "All Time" : activeTab})
+          </p>
         </div>
         <h2 className="text-5xl font-extrabold text-gray-800 tracking-tight">
           {loading ? "..." : `₹${revenue.toLocaleString()}`}
@@ -161,7 +238,7 @@ const AdminSales = () => {
             {orders.length} records
           </span>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500 border-b border-gray-100">
@@ -170,57 +247,11 @@ const AdminSales = () => {
                 <th className="px-6 py-4">Order Ref</th>
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Status</th>
-                {/* 🟢 RENAMED HEADER */}
                 <th className="px-6 py-4 text-right">Net Revenue</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">Loading data...</td></tr>
-              ) : orders.length === 0 ? (
-                <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">No matching sales found.</td></tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-green-50/50 transition">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-blue-600 font-medium">
-                      #{order.id}
-                    </td>
-                    <td className="px-6 py-4">
-                      User {order.userId}
-                    </td>
-                    <td className="px-6 py-4">
-                        {/* 🟢 SMART STATUS BADGE */}
-                        <div className="flex flex-col items-start gap-1">
-                             <span className={`px-2 py-1 rounded text-xs font-bold border ${
-                                order.status === 'DELIVERED' 
-                                ? 'bg-green-50 text-green-700 border-green-100' 
-                                : 'bg-yellow-50 text-yellow-700 border-yellow-100'
-                            }`}>
-                                {order.status}
-                            </span>
-                            {/* Show warning if amount differs */}
-                            {order.netRevenue < order.amount && (
-                                <span className="text-[10px] text-orange-500 flex items-center gap-1 font-medium">
-                                    <FaInfoCircle/> Partial Return
-                                </span>
-                            )}
-                        </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-bold text-gray-800 text-base">
-                      {/* 🟢 SHOW NET REVENUE, NOT TOTAL */}
-                      ₹{order.netRevenue.toLocaleString()}
-                      {order.netRevenue < order.amount && (
-                          <span className="block text-[10px] text-gray-400 line-through">
-                              ₹{parseFloat(order.amount).toLocaleString()}
-                          </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
+              {renderTableBody()}
             </tbody>
           </table>
         </div>

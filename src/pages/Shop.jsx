@@ -16,6 +16,15 @@ import ProductCard from "../components/common/ProductCard";
 import ProductCardSkeleton from "../components/placeholders/ProductCardSkeleton";
 import VirtualizedProductGrid from "../components/common/VirtualizedProductGrid";
 
+const SKELETON_KEYS = [
+  "shop-skel-1",
+  "shop-skel-2",
+  "shop-skel-3",
+  "shop-skel-4",
+  "shop-skel-5",
+  "shop-skel-6",
+];
+
 const Shop = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -34,7 +43,7 @@ const Shop = () => {
     [],
   );
 
-  // 🟢 2. Clean URL Params Sync
+  // 2. Clean URL Params Sync
   useEffect(() => {
     const categoriesFromURL = searchParams.getAll("category").filter(Boolean);
     const searchFromURL = searchParams.get("search") || "";
@@ -46,7 +55,7 @@ const Shop = () => {
         search: searchFromURL,
       }),
     );
-  }, [searchParams, dispatch]); // 🚨 Notice filters.category is GONE from this array!
+  }, [searchParams, dispatch]);
 
   // 3. Data Fetching
   useEffect(() => {
@@ -61,7 +70,7 @@ const Shop = () => {
     delete serverParams.category;
 
     if (activeCategories.length === 1) {
-      serverParams.category = activeCategories[0];
+      serverParams.category = activeCategories;
     }
 
     if (serverParams.sort === "default") {
@@ -75,11 +84,54 @@ const Shop = () => {
     dispatch(setFilters({ sort: e.target.value }));
   };
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 🟢 FIX: Map over the static keys array, completely avoiding the index 'i' */}
+          {SKELETON_KEYS.map((skeletonId) => (
+            <ProductCardSkeleton key={skeletonId} />
+          ))}
+        </div>
+      );
+    }
+
+    if (displayItems.length === 0) {
+      return (
+        <div className="py-20 text-center">
+          <div className="text-gray-400 mb-4 text-6xl">🔍</div>
+          <h3 className="text-xl font-medium text-gray-900">
+            No products found
+          </h3>
+          <p className="text-gray-500">Try adjusting your search or filters.</p>
+        </div>
+      );
+    }
+
+    if (displayItems.length >= 30) {
+      return (
+        <VirtualizedProductGrid
+          items={displayItems}
+          renderItem={renderProductCard}
+        />
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {displayItems.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 min-h-screen">
       <button
+        type="button"
         onClick={() => navigate("/")}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition cursor-pointer"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
       >
         <FaArrowLeft /> Back
       </button>
@@ -87,8 +139,9 @@ const Shop = () => {
       {/* Mobile Filter Toggle */}
       <div className="md:hidden mb-4">
         <button
+          type="button"
           onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md active:scale-95 transition cursor-pointer"
+          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md active:scale-95 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <FaFilter /> <span>Filters</span>
         </button>
@@ -121,11 +174,15 @@ const Shop = () => {
             </p>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-              <label className="text-sm text-gray-600 hidden sm:block">
+              <label
+                htmlFor="sort-select"
+                className="text-sm text-gray-600 hidden sm:block"
+              >
                 Sort By:
               </label>
               <select
-                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer w-full sm:w-auto"
+                id="sort-select"
+                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer w-full sm:w-auto bg-white"
                 value={filters.sort || "newest"}
                 onChange={handleSortChange}
               >
@@ -137,37 +194,7 @@ const Shop = () => {
             </div>
           </div>
 
-          {/* Product Grid with Shimmer */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : displayItems.length > 0 ? (
-            displayItems.length >= 30 ? (
-              <VirtualizedProductGrid
-                items={displayItems}
-                renderItem={renderProductCard}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {displayItems.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )
-          ) : (
-            <div className="py-20 text-center">
-              <div className="text-gray-400 mb-4 text-6xl">🔍</div>
-              <h3 className="text-xl font-medium text-gray-900">
-                No products found
-              </h3>
-              <p className="text-gray-500">
-                Try adjusting your search or filters.
-              </p>
-            </div>
-          )}
+          {renderContent()}
         </div>
       </div>
     </div>

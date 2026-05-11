@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FaCheckCircle, FaArrowRight, FaBoxOpen } from "react-icons/fa";
+import { FaCheckCircle, FaBoxOpen } from "react-icons/fa";
 
 const OrderSuccess = () => {
   const location = useLocation();
@@ -54,7 +54,7 @@ const OrderSuccess = () => {
           <Link
             to="/profile"
             state={{ activeTab: "orders" }}
-            className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition"
+            className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           >
             <FaBoxOpen />
             View Order History
@@ -62,7 +62,7 @@ const OrderSuccess = () => {
 
           <Link
             to="/shop"
-            className="block w-full bg-white border border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition"
+            className="block w-full bg-white border border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-gray-200"
           >
             Continue Shopping
           </Link>

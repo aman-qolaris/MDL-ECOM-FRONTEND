@@ -26,9 +26,15 @@ export const selectFilteredProducts = createSelector(
         }
 
         // Price Filters
-        if (filters.minPrice && item.price < parseFloat(filters.minPrice))
+        if (
+          filters.minPrice &&
+          item.price < Number.parseFloat(filters.minPrice)
+        )
           return false;
-        if (filters.maxPrice && item.price > parseFloat(filters.maxPrice))
+        if (
+          filters.maxPrice &&
+          item.price > Number.parseFloat(filters.maxPrice)
+        )
           return false;
 
         // Search Filter

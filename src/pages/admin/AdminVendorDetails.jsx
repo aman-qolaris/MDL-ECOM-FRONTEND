@@ -33,7 +33,7 @@ const AdminVendorDetails = () => {
           const foundVendor = vendors.find((v) => v.id.toString() === id);
           setVendor(foundVendor);
         } catch (error) {
-          console.error("Failed to load vendor details");
+          console.error("Failed to load vendor details:", error);
         } finally {
           setLoading(false);
         }
@@ -53,8 +53,19 @@ const AdminVendorDetails = () => {
         status: action === "approve" ? "APPROVED" : "REJECTED",
       });
     } catch (err) {
-      alert(`Failed to ${action} vendor`);
+      console.error(`Failed to ${action} vendor:`, err);
+      globalThis.alert(`Failed to ${action} vendor`);
     }
+  };
+
+  const getStatusBadgeStyles = (status) => {
+    if (status === "APPROVED") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+    if (status === "REJECTED") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+    return "bg-yellow-100 text-yellow-700 border-yellow-200";
   };
 
   if (loading) return <div className="p-6">Loading vendor details...</div>;
@@ -65,8 +76,9 @@ const AdminVendorDetails = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+            className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             <FaArrowLeft size={16} />
           </button>
@@ -75,13 +87,7 @@ const AdminVendorDetails = () => {
 
         {/* Status Badge */}
         <span
-          className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${
-            vendor.status === "APPROVED"
-              ? "bg-green-100 text-green-700 border border-green-200"
-              : vendor.status === "REJECTED"
-                ? "bg-red-100 text-red-700 border border-red-200"
-                : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-          }`}
+          className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border ${getStatusBadgeStyles(vendor.status)}`}
         >
           {vendor.status}
         </span>
@@ -179,14 +185,16 @@ const AdminVendorDetails = () => {
       {vendor.status === "PENDING" && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex gap-4">
           <button
+            type="button"
             onClick={() => handleAction("approve")}
-            className="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
+            className="flex-1 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
           >
             <FaCheck /> Approve Vendor
           </button>
           <button
+            type="button"
             onClick={() => handleAction("reject")}
-            className="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition flex items-center justify-center gap-2"
+            className="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400"
           >
             <FaTimes /> Reject Vendor
           </button>

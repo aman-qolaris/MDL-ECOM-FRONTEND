@@ -4,10 +4,11 @@ import { FaMoneyBillWave } from "react-icons/fa";
 const OrderPaymentInfo = ({ order }) => {
   return (
     <div
+      // 🟢 Fix: Flipped negated condition to evaluate the positive state first
       className={`bg-white rounded-xl shadow-sm border p-6 ${
-        !order.payment
-          ? "border-orange-200 bg-orange-50"
-          : "border-green-200 bg-green-50"
+        order.payment
+          ? "border-green-200 bg-green-50"
+          : "border-orange-200 bg-orange-50"
       }`}
     >
       <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">

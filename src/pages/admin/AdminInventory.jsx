@@ -68,11 +68,12 @@ const AdminInventory = () => {
   if (loading) return <div className="p-6">Loading inventory...</div>;
 
   return (
-    <div className="animate-fadeIn">
+    <div className="animate-fadeIn p-6">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>
@@ -100,11 +101,12 @@ const AdminInventory = () => {
           return (
             <div
               key={vendor.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition flex flex-col justify-between"
             >
               <div className="flex justify-between items-start mb-4">
-                <div
-                  className="flex items-center gap-3 cursor-pointer group"
+                <button
+                  type="button"
+                  className="flex items-center gap-3 cursor-pointer group text-left focus:outline-none focus:ring-2 focus:ring-blue-300 rounded p-1 -ml-1"
                   onClick={() =>
                     navigate(`/admin/vendors/${vendor.id}`, {
                       state: { vendor },
@@ -121,7 +123,7 @@ const AdminInventory = () => {
                     </h3>
                     <p className="text-sm text-gray-500">{vendor.name}</p>
                   </div>
-                </div>
+                </button>
 
                 <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
                   ID: {vendor.id}
@@ -143,7 +145,7 @@ const AdminInventory = () => {
                   {/* Sales Button */}
                   <Link
                     to={`/admin/inventory/vendor/${vendor.id}/sales`}
-                    className="text-green-600 hover:text-green-800 font-medium text-sm transition flex items-center gap-1"
+                    className="text-green-600 hover:text-green-800 font-medium text-sm transition flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-green-200 rounded px-1"
                   >
                     <FaChartLine /> Sales
                   </Link>
@@ -151,7 +153,7 @@ const AdminInventory = () => {
                   {/* Inventory Button (Points to dynamic page) */}
                   <Link
                     to={`/admin/inventory/vendor/${vendor.id}`}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-sm transition"
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
                   >
                     Inventory <FaArrowRight />
                   </Link>

@@ -34,8 +34,9 @@ const Header = () => {
       params.set("search", debouncedSearch.trim());
 
       const nextSearch = params.toString();
-      const nextUrl = `/shop${nextSearch ? `?${nextSearch}` : ""}`;
+      const nextUrl = nextSearch ? `/shop?${nextSearch}` : "/shop";
       const currentUrl = `${location.pathname}${location.search}`;
+
       if (currentUrl !== nextUrl) navigate(nextUrl, { replace: true });
       setIsMobileMenuOpen(false);
     } else if (location.pathname === "/shop") {
@@ -46,8 +47,9 @@ const Header = () => {
 
       params.delete("search");
       const nextSearch = params.toString();
-      const nextUrl = `/shop${nextSearch ? `?${nextSearch}` : ""}`;
+      const nextUrl = nextSearch ? `/shop?${nextSearch}` : "/shop";
       const currentUrl = `${location.pathname}${location.search}`;
+
       if (currentUrl !== nextUrl) navigate(nextUrl, { replace: true });
     }
   }, [
@@ -70,9 +72,6 @@ const Header = () => {
     hasFetchedCartRef.current = true;
     dispatch(getCartItems());
   }, [dispatch, isAuthenticated]);
-
-  // 3. Removed the manual 'items.reduce' calculation here.
-  // It is now handled efficiently in the Redux slice.
 
   return (
     // Added 'animate-fadeIn' so the header appears smoothly
@@ -137,7 +136,7 @@ const Header = () => {
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                  {user?.name?.split(" ")[0] || "Profile"}
+                  {user?.name?.split(" ") || "Profile"}
                 </span>
               </Link>
             ) : (

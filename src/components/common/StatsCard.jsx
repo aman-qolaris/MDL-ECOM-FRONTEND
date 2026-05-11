@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 
@@ -34,6 +35,15 @@ const StatsCard = ({ title, value, icon, color, link, desc }) => {
       )}
     </Link>
   );
+};
+
+StatsCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  icon: PropTypes.node.isRequired, // Allows React elements/icons to be passed in
+  color: PropTypes.string.isRequired,
+  link: PropTypes.string.isRequired,
+  desc: PropTypes.string, // Left optional since it is conditionally rendered
 };
 
 export default StatsCard;

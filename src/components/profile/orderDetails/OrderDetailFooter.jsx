@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { FaRedo } from "react-icons/fa";
 import ReturnRequestModal from "../ReturnRequestModal";
 
@@ -19,7 +20,7 @@ const OrderDetailFooter = ({
         <button
           onClick={onOrderAgain}
           disabled={addingToCart}
-          className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:bg-blue-400"
+          className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
         >
           {addingToCart ? (
             "Adding..."
@@ -33,7 +34,7 @@ const OrderDetailFooter = ({
         {isOrderActive && onCancelOrder && (
           <button
             onClick={onCancelOrder}
-            className="px-4 py-2 text-red-600 font-bold hover:bg-red-100 rounded-lg transition flex items-center gap-2"
+            className="px-4 py-2 text-red-600 font-bold hover:bg-red-100 rounded-lg transition flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-200"
           >
             Cancel Order
           </button>
@@ -52,12 +53,27 @@ const OrderDetailFooter = ({
 
       <button
         onClick={onClose}
-        className="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition"
+        className="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-gray-400"
       >
         Close
       </button>
     </div>
   );
+};
+
+OrderDetailFooter.propTypes = {
+  onOrderAgain: PropTypes.func.isRequired,
+  addingToCart: PropTypes.bool,
+  isOrderActive: PropTypes.bool,
+  onCancelOrder: PropTypes.func,
+  onClose: PropTypes.func.isRequired,
+  selectedReturnItem: PropTypes.object,
+  order: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }),
+  orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onReturnItemClose: PropTypes.func,
+  onReturnItemSuccess: PropTypes.func,
 };
 
 export default OrderDetailFooter;

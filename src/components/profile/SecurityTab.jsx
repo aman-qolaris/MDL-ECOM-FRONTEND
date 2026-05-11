@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { changePassword } from "../../services/authService";
 import { FaInfoCircle } from "react-icons/fa";
 import { validatePassword } from "../../utils/passwordValidator";
@@ -138,7 +139,7 @@ const SecurityTab = ({ userId }) => {
             <button
               type="submit"
               disabled={saving}
-              className="bg-gray-900 text-white font-bold py-3 px-8 rounded-lg hover:bg-black transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
+              className="bg-gray-900 text-white font-bold py-3 px-8 rounded-lg hover:bg-black transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-gray-400"
             >
               {saving ? "Updating Password..." : "Update Password"}
             </button>
@@ -147,6 +148,10 @@ const SecurityTab = ({ userId }) => {
       </form>
     </div>
   );
+};
+
+SecurityTab.propTypes = {
+  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default SecurityTab;

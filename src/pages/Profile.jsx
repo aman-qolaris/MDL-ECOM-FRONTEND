@@ -27,7 +27,7 @@ const Profile = () => {
   );
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
+    if (globalThis.confirm("Are you sure you want to logout?")) {
       dispatch(logout());
       navigate("/login");
     }
@@ -71,8 +71,9 @@ const Profile = () => {
             {/* Navigation Links */}
             <nav className="flex flex-col p-2 space-y-1">
               <button
+                type="button"
                 onClick={() => setActiveTab("profile")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                   activeTab === "profile"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -87,8 +88,9 @@ const Profile = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setActiveTab("addresses")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                   activeTab === "addresses"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -105,8 +107,9 @@ const Profile = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setActiveTab("orders")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                   activeTab === "orders"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -121,8 +124,9 @@ const Profile = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setActiveTab("security")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                   activeTab === "security"
                     ? "bg-blue-50 text-blue-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -138,8 +142,9 @@ const Profile = () => {
 
               <div className="pt-2 mt-2 border-t border-gray-100">
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition text-sm font-medium cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:bg-red-50 transition text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-200"
                 >
                   <FaSignOutAlt /> Logout
                 </button>

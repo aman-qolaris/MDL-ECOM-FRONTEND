@@ -38,6 +38,7 @@ const Home = () => {
   const allProducts = Array.isArray(items)
     ? items
     : items?.products || items?.data || [];
+
   // --- LOGIC: Group Products & Calculate Derived Lists ---
   const { trendingProducts, newArrivals, categoryRows } = useMemo(() => {
     if (!renderBelowFold) {
@@ -52,8 +53,9 @@ const Home = () => {
         product?.id ?? product?._id ?? product?.slug ?? product?.name ?? "",
       );
       let hash = 0;
-      for (let i = 0; i < key.length; i += 1) {
-        hash = (hash * 31 + key.charCodeAt(i)) | 0;
+
+      for (const char of key) {
+        hash = Math.trunc(hash * 31 + char.codePointAt(0));
       }
       return hash;
     };

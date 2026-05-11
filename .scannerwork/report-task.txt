@@ -1,0 +1,6 @@
+projectKey=MDL-ECOM-FRONTEND
+serverUrl=https://sonarqube.qolarisdata.com
+serverVersion=26.2.0.119303
+dashboardUrl=https://sonarqube.qolarisdata.com/dashboard?id=MDL-ECOM-FRONTEND
+ceTaskId=97f8d543-a1e8-40ad-842c-fd2681a35c0e
+ceTaskUrl=https://sonarqube.qolarisdata.com/api/ce/task?id=97f8d543-a1e8-40ad-842c-fd2681a35c0e

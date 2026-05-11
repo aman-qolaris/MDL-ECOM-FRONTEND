@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import { FaTimes, FaPrint, FaCheckCircle, FaLandmark } from "react-icons/fa";
 
 const CreditNoteModal = ({ data, onClose }) => {
@@ -85,7 +86,8 @@ const CreditNoteModal = ({ data, onClose }) => {
         {/* Footer */}
         <div className="bg-gray-50 p-4 flex justify-end border-t border-gray-100">
           <button
-            onClick={() => window.print()}
+            // 🟢 Fix: Prefer globalThis over window
+            onClick={() => globalThis.print()}
             className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition"
           >
             <FaPrint /> Print
@@ -100,6 +102,26 @@ const CreditNoteModal = ({ data, onClose }) => {
       </div>
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping the nested 'data' object
+CreditNoteModal.propTypes = {
+  data: PropTypes.shape({
+    orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    itemId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    lastUpdated: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.instanceOf(Date),
+    ]).isRequired,
+    amountToRefund: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      .isRequired,
+    quantity: PropTypes.number.isRequired,
+    productName: PropTypes.string.isRequired,
+    reason: PropTypes.string.isRequired,
+  }),
+  onClose: PropTypes.func.isRequired,
 };
 
 export default CreditNoteModal;

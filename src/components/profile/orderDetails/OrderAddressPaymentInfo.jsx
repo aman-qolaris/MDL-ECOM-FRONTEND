@@ -1,15 +1,15 @@
+import PropTypes from "prop-types";
 import { FaCreditCard, FaMapMarkerAlt } from "react-icons/fa";
 
 const OrderAddressPaymentInfo = ({ order }) => {
-  // 🟢 1. EXTRACT VALUES SAFELY
-  const shipping = parseFloat(order.shippingCharge || 0);
-  const credit = parseFloat(order.creditApplied || 0);
-  const payable = parseFloat(order.amount || 0);
+  const shipping = Number.parseFloat(order.shippingCharge || 0);
+  const credit = Number.parseFloat(order.creditApplied || 0);
+  const payable = Number.parseFloat(order.amount || 0);
 
-  // 🟢 2. CALCULATE TRUE SUBTOTAL (Item Total)
   // Logic: Payable + WalletUsed - Shipping = Item Price
-  const itemSubtotal = (payable + credit) - shipping;
-   return (
+  const itemSubtotal = payable + credit - shipping;
+
+  return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* --- Shipping Address Section (Unchanged) --- */}
       <div>
@@ -47,7 +47,7 @@ const OrderAddressPaymentInfo = ({ order }) => {
             </span>
           </div>
 
-          {/* 🟢 3. SHOW CALCULATED ITEM SUBTOTAL */}
+          {/* 🟢 SHOW CALCULATED ITEM SUBTOTAL */}
           <div className="flex justify-between">
             <span className="text-gray-600">Item Subtotal</span>
             <span className="font-medium text-gray-900">
@@ -55,7 +55,7 @@ const OrderAddressPaymentInfo = ({ order }) => {
             </span>
           </div>
 
-          {/* 🟢 4. DYNAMIC SHIPPING DISPLAY */}
+          {/* 🟢 DYNAMIC SHIPPING DISPLAY */}
           <div className="flex justify-between">
             <span className="text-gray-600">Shipping</span>
             <span
@@ -67,7 +67,7 @@ const OrderAddressPaymentInfo = ({ order }) => {
             </span>
           </div>
 
-          {/* 🟢 5. SHOW WALLET CREDIT IF USED */}
+          {/* 🟢 SHOW WALLET CREDIT IF USED */}
           {credit > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">Wallet Credit</span>
@@ -87,6 +87,22 @@ const OrderAddressPaymentInfo = ({ order }) => {
       </div>
     </div>
   );
+};
+
+OrderAddressPaymentInfo.propTypes = {
+  order: PropTypes.shape({
+    shippingCharge: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    creditApplied: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    paymentMethod: PropTypes.string,
+    address: PropTypes.shape({
+      fullName: PropTypes.string,
+      addressLine1: PropTypes.string,
+      state: PropTypes.string,
+      city: PropTypes.string,
+      phone: PropTypes.string,
+    }),
+  }).isRequired,
 };
 
 export default OrderAddressPaymentInfo;

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import { useDispatch } from "react-redux";
 import { FaEdit, FaCamera, FaLock } from "react-icons/fa";
 import { updateUserProfile } from "../../services/authService";
@@ -35,7 +36,7 @@ const ProfileTab = ({ user }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files;
     if (file) {
       setSelectedFile(file);
       const reader = new FileReader();
@@ -64,16 +65,18 @@ const ProfileTab = ({ user }) => {
 
       setIsEditing(false);
       setSelectedFile(null);
-      alert("Profile Updated Successfully!");
+      globalThis.alert("Profile Updated Successfully!");
     } catch (error) {
       console.error(error);
       if (error.validationErrors) {
         const formattedErrors = error.validationErrors
           .map((zError) => zError.message)
           .join("\n");
-        alert("Validation Failed:\n" + formattedErrors);
+        globalThis.alert("Validation Failed:\n" + formattedErrors);
       } else {
-        alert(error.response?.data?.message || "Failed to update profile.");
+        globalThis.alert(
+          error.response?.data?.message || "Failed to update profile.",
+        );
       }
     } finally {
       setSaving(false);
@@ -87,14 +90,7 @@ const ProfileTab = ({ user }) => {
         <h2 className="text-xl font-bold text-gray-800">
           Personal Information
         </h2>
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition"
-          >
-            <FaEdit /> Edit Profile
-          </button>
-        ) : (
+        {isEditing ? (
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -108,18 +104,25 @@ const ProfileTab = ({ user }) => {
                 });
                 setSelectedFile(null);
               }}
-              className="text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition font-medium"
+              className="text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition font-medium focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveProfile}
               disabled={saving}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+          >
+            <FaEdit /> Edit Profile
+          </button>
         )}
       </div>
 
@@ -145,7 +148,7 @@ const ProfileTab = ({ user }) => {
             {isEditing && (
               <button
                 onClick={() => fileInputRef.current.click()}
-                className="absolute bottom-1 right-1 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition shadow-md border-2 border-white"
+                className="absolute bottom-1 right-1 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition shadow-md border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300"
                 title="Change Photo"
               >
                 <FaCamera size={14} />
@@ -171,7 +174,6 @@ const ProfileTab = ({ user }) => {
               Full Name
             </label>
             {isEditing ? (
-              // ✅ CHANGE: Render a disabled/locked input in Edit Mode
               <div className="relative">
                 <input
                   type="text"
@@ -234,6 +236,16 @@ const ProfileTab = ({ user }) => {
       </div>
     </div>
   );
+};
+
+ProfileTab.propTypes = {
+  user: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string,
+    email: PropTypes.string,
+    phone: PropTypes.string,
+    profilePic: PropTypes.string,
+  }).isRequired,
 };
 
 export default ProfileTab;

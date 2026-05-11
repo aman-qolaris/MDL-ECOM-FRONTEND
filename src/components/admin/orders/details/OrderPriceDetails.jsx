@@ -1,12 +1,17 @@
 /* eslint-disable react/prop-types */
-import { FaReceipt, FaRupeeSign, FaShippingFast, FaWallet } from "react-icons/fa";
+import {
+  FaReceipt,
+  FaRupeeSign,
+  FaShippingFast,
+  FaWallet,
+} from "react-icons/fa";
 
 const OrderPriceDetails = ({ priceDetails }) => {
-  // 🟢 1. Extract values safely
-  const subtotal = parseFloat(priceDetails.subtotal || 0);
-  const total = parseFloat(priceDetails.total || 0); // Final Payable
-  const shipping = parseFloat(priceDetails.shippingCharge || 0);
-  const credit = parseFloat(priceDetails.creditApplied || 0);
+  // 🟢 Fix: Prefer Number.parseFloat over global parseFloat
+  const subtotal = Number.parseFloat(priceDetails.subtotal || 0);
+  const total = Number.parseFloat(priceDetails.total || 0); // Final Payable
+  const shipping = Number.parseFloat(priceDetails.shippingCharge || 0);
+  const credit = Number.parseFloat(priceDetails.creditApplied || 0);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -37,7 +42,7 @@ const OrderPriceDetails = ({ priceDetails }) => {
           )}
         </div>
 
-        {/* 🟢 WALLET DEDUCTION (Shown in Red/Minus) */}
+        {/* WALLET DEDUCTION (Shown in Red/Minus) */}
         {credit > 0 && (
           <div className="flex justify-between text-gray-600 text-sm items-center">
             <span className="flex items-center gap-2 text-purple-600">

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 
@@ -38,6 +39,12 @@ const CartSummary = ({ cartTotal, grandTotal, onCheckout }) => {
       </Link>
     </div>
   );
+};
+
+CartSummary.propTypes = {
+  cartTotal: PropTypes.number.isRequired,
+  grandTotal: PropTypes.number.isRequired,
+  onCheckout: PropTypes.func.isRequired,
 };
 
 export default memo(CartSummary);

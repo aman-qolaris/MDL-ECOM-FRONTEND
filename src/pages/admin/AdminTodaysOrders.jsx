@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { FaCalendarDay, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { getAllOrders } from "../../services/orderService";
 
 const AdminTodaysOrders = () => {
   const navigate = useNavigate();
@@ -11,21 +11,17 @@ const AdminTodaysOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const token =
-          localStorage.getItem("adminToken") || localStorage.getItem("token");
-        const res = await axios.get(
-          "http://localhost:5007/api/orders/admin/all",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const responseData = await getAllOrders();
 
-        const today = new Date().toISOString().split("T")[0];
-        setOrders(
-          res.data.filter((o) => o.createdAt && o.createdAt.startsWith(today))
-        );
+        // Safety check to ensure we are filtering an array
+        const allOrdersList = Array.isArray(responseData)
+          ? responseData
+          : responseData?.orders || [];
+
+        const today = new Date().toISOString().split("T");
+        setOrders(allOrdersList.filter((o) => o.createdAt?.startsWith(today)));
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch today's orders:", err);
       } finally {
         setLoading(false);
       }
@@ -39,10 +35,11 @@ const AdminTodaysOrders = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={() => navigate("/admin/dashboard")}
-          className="text-gray-600 hover:text-gray-900"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
-          <FaArrowLeft /> Back
+          <FaArrowLeft />
         </button>
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaCalendarDay className="text-orange-500" /> Today's Orders
@@ -80,8 +77,9 @@ const AdminTodaysOrders = () => {
                   <td className="p-4 text-right">₹{o.amount}</td>
                   <td className="p-4 text-center">
                     <button
+                      type="button"
                       onClick={() => navigate(`/admin/orders/${o.id}`)}
-                      className="text-blue-600 hover:underline text-xs"
+                      className="text-blue-600 hover:underline text-xs focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
                     >
                       View Details
                     </button>

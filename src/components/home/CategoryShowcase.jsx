@@ -53,8 +53,9 @@ const CategoryShowcase = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => navigate("/shop")}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-900 hover:text-white hover:border-transparent transition-all duration-300"
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-900 hover:text-white hover:border-transparent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
             View All Categories <FaArrowRight className="text-sm" />
           </button>
@@ -63,10 +64,12 @@ const CategoryShowcase = () => {
         {/* Categories Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {categories.map((cat) => (
-            <div
+            /* 🟢 FIX: Replaced div role="button" with a native button, added "block w-full text-left" to maintain layout */
+            <button
+              type="button"
               key={cat.id}
               onClick={() => navigate(`/shop?category=${cat.name}`)}
-              className="group relative h-44 sm:h-52 lg:h-56 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100"
+              className="group relative block w-full text-left h-44 sm:h-52 lg:h-56 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 focus:outline-none focus:ring-4 focus:ring-indigo-500"
             >
               {/* Image with Zoom Effect */}
               <img
@@ -86,7 +89,7 @@ const CategoryShowcase = () => {
                   </span>
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaCalendarAlt, FaHashtag } from "react-icons/fa";
 import {
   getAdminOrderDetails,
@@ -20,7 +20,7 @@ import OrderDeliveryPartner from "../../components/admin/orders/details/OrderDel
 import OrderCustomerInfo from "../../components/admin/orders/details/OrderCustomerInfo";
 
 const AdminOrderDetails = () => {
-  const navigate = useNavigate(); // 🟢 Hook for navigation
+  const navigate = useNavigate();
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,11 +89,11 @@ const AdminOrderDetails = () => {
 
     if (newStatus === "PACKED") {
       if (!product) {
-        alert("Product data not loaded yet. Please wait.");
+        globalThis.alert("Product data not loaded yet. Please wait.");
         return;
       }
       if (product.warehouseStock < item.quantity) {
-        alert(
+        globalThis.alert(
           `⛔ INSUFFICIENT WAREHOUSE STOCK!\n\n` +
             `Required: ${item.quantity}\n` +
             `Available in Warehouse: ${product.warehouseStock}\n\n` +
@@ -111,7 +111,9 @@ const AdminOrderDetails = () => {
       fetchProductData(order.OrderItems);
     } catch (err) {
       console.error(err);
-      alert("Failed to update status. Server might be enforcing stock limits.");
+      globalThis.alert(
+        "Failed to update status. Server might be enforcing stock limits.",
+      );
       fetchData();
     }
   };
@@ -129,10 +131,10 @@ const AdminOrderDetails = () => {
     try {
       await updateOrderStatus(order.id, "PACKED");
       await fetchData();
-      alert("Order Marked as PACKED. Delivery Partner Assigned.");
+      globalThis.alert("Order Marked as PACKED. Delivery Partner Assigned.");
     } catch (e) {
       console.error(e);
-      alert("Failed to update status");
+      globalThis.alert("Failed to update status");
     }
   };
 
@@ -144,7 +146,7 @@ const AdminOrderDetails = () => {
       setReassignOptions(data.options || []);
     } catch (err) {
       console.error("Failed to load reassignment options", err);
-      alert("Could not load delivery boys. Please try again.");
+      globalThis.alert("Could not load delivery boys. Please try again.");
       setIsReassignModalOpen(false);
     } finally {
       setReassignLoading(false);
@@ -153,21 +155,21 @@ const AdminOrderDetails = () => {
 
   const handleSubmitReassignment = async () => {
     if (!selectedNewBoy) {
-      alert("Please select a delivery boy.");
+      globalThis.alert("Please select a delivery boy.");
       return;
     }
-    if (!window.confirm(`Confirm reassignment to ${selectedNewBoy.name}?`))
+
+    if (!globalThis.confirm(`Confirm reassignment to ${selectedNewBoy.name}?`))
       return;
 
     try {
       await reassignDeliveryBoy(id, null, selectedNewBoy.id);
-      alert("Reassignment Successful!");
-      setIsReassignModalOpen(false);
+      globalThis.alert("Reassignment Successful!");
       setSelectedNewBoy(null);
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Reassignment Failed");
+      globalThis.alert(err.response?.data?.message || "Reassignment Failed");
     }
   };
 
@@ -183,7 +185,6 @@ const AdminOrderDetails = () => {
       0,
     );
 
-    // 🟢 UPDATED: Removed creditApplied
     return {
       subtotal,
       total: order.amount,
@@ -231,8 +232,9 @@ const AdminOrderDetails = () => {
             {/* Left: Back Button & Title */}
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 onClick={() => navigate(-1)}
-                className="p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-600 transition-all shadow-sm group"
+                className="p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-600 transition-all shadow-sm group focus:outline-none focus:ring-2 focus:ring-gray-300"
                 title="Go Back"
               >
                 <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />

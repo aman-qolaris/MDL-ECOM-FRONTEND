@@ -1,5 +1,6 @@
+import PropTypes from "prop-types";
 import { FaPlus } from "react-icons/fa";
-import { useSelector } from "react-redux"; // 🟢 1. Import Redux
+import { useSelector } from "react-redux";
 import AddressForm from "../../components/checkout/AddressForm";
 
 const CheckoutShippingStep = ({
@@ -16,7 +17,7 @@ const CheckoutShippingStep = ({
   onDeliverSavedAddress,
   onAreaChange,
 }) => {
-  // 🟢 2. Get User Data for Name/Phone Fallback
+  // Get User Data for Name/Phone Fallback
   const { user } = useSelector((state) => state.auth);
 
   return (
@@ -36,12 +37,13 @@ const CheckoutShippingStep = ({
           >
             {step > 1 ? "✓" : "1"}
           </span>
-          Shipping Address
+          <span>Shipping Address</span>
         </h2>
         {step > 1 && (
           <button
+            type="button"
             onClick={onEdit}
-            className="text-sm text-blue-600 font-semibold hover:underline"
+            className="text-sm text-blue-600 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-300 rounded px-1"
           >
             Edit
           </button>
@@ -54,10 +56,11 @@ const CheckoutShippingStep = ({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {savedAddresses.map((addr) => (
-                  <div
+                  <button
+                    type="button"
                     key={addr.id}
                     onClick={() => onSelectAddressId(addr.id)}
-                    className={`cursor-pointer border rounded-xl p-4 transition relative flex items-start gap-3 
+                    className={`cursor-pointer border rounded-xl p-4 transition relative flex items-start gap-3 text-left focus:outline-none focus:ring-2 focus:ring-blue-400
                       ${
                         selectedAddressId === addr.id
                           ? "border-blue-600 bg-blue-50"
@@ -69,10 +72,12 @@ const CheckoutShippingStep = ({
                       name="savedAddress"
                       checked={selectedAddressId === addr.id}
                       onChange={() => onSelectAddressId(addr.id)}
-                      className="mt-1 w-4 h-4 text-blue-600"
+                      className="mt-1 w-4 h-4 text-blue-600 cursor-pointer focus:ring-blue-400"
+                      // Stop propagation so the button's onClick doesn't fire twice
+                      onClick={(e) => e.stopPropagation()}
                     />
-                    <div>
-                      {/* 🟢 3. Use User Name */}
+                    <div className="flex-1">
+                      {/* Use User Name */}
                       <p className="font-bold text-gray-900">
                         {user?.name || "User"}
                       </p>
@@ -81,7 +86,7 @@ const CheckoutShippingStep = ({
                         {addr.addressLine1}
                       </p>
 
-                      {/* 🟢 4. Show Area, City, State */}
+                      {/* Show Area, City, State */}
                       <p className="text-sm text-gray-600">
                         {addr.area}, {addr.city}
                       </p>
@@ -89,7 +94,7 @@ const CheckoutShippingStep = ({
                         {addr.state}
                       </p>
 
-                      {/* 🟢 5. Use User Phone */}
+                      {/* Use User Phone */}
                       <p className="text-xs text-gray-500 mt-1">
                         📞 {user?.phone || "No Phone"}
                       </p>
@@ -101,20 +106,22 @@ const CheckoutShippingStep = ({
                         Default
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mt-6">
                 <button
+                  type="button"
                   onClick={onDeliverSavedAddress}
-                  className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition"
+                  className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   Deliver Here
                 </button>
                 <button
+                  type="button"
                   onClick={onShowNewAddressForm}
-                  className="flex-1 border border-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                  className="flex-1 border border-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 >
                   <FaPlus /> Add New Address
                 </button>
@@ -124,8 +131,9 @@ const CheckoutShippingStep = ({
             <div>
               {savedAddresses.length > 0 && (
                 <button
+                  type="button"
                   onClick={onBackToSavedAddresses}
-                  className="mb-4 text-blue-600 hover:underline text-sm font-semibold flex items-center gap-1"
+                  className="mb-4 text-blue-600 hover:underline text-sm font-semibold flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
                 >
                   ← Back to Saved Addresses
                 </button>
@@ -140,7 +148,7 @@ const CheckoutShippingStep = ({
         </div>
       )}
 
-      {/* 🟢 6. Update Summary View (Step > 1) */}
+      {/* Update Summary View (Step > 1) */}
       {step > 1 && (
         <div className="text-gray-600 ml-0 sm:ml-10 text-sm">
           <p className="font-medium text-gray-900">{user?.name}</p>
@@ -155,6 +163,35 @@ const CheckoutShippingStep = ({
       )}
     </div>
   );
+};
+
+CheckoutShippingStep.propTypes = {
+  step: PropTypes.number.isRequired,
+  shippingAddress: PropTypes.shape({
+    addressLine1: PropTypes.string,
+    area: PropTypes.string,
+    city: PropTypes.string,
+    state: PropTypes.string,
+  }),
+  savedAddresses: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      addressLine1: PropTypes.string.isRequired,
+      area: PropTypes.string.isRequired,
+      city: PropTypes.string.isRequired,
+      state: PropTypes.string.isRequired,
+      isDefault: PropTypes.bool,
+    }),
+  ).isRequired,
+  selectedAddressId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  showNewAddressForm: PropTypes.bool.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onSelectAddressId: PropTypes.func.isRequired,
+  onShowNewAddressForm: PropTypes.func.isRequired,
+  onBackToSavedAddresses: PropTypes.func.isRequired,
+  onSubmitNewAddress: PropTypes.func.isRequired,
+  onDeliverSavedAddress: PropTypes.func.isRequired,
+  onAreaChange: PropTypes.func.isRequired,
 };
 
 export default CheckoutShippingStep;

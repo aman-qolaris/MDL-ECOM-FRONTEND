@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+build/
+coverage/
+.sonar/
+
 .env
 .env.*
 

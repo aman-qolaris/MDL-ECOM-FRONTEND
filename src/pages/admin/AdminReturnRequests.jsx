@@ -60,7 +60,6 @@ const AdminReturnRequests = () => {
     setSearchParams({ tab });
   };
 
-  // 🟢 FETCH DATA (Simple, No Pagination, Explicit De-duplication)
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -76,7 +75,6 @@ const AdminReturnRequests = () => {
         data = await getCancelledRefundOrders(1, 10000);
       }
 
-      // 🟢 Explicit De-duplication on Frontend
       const uniqueItems = [];
       const seenIds = new Set();
       const idKey = activeTab === "returns" ? "itemId" : "id";
@@ -128,6 +126,7 @@ const AdminReturnRequests = () => {
       const data = await getReassignmentOptions(req.orderId);
       setReassignOptions(data.options);
     } catch (err) {
+      console.error("Failed to load delivery boy options:", err);
       toast.error("Failed to load delivery boys");
       setReassignModalOpen(false);
     } finally {
@@ -150,6 +149,7 @@ const AdminReturnRequests = () => {
       );
       setReassignModalOpen(false);
     } catch (err) {
+      console.error("Failed to confirm reassignment:", err);
       toast.error(err.response?.data?.message || "Reassignment Failed");
     }
   };
@@ -157,7 +157,7 @@ const AdminReturnRequests = () => {
   const handleAction = async (orderId, itemId, status, extraPayload = {}) => {
     if (
       status === "REJECTED" &&
-      !window.confirm("Are you sure you want to REJECT?")
+      !globalThis.confirm("Are you sure you want to REJECT?")
     )
       return;
 
@@ -252,7 +252,7 @@ const AdminReturnRequests = () => {
                 </span>
                 <Link
                   to={`/admin/orders/${item.orderId || item.Order?.id}`}
-                  className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
+                  className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
                 >
                   View Order <FaExternalLinkAlt size={8} />
                 </Link>
@@ -269,6 +269,7 @@ const AdminReturnRequests = () => {
             <td className="p-4 text-right align-top">
               {item.refundStatus === "CREDITED" ? (
                 <button
+                  type="button"
                   onClick={() =>
                     setSelectedCreditNote({
                       itemId: item.id,
@@ -282,12 +283,13 @@ const AdminReturnRequests = () => {
                       customerPhone: item.Order?.address?.phone || "N/A",
                     })
                   }
-                  className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
+                  className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block focus:outline-none focus:ring-2 focus:ring-purple-300"
                 >
                   View Refund Details
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={() =>
                     setSelectedForRefund({
                       orderId: item.Order?.id || item.orderId,
@@ -296,7 +298,7 @@ const AdminReturnRequests = () => {
                       customerName: "Customer",
                     })
                   }
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md text-sm flex items-center gap-2 ml-auto"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md text-sm flex items-center gap-2 ml-auto focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
                   <FaWallet /> Refund
                 </button>
@@ -322,7 +324,6 @@ const AdminReturnRequests = () => {
       </thead>
       <tbody className="divide-y divide-gray-100">
         {filteredItems.map((req, index) => {
-          // 🟢 FIX IS HERE: This robust variable protects against backend strings changing on refresh!
           const isWarehouseDrop =
             req.returnDropMethod === "WAREHOUSE_DROP" ||
             req.pickupBoy === "Warehouse Drop-off" ||
@@ -369,7 +370,7 @@ const AdminReturnRequests = () => {
                   </span>
                   <Link
                     to={`/admin/orders/${req.orderId}`}
-                    className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1"
+                    className="text-blue-600 hover:underline text-xs font-bold flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1"
                   >
                     View Order <FaExternalLinkAlt size={8} />
                   </Link>
@@ -391,7 +392,6 @@ const AdminReturnRequests = () => {
                 {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-500">
-                      {/* 🟢 Applying the variable here */}
                       {isWarehouseDrop ? (
                         <span className="text-orange-600 flex items-center gap-1">
                           <FaStore /> Awaiting Drop-off
@@ -435,16 +435,18 @@ const AdminReturnRequests = () => {
                 {req.status === "REQUESTED" && (
                   <div className="flex justify-end gap-2">
                     <button
+                      type="button"
                       onClick={() => setApproveModalData(req)}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700"
+                      className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
                     >
                       Approve
                     </button>
                     <button
+                      type="button"
                       onClick={() =>
                         handleAction(req.orderId, req.itemId, "REJECTED")
                       }
-                      className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50"
+                      className="px-3 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
                     >
                       Reject
                     </button>
@@ -452,20 +454,21 @@ const AdminReturnRequests = () => {
                 )}
                 {["APPROVED", "PICKUP_SCHEDULED"].includes(req.status) && (
                   <>
-                    {/* 🟢 Applying the variable to the Actions column */}
                     {isWarehouseDrop ? (
                       <button
+                        type="button"
                         onClick={() =>
                           handleAction(req.orderId, req.itemId, "RETURNED")
                         }
-                        className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs font-bold ml-auto block hover:bg-orange-700 shadow-sm"
+                        className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs font-bold ml-auto block hover:bg-orange-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
                       >
                         Mark as Received
                       </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => handleOpenReassign(req)}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700"
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold ml-auto block hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                       >
                         Reassign Rider
                       </button>
@@ -474,26 +477,29 @@ const AdminReturnRequests = () => {
                 )}
                 {req.status === "RETURNED" && (
                   <button
+                    type="button"
                     onClick={() =>
                       handleAction(req.orderId, req.itemId, "COMPLETED")
                     }
-                    className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700"
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-bold ml-auto block hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   >
                     Verify Item
                   </button>
                 )}
                 {req.status === "COMPLETED" && (
                   <button
+                    type="button"
                     onClick={() => setSelectedForRefund(req)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700"
+                    className="px-4 py-2 bg-purple-600 text-white rounded text-xs font-bold shadow-md ml-auto block hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   >
                     Process Refund
                   </button>
                 )}
                 {(req.status === "REFUNDED" || req.status === "CREDITED") && (
                   <button
+                    type="button"
                     onClick={() => setSelectedCreditNote(req)}
-                    className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block"
+                    className="text-xs text-purple-600 font-bold hover:underline bg-purple-50 px-2 py-1 rounded ml-auto block focus:outline-none focus:ring-2 focus:ring-purple-300"
                   >
                     View Refund Details
                   </button>
@@ -512,8 +518,9 @@ const AdminReturnRequests = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <button
+              type="button"
               onClick={() => navigate("/admin/dashboard")}
-              className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+              className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               <FaArrowLeft size={16} />
             </button>
@@ -524,8 +531,9 @@ const AdminReturnRequests = () => {
 
           <div className="bg-white p-1 rounded-lg border border-gray-200 flex shadow-sm">
             <button
+              type="button"
               onClick={() => handleTabChange("returns")}
-              className={`px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition ${
+              className={`px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                 activeTab === "returns"
                   ? "bg-blue-100 text-blue-700"
                   : "text-gray-500 hover:bg-gray-50"
@@ -534,8 +542,9 @@ const AdminReturnRequests = () => {
               <FaExchangeAlt /> Returns
             </button>
             <button
+              type="button"
               onClick={() => handleTabChange("refunds")}
-              className={`px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition ${
+              className={`px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition focus:outline-none focus:ring-2 focus:ring-red-300 ${
                 activeTab === "refunds"
                   ? "bg-red-100 text-red-700"
                   : "text-gray-500 hover:bg-gray-50"
@@ -569,8 +578,9 @@ const AdminReturnRequests = () => {
           />
           {(dateRange.start || dateRange.end) && (
             <button
+              type="button"
               onClick={() => setDateRange({ start: "", end: "" })}
-              className="text-xs text-red-600 hover:text-red-800 font-bold ml-auto"
+              className="text-xs text-red-600 hover:text-red-800 font-bold ml-auto focus:outline-none focus:ring-2 focus:ring-red-200 rounded px-1"
             >
               Clear Filter
             </button>
@@ -648,12 +658,14 @@ const AdminReturnRequests = () => {
 
             <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
               <button
+                type="button"
                 onClick={() => setApproveModalData(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
                   handleAction(
                     approveModalData.orderId,
@@ -663,7 +675,7 @@ const AdminReturnRequests = () => {
                   );
                   setApproveModalData(null);
                 }}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-green-700 transition-colors"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
               >
                 Confirm Approval
               </button>

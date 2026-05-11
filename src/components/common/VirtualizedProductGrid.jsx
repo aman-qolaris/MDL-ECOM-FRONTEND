@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, memo } from "react";
+import PropTypes from "prop-types";
 import { List } from "react-window";
 
 const getColumnCount = (width) => {
@@ -9,6 +10,62 @@ const getColumnCount = (width) => {
 
 const DEFAULT_ROW_HEIGHT = 420;
 const DEFAULT_GAP_PX = 24; // Tailwind gap-6
+
+// Wrapped in React.memo so rows only re-render if their specific data changes.
+const GridRow = memo(
+  ({
+    ariaAttributes,
+    index,
+    style,
+    items,
+    renderItem,
+    columnCount,
+    columnWidth,
+    gapPx,
+  }) => {
+    const start = index * columnCount;
+    const end = Math.min(start + columnCount, items.length);
+    const rowItems = items.slice(start, end);
+
+    return (
+      <div
+        {...ariaAttributes}
+        style={{
+          ...style,
+          display: "grid",
+          gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+          columnGap: gapPx,
+          alignItems: "start",
+          paddingBottom: gapPx,
+        }}
+      >
+        {rowItems.map((item) => (
+          <div key={item.id} style={{ width: columnWidth }}>
+            {renderItem(item)}
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+
+// Add display name for React DevTools
+GridRow.displayName = "GridRow";
+
+GridRow.propTypes = {
+  ariaAttributes: PropTypes.object,
+  index: PropTypes.number.isRequired,
+  style: PropTypes.object.isRequired,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }),
+  ).isRequired,
+  renderItem: PropTypes.func.isRequired,
+  columnCount: PropTypes.number.isRequired,
+  columnWidth: PropTypes.number.isRequired,
+  gapPx: PropTypes.number.isRequired,
+};
 
 const VirtualizedProductGrid = ({
   items,
@@ -46,7 +103,7 @@ const VirtualizedProductGrid = ({
 
   const columnCount = useMemo(
     () => getColumnCount(containerWidth || 0),
-    [containerWidth]
+    [containerWidth],
   );
 
   const columnWidth = useMemo(() => {
@@ -62,34 +119,8 @@ const VirtualizedProductGrid = ({
 
   const itemData = useMemo(
     () => ({ items, renderItem, columnCount, columnWidth, rowHeight, gapPx }),
-    [items, renderItem, columnCount, columnWidth, rowHeight, gapPx]
+    [items, renderItem, columnCount, columnWidth, rowHeight, gapPx],
   );
-
-  const Row = ({ ariaAttributes, index, style, ...rowProps }) => {
-    const start = index * rowProps.columnCount;
-    const end = Math.min(start + rowProps.columnCount, rowProps.items.length);
-    const rowItems = rowProps.items.slice(start, end);
-
-    return (
-      <div
-        {...ariaAttributes}
-        style={{
-          ...style,
-          display: "grid",
-          gridTemplateColumns: `repeat(${rowProps.columnCount}, minmax(0, 1fr))`,
-          columnGap: rowProps.gapPx,
-          alignItems: "start",
-          paddingBottom: rowProps.gapPx,
-        }}
-      >
-        {rowItems.map((item) => (
-          <div key={item.id} style={{ width: rowProps.columnWidth }}>
-            {rowProps.renderItem(item)}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div ref={containerRef} className="w-full">
@@ -97,7 +128,7 @@ const VirtualizedProductGrid = ({
         <List
           rowCount={rowCount}
           rowHeight={rowHeight + gapPx}
-          rowComponent={Row}
+          rowComponent={GridRow} // Passed the extracted, memoized component here
           rowProps={itemData}
           overscanCount={3}
           style={{ height: containerHeight, width: containerWidth }}
@@ -108,6 +139,17 @@ const VirtualizedProductGrid = ({
       )}
     </div>
   );
+};
+
+VirtualizedProductGrid.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }),
+  ).isRequired,
+  renderItem: PropTypes.func.isRequired,
+  rowHeight: PropTypes.number,
+  gapPx: PropTypes.number,
 };
 
 export default VirtualizedProductGrid;

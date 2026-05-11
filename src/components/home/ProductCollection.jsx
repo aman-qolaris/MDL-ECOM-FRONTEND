@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import ProductCard from "../common/ProductCard";
 import { FaArrowRight } from "react-icons/fa";
 
@@ -48,6 +49,17 @@ const ProductCollection = ({
       </div>
     </section>
   );
+};
+
+ProductCollection.propTypes = {
+  title: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
+  products: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }),
+  ),
+  link: PropTypes.string,
 };
 
 export default ProductCollection;

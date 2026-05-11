@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import { FiSearch, FiUser } from "react-icons/fi";
 
 const CustomerSection = ({
@@ -22,7 +23,23 @@ const CustomerSection = ({
         <FiUser className="mr-2 text-purple-600" /> Customer
       </h2>
 
-      {!user ? (
+      {/* 🟢 Fix: Flipped negated condition to check for positive 'user' first */}
+      {user ? (
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200 relative">
+          <button
+            onClick={() => {
+              setUser(null);
+              setSelectedAddress(null);
+            }}
+            className="absolute top-2 right-2 text-xs text-red-500 underline"
+          >
+            Change
+          </button>
+          <p className="font-bold text-green-800">{user.name}</p>
+          <p className="text-sm text-green-700">{user.phone}</p>
+          <p className="text-sm text-green-700">{user.email}</p>
+        </div>
+      ) : (
         <>
           <form onSubmit={handleSearch(onSearchUser)} className="mb-6">
             <div className="flex gap-2">
@@ -125,24 +142,44 @@ const CustomerSection = ({
             </button>
           </form>
         </>
-      ) : (
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200 relative">
-          <button
-            onClick={() => {
-              setUser(null);
-              setSelectedAddress(null);
-            }}
-            className="absolute top-2 right-2 text-xs text-red-500 underline"
-          >
-            Change
-          </button>
-          <p className="font-bold text-green-800">{user.name}</p>
-          <p className="text-sm text-green-700">{user.phone}</p>
-          <p className="text-sm text-green-700">{user.email}</p>
-        </div>
       )}
     </div>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping nested objects
+CustomerSection.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  user: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    phone: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+  }),
+  setUser: PropTypes.func.isRequired,
+  setSelectedAddress: PropTypes.func.isRequired,
+  registerSearch: PropTypes.func.isRequired,
+  handleSearch: PropTypes.func.isRequired,
+  searchErrors: PropTypes.shape({
+    phone: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+  }).isRequired,
+  onSearchUser: PropTypes.func.isRequired,
+  registerNewUser: PropTypes.func.isRequired,
+  handleNewUser: PropTypes.func.isRequired,
+  userErrors: PropTypes.shape({
+    name: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+    email: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+    phone: PropTypes.shape({
+      message: PropTypes.string,
+    }),
+  }).isRequired,
+  onRegisterUser: PropTypes.func.isRequired,
+  handleNumberInput: PropTypes.func.isRequired,
 };
 
 export default CustomerSection;

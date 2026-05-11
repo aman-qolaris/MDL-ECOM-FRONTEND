@@ -33,19 +33,16 @@ export const getAllProducts = createAsyncThunk(
       const isLoading = state?.products?.loading;
       const hasItems = (state?.products?.items?.length || 0) > 0;
 
-      if (isLoading) return false;
-
       const cleanedParams = Object.fromEntries(
         Object.entries(params || {}).filter(
           ([, value]) => value !== "" && value !== null && value !== undefined,
         ),
       );
 
-      // If caller didn't pass any filters, and we already have items,
-      // avoid refetching just to rerender the same data.
-      if (Object.keys(cleanedParams).length === 0 && hasItems) return false;
-
-      return true;
+      // Returns true ONLY IF it's not loading AND it's not a redundant fetch
+      return (
+        !isLoading && !(Object.keys(cleanedParams).length === 0 && hasItems)
+      );
     },
   },
 );
@@ -69,8 +66,9 @@ export const getFeaturedProducts = createAsyncThunk(
     condition: (_arg, { getState }) => {
       const state = getState();
       const hasFeatured = (state?.products?.featured?.length || 0) > 0;
-      if (hasFeatured) return false;
-      return true;
+
+      // 🟢 FIX: Replaced if-then-else with a single boolean return statement
+      return !hasFeatured;
     },
   },
 );

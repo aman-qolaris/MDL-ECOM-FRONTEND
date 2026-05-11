@@ -11,6 +11,14 @@ import { getDashboardStats } from "../../services/adminService";
 import StatsCard from "../../components/admin/common/StatsCard";
 import Skeleton from "../../components/ui/Skeleton";
 
+const SKELETON_KEYS = [
+  "admin-stat-skel-1",
+  "admin-stat-skel-2",
+  "admin-stat-skel-3",
+  "admin-stat-skel-4",
+  "admin-stat-skel-5",
+];
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,8 +26,8 @@ const AdminDashboard = () => {
   // --- FILTER STATE ---
   const [filterType, setFilterType] = useState("all"); // 'all', 'today', 'week', 'range'
   const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split("T")[0],
-    end: new Date().toISOString().split("T")[0],
+    start: new Date().toISOString().split("T"),
+    end: new Date().toISOString().split("T"),
   });
 
   useEffect(() => {
@@ -35,13 +43,13 @@ const AdminDashboard = () => {
 
       // Logic to determine start/end dates based on filterType
       if (filterType === "today") {
-        start = today.toISOString().split("T")[0];
-        end = today.toISOString().split("T")[0];
+        start = today.toISOString().split("T");
+        end = today.toISOString().split("T");
       } else if (filterType === "week") {
         const lastWeek = new Date(today);
         lastWeek.setDate(today.getDate() - 7);
-        start = lastWeek.toISOString().split("T")[0];
-        end = today.toISOString().split("T")[0];
+        start = lastWeek.toISOString().split("T");
+        end = today.toISOString().split("T");
       } else if (filterType === "range") {
         start = dateRange.start;
         end = dateRange.end;
@@ -66,7 +74,6 @@ const AdminDashboard = () => {
       formatter: (val) => `₹${val?.toLocaleString()}`,
       icon: <FaMoneyBillWave />,
       color: "bg-green-500",
-      // 🟢 CHANGE LINK: Add '?filter=revenue' to match Net Sales logic
       link: "/admin/sales?filter=revenue",
       desc:
         filterType === "all"
@@ -127,9 +134,10 @@ const AdminDashboard = () => {
           <div className="flex bg-gray-100 rounded-md p-1">
             {["all", "today", "week"].map((f) => (
               <button
-                key={f}
+                type="button"
+                key={`filter-btn-${f}`}
                 onClick={() => setFilterType(f)}
-                className={`px-4 py-2 rounded text-xs font-bold uppercase transition-all ${
+                className={`px-4 py-2 rounded text-xs font-bold uppercase transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                   filterType === f
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
@@ -139,8 +147,9 @@ const AdminDashboard = () => {
               </button>
             ))}
             <button
+              type="button"
               onClick={() => setFilterType("range")}
-              className={`px-4 py-2 rounded text-xs font-bold uppercase transition-all ${
+              className={`px-4 py-2 rounded text-xs font-bold uppercase transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                 filterType === "range"
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -158,7 +167,7 @@ const AdminDashboard = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, start: e.target.value })
                 }
-                className="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-3 py-2"
+                className="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="date"
@@ -166,19 +175,20 @@ const AdminDashboard = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, end: e.target.value })
                 }
-                className="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-3 py-2"
+                className="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* 🟢 STATS GRID — CONGESTION FIX */}
+      {/* STATS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading
-          ? Array.from({ length: 5 }).map((_, i) => (
+          ? SKELETON_KEYS.map((skeletonId) => (
               <div
-                key={i}
+                // 🟢 FIX: Map over the static keys array, completely avoiding the index
+                key={skeletonId}
                 className="bg-white p-6 rounded-xl border border-gray-200 h-36 flex gap-4"
               >
                 <Skeleton className="w-12 h-12 rounded-full" />
@@ -188,9 +198,9 @@ const AdminDashboard = () => {
                 </div>
               </div>
             ))
-          : cardConfig.map((card, index) => (
+          : cardConfig.map((card) => (
               <StatsCard
-                key={index}
+                key={card.key}
                 title={card.title}
                 value={
                   card.formatter

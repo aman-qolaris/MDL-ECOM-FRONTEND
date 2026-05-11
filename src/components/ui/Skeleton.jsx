@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -8,6 +9,10 @@ const Skeleton = ({ className, ...props }) => {
       {...props}
     />
   );
+};
+
+Skeleton.propTypes = {
+  className: PropTypes.string,
 };
 
 export default Skeleton;

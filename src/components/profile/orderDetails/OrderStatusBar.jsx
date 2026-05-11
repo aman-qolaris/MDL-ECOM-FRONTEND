@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 const OrderStatusBar = ({ order }) => {
   const getStatusColor = (status) => {
     switch (status) {
@@ -21,8 +23,10 @@ const OrderStatusBar = ({ order }) => {
 
   const formatStatus = (status) => {
     if (!status) return "Processing";
-    return status.replace(/_/g, " ").replace(/\w\S*/g, (txt) => {
-      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+
+    // This correctly title-cases each word in the status string
+    return status.replaceAll("_", " ").replaceAll(/\w\S*/g, (txt) => {
+      return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
     });
   };
 
@@ -48,6 +52,13 @@ const OrderStatusBar = ({ order }) => {
       </div>
     </div>
   );
+};
+
+OrderStatusBar.propTypes = {
+  order: PropTypes.shape({
+    createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    status: PropTypes.string,
+  }).isRequired,
 };
 
 export default OrderStatusBar;

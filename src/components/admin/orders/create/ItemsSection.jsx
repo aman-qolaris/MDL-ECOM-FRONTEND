@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types"; // 🟢 Added PropTypes import
 import { FiPlus, FiShoppingCart, FiTrash2 } from "react-icons/fi";
 
 const ItemsSection = ({
@@ -119,6 +120,34 @@ const ItemsSection = ({
       </div>
     </>
   );
+};
+
+// 🟢 Fix: Added comprehensive PropTypes validation mapping nested arrays/objects
+ItemsSection.propTypes = {
+  productQuery: PropTypes.string.isRequired,
+  setProductQuery: PropTypes.func.isRequired,
+  searchProducts: PropTypes.func.isRequired,
+  searchResults: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      name: PropTypes.string.isRequired,
+      price: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+        .isRequired,
+      availableStock: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+        .isRequired,
+      images: PropTypes.arrayOf(PropTypes.string),
+    }),
+  ),
+  addToCart: PropTypes.func.isRequired,
+  cart: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      name: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired,
+      quantity: PropTypes.number.isRequired,
+    }),
+  ).isRequired,
+  removeFromCart: PropTypes.func.isRequired,
 };
 
 export default ItemsSection;

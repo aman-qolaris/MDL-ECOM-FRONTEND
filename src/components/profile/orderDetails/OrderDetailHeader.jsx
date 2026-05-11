@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { FaTimes } from "react-icons/fa";
 
 const OrderDetailHeader = ({ orderId, onClose }) => {
@@ -9,12 +10,18 @@ const OrderDetailHeader = ({ orderId, onClose }) => {
       </div>
       <button
         onClick={onClose}
-        className="text-gray-400 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50"
+        aria-label="Close order details"
+        className="text-gray-400 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
       >
         <FaTimes size={20} />
       </button>
     </div>
   );
+};
+
+OrderDetailHeader.propTypes = {
+  orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 export default OrderDetailHeader;

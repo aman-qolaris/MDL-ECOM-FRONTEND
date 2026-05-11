@@ -85,8 +85,8 @@ const CustomerTestimonials = () => {
 
               {/* Rating */}
               <div className="flex text-amber-400 text-xs mb-3">
-                {[...Array(t.rating)].map((_, i) => (
-                  <FaStar key={i} />
+                {Array.from({ length: t.rating }).map((_, i) => (
+                  <FaStar key={`star-${t.id}-${i}`} />
                 ))}
               </div>
 

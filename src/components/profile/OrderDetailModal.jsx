@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -20,7 +21,7 @@ import OrderDetailHeader from "./orderDetails/OrderDetailHeader";
 import OrderItemsList from "./orderDetails/OrderItemsList";
 import OrderStatusBar from "./orderDetails/OrderStatusBar";
 import { useOrderDetails } from "./orderDetails/useOrderDetails";
-import CancelRequestModal from "./CancelRequestModal"; // 🟢 ADD THIS
+import CancelRequestModal from "./CancelRequestModal";
 
 const OrderDetailModal = ({ order: initialOrder, onClose }) => {
   const [addingToCart, setAddingToCart] = useState(false);
@@ -53,19 +54,19 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     const returnableItems = enrichedItems.filter(isReturnable);
 
     if (returnableItems.length === 0) {
-      alert("No returnable items available in this order.");
+      globalThis.alert("No returnable items available in this order.");
       return;
     }
 
-    // Simple prompt for reason (you can replace with a modal if preferred)
-    const reason = prompt(
+    // Simple prompt for reason
+    const reason = globalThis.prompt(
       `Returning ${returnableItems.length} items. Please enter a reason for the return:`,
     );
 
     if (!reason) return; // User cancelled
 
     if (
-      !window.confirm(
+      !globalThis.confirm(
         `Are you sure you want to return ${returnableItems.length} items?`,
       )
     )
@@ -80,12 +81,12 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         ),
       );
 
-      alert("Return request submitted for all eligible items.");
+      globalThis.alert("Return request submitted for all eligible items.");
 
       await refreshOrder();
     } catch (err) {
       console.error(err);
-      alert("Failed to submit return request. Please try again.");
+      globalThis.alert("Failed to submit return request. Please try again.");
     } finally {
       setReturningOrder(false);
     }
@@ -116,7 +117,9 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
       navigate("/checkout");
     } catch (error) {
       console.error("Failed to add items to cart:", error);
-      alert("Some items could not be added (possibly out of stock).");
+      globalThis.alert(
+        "Some items could not be added (possibly out of stock).",
+      );
       navigate("/cart");
     } finally {
       setAddingToCart(false);
@@ -146,7 +149,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
         await cancelOrder(order.id, reason);
         toast.success("Order Cancelled Successfully");
         onClose();
-        window.location.reload();
+        globalThis.location.reload();
       } else if (cancelModal.type === "ITEM") {
         await cancelOrderItem(order.id, cancelModal.targetId, reason);
         toast.success("Item Cancelled Successfully");
@@ -187,7 +190,7 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
           onOrderAgain={handleOrderAgain}
           addingToCart={addingToCart}
           isOrderActive={isOrderActive}
-          onCancelOrder={!hasPackedItems ? handleCancelOrderClick : null}
+          onCancelOrder={hasPackedItems ? null : handleCancelOrderClick}
           canReturnOrder={canReturnOrder}
           onReturnOrder={handleReturnOrder}
           returningOrder={returningOrder}
@@ -211,6 +214,13 @@ const OrderDetailModal = ({ order: initialOrder, onClose }) => {
     </div>,
     document.body,
   );
+};
+
+OrderDetailModal.propTypes = {
+  order: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 export default OrderDetailModal;

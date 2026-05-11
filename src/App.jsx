@@ -91,7 +91,8 @@ function App() {
   useEffect(() => {
     const initializeCsrf = async () => {
       try {
-        const isVendorRoute = window.location.pathname.startsWith("/vendor");
+        const isVendorRoute =
+          globalThis.location.pathname.startsWith("/vendor");
 
         const csrfEndpoint = isVendorRoute
           ? "/vendor/csrf-token"
