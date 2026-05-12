@@ -94,8 +94,9 @@ const AdminSettings = () => {
     <div className="animate-fadeIn">
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button" // 🟢 Added type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm"
+          className="p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-100 text-gray-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <FaArrowLeft size={16} />
         </button>
@@ -121,11 +122,16 @@ const AdminSettings = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Read-Only Fields (Backend doesn't support update yet) */}
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="displayName"
+              className="block text-sm font-medium text-gray-600"
+            >
               Display Name{" "}
               <span className="text-xs text-gray-400">(Read Only)</span>
             </label>
             <input
+              id="displayName"
               type="text"
               value={adminData.name}
               disabled
@@ -134,10 +140,15 @@ const AdminSettings = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-600"
+            >
               Email <span className="text-xs text-gray-400">(Read Only)</span>
             </label>
             <input
+              id="email"
               type="email"
               value={adminData.email}
               disabled
@@ -149,11 +160,16 @@ const AdminSettings = () => {
 
           {/* Password Fields - Now Connected */}
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="currentPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
               Current Password
             </label>
             <div className="relative mt-1">
               <input
+                id="currentPassword"
                 type={showCurrentPassword ? "text" : "password"}
                 value={adminData.currentPassword}
                 onChange={(e) =>
@@ -168,7 +184,7 @@ const AdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
               >
                 {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -176,11 +192,16 @@ const AdminSettings = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="newPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
               New Password
             </label>
             <div className="relative mt-1">
               <input
+                id="newPassword"
                 type={showNewPassword ? "text" : "password"}
                 value={adminData.newPassword}
                 onChange={(e) =>
@@ -192,7 +213,7 @@ const AdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
               >
                 {showNewPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -200,11 +221,16 @@ const AdminSettings = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-600"
+            >
               Confirm New Password
             </label>
             <div className="relative mt-1">
               <input
+                id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 value={adminData.confirmPassword}
                 onChange={(e) =>
@@ -219,7 +245,7 @@ const AdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -228,7 +254,7 @@ const AdminSettings = () => {
 
           <button
             type="submit"
-            className="mt-6 px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer"
+            className="mt-6 px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
           >
             <FaSave /> Update Password
           </button>

@@ -263,7 +263,8 @@ const AdminReturnRequests = () => {
             </td>
 
             <td className="p-4 font-bold text-gray-800 align-top">
-              ₹{(parseFloat(item.price) * item.quantity).toLocaleString()}
+              {/* 🟢 FIX: Replaced parseFloat with Number.parseFloat */}₹
+              {(Number.parseFloat(item.price) * item.quantity).toLocaleString()}
             </td>
 
             <td className="p-4 text-right align-top">
@@ -276,7 +277,9 @@ const AdminReturnRequests = () => {
                       orderId: item.orderId || item.Order?.id,
                       productName: item.Product?.name,
                       quantity: item.quantity,
-                      amountToRefund: parseFloat(item.price) * item.quantity,
+                      /* 🟢 FIX: Replaced parseFloat with Number.parseFloat */
+                      amountToRefund:
+                        Number.parseFloat(item.price) * item.quantity,
                       reason: item.returnReason || "Cancellation",
                       status: "CREDITED",
                       customerName: item.Order?.address?.fullName || "Customer",
@@ -294,7 +297,9 @@ const AdminReturnRequests = () => {
                     setSelectedForRefund({
                       orderId: item.Order?.id || item.orderId,
                       itemId: item.id,
-                      amountToRefund: parseFloat(item.price) * item.quantity,
+                      /* 🟢 FIX: Replaced parseFloat with Number.parseFloat */
+                      amountToRefund:
+                        Number.parseFloat(item.price) * item.quantity,
                       customerName: "Customer",
                     })
                   }
@@ -512,6 +517,17 @@ const AdminReturnRequests = () => {
     </table>
   );
 
+  // 🟢 FIX: Extracted nested ternary operation into an independent helper statement
+  const renderContent = () => {
+    if (loading) {
+      return <div className="p-10 text-center text-gray-500">Loading...</div>;
+    }
+    if (activeTab === "refunds") {
+      return renderCancelledTable();
+    }
+    return renderReturnsTable();
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col gap-4 mb-6">
@@ -589,13 +605,8 @@ const AdminReturnRequests = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-        {loading ? (
-          <div className="p-10 text-center text-gray-500">Loading...</div>
-        ) : activeTab === "refunds" ? (
-          renderCancelledTable()
-        ) : (
-          renderReturnsTable()
-        )}
+        {/* 🟢 FIX: Using the newly extracted renderContent helper here */}
+        {renderContent()}
       </div>
 
       {selectedForRefund && (
@@ -627,10 +638,13 @@ const AdminReturnRequests = () => {
             </p>
 
             <div className="space-y-3 mb-6">
+              {/* 🟢 FIX: Added htmlFor and id to link the radio inputs implicitly and explicitly */}
               <label
+                htmlFor="method-delivery-boy"
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${dropMethod === "DELIVERY_BOY" ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
               >
                 <input
+                  id="method-delivery-boy"
                   type="radio"
                   checked={dropMethod === "DELIVERY_BOY"}
                   onChange={() => setDropMethod("DELIVERY_BOY")}
@@ -642,9 +656,11 @@ const AdminReturnRequests = () => {
               </label>
 
               <label
+                htmlFor="method-warehouse-drop"
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${dropMethod === "WAREHOUSE_DROP" ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
               >
                 <input
+                  id="method-warehouse-drop"
                   type="radio"
                   checked={dropMethod === "WAREHOUSE_DROP"}
                   onChange={() => setDropMethod("WAREHOUSE_DROP")}

@@ -74,7 +74,8 @@ const ProductDetails = () => {
   const product = currentProduct;
 
   const productId = useMemo(() => {
-    const resolved = product?.id ?? parseInt(id);
+    // 🟢 FIX: Used Number.parseInt with radix 10 instead of global parseInt
+    const resolved = product?.id ?? Number.parseInt(id, 10);
     return Number.isNaN(resolved) ? product?.id : resolved;
   }, [product?.id, id]);
 
@@ -139,7 +140,8 @@ const ProductDetails = () => {
 
         // Helper function to safely extract the array from the API response
         const extractArray = (res) => {
-          if (!res || !res.data) return [];
+          // 🟢 FIX: Replaced !res || !res.data with optional chaining
+          if (!res?.data) return [];
           if (Array.isArray(res.data)) return res.data;
           if (Array.isArray(res.data.products)) return res.data.products;
           if (Array.isArray(res.data.data)) return res.data.data;
@@ -406,7 +408,7 @@ const ProductDetails = () => {
       {/* --- 3. SIMILAR PRODUCTS (Name Based) --- */}
       {renderBelowFold && similarProducts.length > 0 && (
         <section className="animate-fade-in-up delay-75">
-          {/* Dynamic title based on the first word of the product name */}
+          {/* 🟢 FIX: Added to correctly extract the first word of the product name */}
           <SectionHeader title={`More like "${product.name.split(" ")}"`} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {similarProducts.map((p) => (

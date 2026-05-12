@@ -124,6 +124,91 @@ const AdminShippingRates = () => {
     return rates;
   }, [rates, filter]);
 
+  // 🟢 FIX: Extracted nested ternary operation into an independent helper statement
+  const renderTableContent = () => {
+    if (loading) {
+      return <div className="p-8 text-center text-gray-500">Loading...</div>;
+    }
+
+    if (displayedRates.length === 0) {
+      return (
+        <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+          <FaMapMarkerAlt size={40} className="text-gray-300 mb-3" />
+          <p>No shipping areas found for this filter.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
+            <tr>
+              <th className="p-4 font-semibold">Area Name</th>
+              <th className="p-4 font-semibold text-right">Charge</th>
+              <th className="p-4 font-semibold text-center">Status</th>
+              <th className="p-4 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {displayedRates.map((rate) => (
+              <tr key={rate.id} className="hover:bg-gray-50 transition">
+                <td className="p-4 font-medium text-gray-800">
+                  {rate.areaName}
+                </td>
+                <td className="p-4 font-bold text-gray-900 text-right">
+                  ₹{rate.rate}
+                </td>
+                <td className="p-4 text-center">
+                  {rate.isActive ? (
+                    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">
+                      <FaCheckCircle size={10} /> Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-bold">
+                      <FaTimesCircle size={10} /> Inactive
+                    </span>
+                  )}
+                </td>
+                <td className="p-4 flex justify-end gap-2">
+                  {/* Toggle Status Action */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(rate.id)}
+                    title={rate.isActive ? "Deactivate Area" : "Activate Area"}
+                    className={`p-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-gray-300 ${rate.isActive ? "bg-orange-50 text-orange-600 hover:bg-orange-100" : "bg-green-50 text-green-600 hover:bg-green-100"}`}
+                  >
+                    <FaPowerOff size={14} />
+                  </button>
+
+                  {/* Edit Action */}
+                  <button
+                    type="button"
+                    onClick={() => handleEditClick(rate)}
+                    title="Edit Rate"
+                    className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  >
+                    <FaEdit size={14} />
+                  </button>
+
+                  {/* Delete Action */}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(rate.id)}
+                    title="Delete Area"
+                    className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition focus:outline-none focus:ring-2 focus:ring-red-300"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-4 mb-6">
@@ -154,14 +239,19 @@ const AdminShippingRates = () => {
 
             <form onSubmit={handleSaveRate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+                <label
+                  htmlFor="area-name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Area Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="area-name"
                   type="text"
                   value={areaName}
                   onChange={(e) => setAreaName(e.target.value)}
-                  disabled={isEditing} // Prevent changing area name while editing to avoid duplicate entries
+                  disabled={isEditing}
                   placeholder="e.g., Amanaka, Civil Lines"
                   className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${isEditing ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   required
@@ -174,7 +264,11 @@ const AdminShippingRates = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+                <label
+                  htmlFor="rate-value"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Shipping Charge (₹) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -182,6 +276,7 @@ const AdminShippingRates = () => {
                     ₹
                   </span>
                   <input
+                    id="rate-value"
                     type="number"
                     value={rateValue}
                     onChange={(e) => setRateValue(e.target.value)}
@@ -194,6 +289,7 @@ const AdminShippingRates = () => {
               </div>
 
               <div className="flex items-center gap-2 pt-2 pb-4">
+                {/* (Note: The checkbox here was already correctly linked with htmlFor="isActiveToggle") */}
                 <input
                   type="checkbox"
                   id="isActiveToggle"
@@ -270,85 +366,8 @@ const AdminShippingRates = () => {
               </div>
             </div>
 
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">Loading...</div>
-            ) : displayedRates.length === 0 ? (
-              <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-                <FaMapMarkerAlt size={40} className="text-gray-300 mb-3" />
-                <p>No shipping areas found for this filter.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
-                    <tr>
-                      <th className="p-4 font-semibold">Area Name</th>
-                      <th className="p-4 font-semibold text-right">Charge</th>
-                      <th className="p-4 font-semibold text-center">Status</th>
-                      <th className="p-4 font-semibold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {displayedRates.map((rate) => (
-                      <tr key={rate.id} className="hover:bg-gray-50 transition">
-                        <td className="p-4 font-medium text-gray-800">
-                          {rate.areaName}
-                        </td>
-                        <td className="p-4 font-bold text-gray-900 text-right">
-                          ₹{rate.rate}
-                        </td>
-                        <td className="p-4 text-center">
-                          {rate.isActive ? (
-                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">
-                              <FaCheckCircle size={10} /> Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-bold">
-                              <FaTimesCircle size={10} /> Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 flex justify-end gap-2">
-                          {/* Toggle Status Action */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStatus(rate.id)}
-                            title={
-                              rate.isActive
-                                ? "Deactivate Area"
-                                : "Activate Area"
-                            }
-                            className={`p-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-gray-300 ${rate.isActive ? "bg-orange-50 text-orange-600 hover:bg-orange-100" : "bg-green-50 text-green-600 hover:bg-green-100"}`}
-                          >
-                            <FaPowerOff size={14} />
-                          </button>
-
-                          {/* Edit Action */}
-                          <button
-                            type="button"
-                            onClick={() => handleEditClick(rate)}
-                            title="Edit Rate"
-                            className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          >
-                            <FaEdit size={14} />
-                          </button>
-
-                          {/* Delete Action */}
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(rate.id)}
-                            title="Delete Area"
-                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition focus:outline-none focus:ring-2 focus:ring-red-300"
-                          >
-                            <FaTrash size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {/* 🟢 FIX: Used the newly extracted helper function here */}
+            {renderTableContent()}
           </div>
         </div>
       </div>

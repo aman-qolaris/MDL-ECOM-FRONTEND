@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from "prop-types"; // 🟢 Added PropTypes import
+import PropTypes from "prop-types";
 import {
   FaUndo,
   FaCheckCircle,
@@ -27,7 +27,7 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
   const isBankTransfer = request.refundMethod === "BANK_TRANSFER";
   const isWarehouseCollect = request.refundMethod === "WAREHOUSE_COLLECT";
 
-  // 5. Safely parse Bank Details (In case your backend stores it as a JSON string)
+  // 5. Safely parse Bank Details
   let parsedBankDetails = request.bankDetails;
   if (typeof parsedBankDetails === "string") {
     try {
@@ -54,8 +54,9 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
             </p>
           </div>
           <button
+            type="button" // 🟢 Added type="button" for general a11y compliance
             onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors"
+            className="text-white/80 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white rounded p-1"
           >
             <FaTimes size={20} />
           </button>
@@ -103,7 +104,8 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
                       <strong className="text-gray-800 flex items-center gap-1 inline-flex">
                         <FaStore className="text-orange-500" /> Store Collection
                       </strong>
-                      .
+                      {/* 🟢 FIX: Moved the period inside a string block so it safely attaches to the end of the element without ambiguous spacing */}
+                      {"."}
                     </p>
                     <p className="text-xs text-orange-700 font-bold bg-orange-100 p-2 rounded border border-orange-200">
                       Please hand over ₹{refundAmount} in cash when the customer
@@ -120,7 +122,8 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
                       <strong className="text-gray-800 flex items-center gap-1 inline-flex">
                         <FaUniversity className="text-blue-500" /> Bank Transfer
                       </strong>
-                      .
+                      {/* 🟢 FIX: Moved the period inside a string block */}
+                      {"."}
                     </p>
 
                     {parsedBankDetails ? (
@@ -163,8 +166,9 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
           </div>
 
           <button
+            type="button" // 🟢 Added type="button"
             onClick={() => onConfirm(request.orderId, request.itemId)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform hover:scale-[1.02] flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform hover:scale-[1.02] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
           >
             <FaCheckCircle /> Confirm Refund Processed
           </button>
@@ -174,7 +178,6 @@ const RefundModal = ({ request, onClose, onConfirm }) => {
   );
 };
 
-// 🟢 Fix: Added comprehensive PropTypes validation mapping the nested 'request' object
 RefundModal.propTypes = {
   request: PropTypes.shape({
     price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -187,7 +190,6 @@ RefundModal.propTypes = {
       .isRequired,
     itemId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
       .isRequired,
-    // Safely handles bankDetails whether it's a JSON string or an already parsed object
     bankDetails: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.shape({

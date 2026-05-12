@@ -73,10 +73,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* 🔒 LOCKED: Full Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+          <label
+            htmlFor="addr-fullName"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Full Name
           </label>
           <input
+            id="addr-fullName"
             type="text"
             name="fullName"
             value={formData.fullName}
@@ -88,10 +93,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
         {/* 🔒 LOCKED: Phone Number */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+          <label
+            htmlFor="addr-phone"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Phone Number
           </label>
           <input
+            id="addr-phone"
             type="tel"
             name="phone"
             value={formData.phone}
@@ -103,11 +113,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
         {/* ✏️ EDITABLE: Address Line 1 */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+          <label
+            htmlFor="addr-line1"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Address Line 1 <span className="text-red-500">*</span>
           </label>
-
           <input
+            id="addr-line1"
             type="text"
             name="addressLine1"
             value={formData.addressLine1}
@@ -120,10 +134,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
         {/* 🔽 NEW DROPDOWN: Delivery Area */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to select via htmlFor and id */}
+          <label
+            htmlFor="addr-area"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Delivery Area <span className="text-red-500">*</span>
           </label>
           <select
+            id="addr-area"
             name="area"
             value={formData.area}
             onChange={handleChange}
@@ -134,7 +153,6 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
             {loadingAreas ? (
               <option disabled>Loading areas...</option>
             ) : (
-              // 🟢 Fix: Replaced 'idx' with the unique 'area' string for the key
               availableAreas.map((area) => (
                 <option key={area} value={area}>
                   {area}
@@ -149,10 +167,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
         {/* 🔒 LOCKED: City */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+          <label
+            htmlFor="addr-city"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             City
           </label>
           <input
+            id="addr-city"
             type="text"
             name="city"
             value={formData.city}
@@ -163,10 +186,15 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
         {/* 🔒 LOCKED: State */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+          <label
+            htmlFor="addr-state"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             State
           </label>
           <input
+            id="addr-state"
             type="text"
             name="state"
             value={formData.state}
@@ -178,7 +206,7 @@ const AddressForm = ({ onSubmit, initialData, buttonText, onAreaChange }) => {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-sm mt-4"
+        className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-sm mt-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
       >
         {buttonText || "Continue to Payment"}
       </button>

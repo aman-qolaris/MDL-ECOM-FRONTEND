@@ -54,6 +54,8 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
           <div className="space-y-4 mb-8">
             {/* COD Option */}
             <label
+              htmlFor="payment-cod"
+              aria-label="Cash on Delivery" // ✅ FIX: explicit accessible text
               className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
                 method === "cod"
                   ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
@@ -61,6 +63,7 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
               }`}
             >
               <input
+                id="payment-cod"
                 type="radio"
                 name="payment"
                 value="cod"
@@ -85,6 +88,8 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
 
             {/* Online Payment Option */}
             <label
+              htmlFor="payment-razorpay"
+              aria-label="Pay Online via UPI, Cards or Netbanking" // ✅ FIX: explicit accessible text
               className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
                 method === "razorpay"
                   ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
@@ -92,6 +97,7 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
               }`}
             >
               <input
+                id="payment-razorpay"
                 type="radio"
                 name="payment"
                 value="razorpay"
@@ -122,13 +128,13 @@ const PaymentForm = ({ onSubmit, onBack, walletUsed, payableAmount }) => {
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition"
+          className="flex-1 py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           Back
         </button>
         <button
           type="submit"
-          className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg transition transform active:scale-95"
+          className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg transition transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           {payableAmount === 0
             ? "Place Order"

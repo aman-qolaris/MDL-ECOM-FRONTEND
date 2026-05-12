@@ -64,97 +64,118 @@ const PaymentFlowBox = ({
   handleSelectQRMode,
   setShowPaymentFlow,
   handleConfirmPaymentAndDeliver,
-}) => (
-  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
-    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-      <FaRupeeSign className="text-orange-600" /> Collect ₹{task.cashToCollect}
-    </h4>
-
-    <div className="grid grid-cols-2 gap-2 mb-4">
-      <button
-        type="button"
-        onClick={() => setPaymentMode("CASH")}
-        className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 ${
-          paymentMode === "CASH"
-            ? "bg-green-600 text-white border-green-600 shadow-sm"
-            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-        }`}
-      >
-        <FaMoneyBillWave /> Cash
-      </button>
-      <button
-        type="button"
-        onClick={handleSelectQRMode}
-        className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-          paymentMode === "QR"
-            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
-        }`}
-      >
-        <FaQrcode /> QR/UPI
-      </button>
-    </div>
-
-    {paymentMode === "QR" && (
-      <div className="mb-4 animate-fade-in">
-        {qrLoading ? (
-          <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-white/50">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <span className="text-xs text-gray-500 font-medium">
-              Generating Secure QR...
-            </span>
-          </div>
-        ) : qrCodeUrl ? (
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-4 text-center">
-            <img
-              src={qrCodeUrl}
-              alt="Razorpay Payment QR"
-              className="w-48 h-48 mx-auto object-contain"
-            />
-            <p className="text-[11px] text-blue-600 font-bold mt-2 uppercase tracking-wide">
-              Scan with PhonePe, GPay, Paytm
-            </p>
-          </div>
-        ) : (
-          <p className="text-xs text-red-500 mb-4 text-center italic">
-            Failed to load QR. Please use manual UTR or collect Cash.
+}) => {
+  // 🟢 FIX: Extracted nested ternary logic into an independent statement/function
+  const renderQRState = () => {
+    if (qrLoading) {
+      return (
+        <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl mb-4 bg-white/50">
+          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+          <span className="text-xs text-gray-500 font-medium">
+            Generating Secure QR...
+          </span>
+        </div>
+      );
+    }
+    if (qrCodeUrl) {
+      return (
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-4 text-center">
+          <img
+            src={qrCodeUrl}
+            alt="Razorpay Payment QR"
+            className="w-48 h-48 mx-auto object-contain"
+          />
+          <p className="text-[11px] text-blue-600 font-bold mt-2 uppercase tracking-wide">
+            Scan with PhonePe, GPay, Paytm
           </p>
-        )}
-        <label className="block text-xs font-bold text-gray-600 mb-1">
-          Manual UTR (Optional fallback)
-        </label>
-        <input
-          type="text"
-          value={utrNumber}
-          onChange={(e) => setUtrNumber(e.target.value)}
-          placeholder="e.g. 312345678901"
-          className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-        />
-      </div>
-    )}
+        </div>
+      );
+    }
+    return (
+      <p className="text-xs text-red-500 mb-4 text-center italic">
+        Failed to load QR. Please use manual UTR or collect Cash.
+      </p>
+    );
+  };
 
-    <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={() => setShowPaymentFlow(false)}
-        className="flex-1 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        onClick={handleConfirmPaymentAndDeliver}
-        className="flex-1 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-      >
-        <FaCheckCircle /> Confirm
-      </button>
+  return (
+    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
+      <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <FaRupeeSign className="text-orange-600" /> Collect ₹
+        {task.cashToCollect}
+      </h4>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setPaymentMode("CASH")}
+          className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 ${
+            paymentMode === "CASH"
+              ? "bg-green-600 text-white border-green-600 shadow-sm"
+              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          <FaMoneyBillWave /> Cash
+        </button>
+        <button
+          type="button"
+          onClick={handleSelectQRMode}
+          className={`py-2 rounded-lg font-bold flex items-center justify-center gap-2 border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            paymentMode === "QR"
+              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+              : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          <FaQrcode /> QR/UPI
+        </button>
+      </div>
+
+      {paymentMode === "QR" && (
+        <div className="mb-4 animate-fade-in">
+          {renderQRState()}
+
+          {/* 🟢 FIX: Added htmlFor to explicitly link the label to the input via ID */}
+          <label
+            htmlFor={`utr-input-${task.orderId}`}
+            className="block text-xs font-bold text-gray-600 mb-1"
+          >
+            Manual UTR (Optional fallback)
+          </label>
+          <input
+            id={`utr-input-${task.orderId}`}
+            type="text"
+            value={utrNumber}
+            onChange={(e) => setUtrNumber(e.target.value)}
+            placeholder="e.g. 312345678901"
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setShowPaymentFlow(false)}
+          className="flex-1 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirmPaymentAndDeliver}
+          className="flex-1 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+        >
+          <FaCheckCircle /> Confirm
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 PaymentFlowBox.propTypes = {
   task: PropTypes.shape({
     cashToCollect: PropTypes.number,
+    orderId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
   paymentMode: PropTypes.string.isRequired,
   setPaymentMode: PropTypes.func.isRequired,
@@ -177,7 +198,6 @@ const AssignedActionArea = ({
   setItemVerified,
   onStatusUpdate,
 }) => {
-  // Flattened CSS logic outside the return to reduce Cognitive Complexity
   let btnClasses =
     "w-full py-3 rounded-xl font-bold text-white shadow-md flex justify-center items-center gap-2 transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1 ";
 
@@ -192,8 +212,13 @@ const AssignedActionArea = ({
   return (
     <div className="space-y-3">
       {isReturn && (
-        <label className="flex items-start gap-2 bg-red-50 p-3 rounded-lg border border-red-100 cursor-pointer">
+        // 🟢 FIX: Added htmlFor to explicitly link the label to the input via ID
+        <label
+          htmlFor={`verify-item-${task.assignmentId}`}
+          className="flex items-start gap-2 bg-red-50 p-3 rounded-lg border border-red-100 cursor-pointer"
+        >
           <input
+            id={`verify-item-${task.assignmentId}`}
             type="checkbox"
             className="mt-1 w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer"
             checked={itemVerified}

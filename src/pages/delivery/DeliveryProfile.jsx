@@ -131,10 +131,15 @@ const DeliveryProfile = () => {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-name"
+              className="block text-sm font-medium text-gray-600"
+            >
               Full Name
             </label>
             <input
+              id="profile-name"
               type="text"
               value={profile.name}
               disabled
@@ -142,10 +147,15 @@ const DeliveryProfile = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-email"
+              className="block text-sm font-medium text-gray-600"
+            >
               Email Address
             </label>
             <input
+              id="profile-email"
               type="email"
               value={profile.email}
               disabled
@@ -153,10 +163,15 @@ const DeliveryProfile = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-phone"
+              className="block text-sm font-medium text-gray-600"
+            >
               Phone Number
             </label>
             <input
+              id="profile-phone"
               type="text"
               value={profile.phone}
               disabled
@@ -164,9 +179,9 @@ const DeliveryProfile = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            <span className="block text-sm font-medium text-gray-600">
               Account Status
-            </label>
+            </span>
             <div className="mt-2">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${profile.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
@@ -185,10 +200,15 @@ const DeliveryProfile = () => {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-state"
+              className="block text-sm font-medium text-gray-600"
+            >
               State
             </label>
             <input
+              id="profile-state"
               type="text"
               value={profile.state}
               disabled
@@ -196,10 +216,15 @@ const DeliveryProfile = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-city"
+              className="block text-sm font-medium text-gray-600"
+            >
               City
             </label>
             <input
+              id="profile-city"
               type="text"
               value={profile.city}
               disabled
@@ -207,10 +232,15 @@ const DeliveryProfile = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600">
+            {/* 🟢 FIX: Added htmlFor and id */}
+            <label
+              htmlFor="profile-max-orders"
+              className="block text-sm font-medium text-gray-600"
+            >
               Daily Order Limit
             </label>
             <input
+              id="profile-max-orders"
               type="text"
               value={profile.maxOrders}
               disabled
@@ -218,9 +248,9 @@ const DeliveryProfile = () => {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-600 mb-2">
+            <span className="block text-sm font-medium text-gray-600 mb-2">
               Assigned Areas
-            </label>
+            </span>
             <div className="flex flex-wrap gap-2">
               {profile.assignedAreas?.length > 0 ? (
                 profile.assignedAreas.map((area) => (
@@ -256,11 +286,16 @@ const DeliveryProfile = () => {
           <div className="grid grid-cols-1 gap-6 max-w-lg">
             {/* Old Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-600">
+              {/* 🟢 FIX: Added htmlFor and id */}
+              <label
+                htmlFor="old-password"
+                className="block text-sm font-medium text-gray-600"
+              >
                 Current Password
               </label>
               <div className="relative mt-1">
                 <input
+                  id="old-password"
                   type={showOld ? "text" : "password"}
                   name="oldPassword"
                   value={passwordData.oldPassword}
@@ -281,11 +316,16 @@ const DeliveryProfile = () => {
 
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-600">
+              {/* 🟢 FIX: Added htmlFor and id */}
+              <label
+                htmlFor="new-password"
+                className="block text-sm font-medium text-gray-600"
+              >
                 New Password
               </label>
               <div className="relative mt-1">
                 <input
+                  id="new-password"
                   type={showNew ? "text" : "password"}
                   name="newPassword"
                   value={passwordData.newPassword}
@@ -307,11 +347,16 @@ const DeliveryProfile = () => {
 
             {/* Confirm New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-600">
+              {/* 🟢 FIX: Added htmlFor and id */}
+              <label
+                htmlFor="confirm-password"
+                className="block text-sm font-medium text-gray-600"
+              >
                 Confirm New Password
               </label>
               <div className="relative mt-1">
                 <input
+                  id="confirm-password"
                   type={showConfirm ? "text" : "password"}
                   name="confirmPassword"
                   value={passwordData.confirmPassword}

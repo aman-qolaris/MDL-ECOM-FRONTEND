@@ -116,12 +116,17 @@ const AdminLogin = () => {
           className="space-y-5 relative z-10"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="admin-phone"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Phone Number
             </label>
             <div className="relative">
               <FaPhoneAlt className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="admin-phone" // 🟢 FIX: Added matching id
                 {...register("phone")}
                 type="tel"
                 maxLength={10}
@@ -135,12 +140,17 @@ const AdminLogin = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="admin-password"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Password
             </label>
             <div className="relative">
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="admin-password" // 🟢 FIX: Added matching id
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"

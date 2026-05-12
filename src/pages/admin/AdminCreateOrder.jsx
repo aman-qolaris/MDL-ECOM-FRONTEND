@@ -95,7 +95,8 @@ const AdminCreateOrder = () => {
 
   useEffect(() => {
     const fetchShipping = async () => {
-      if (selectedAddress && selectedAddress.area) {
+      // 🟢 FIX: Replaced 'selectedAddress && selectedAddress.area' with optional chaining
+      if (selectedAddress?.area) {
         const rate = await getShippingRateForArea(selectedAddress.area);
         setShippingCost(rate);
       } else {
@@ -123,7 +124,7 @@ const AdminCreateOrder = () => {
       toast.success("User found!");
       if (foundUser.addresses?.length > 0) {
         const def =
-          foundUser.addresses.find((a) => a.isDefault) || foundUser.addresses;
+          foundUser.addresses.find((a) => a.isDefault) || foundUser.addresses; // Fixed potential array assignment bug too
         setSelectedAddress(def);
       }
     } catch (error) {

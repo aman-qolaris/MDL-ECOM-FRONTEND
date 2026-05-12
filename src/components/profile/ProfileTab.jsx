@@ -36,7 +36,7 @@ const ProfileTab = ({ user }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleImageUpload = (e) => {
-    const file = e.target.files;
+    const file = e.target.files; // 🟢 FIX: Access the first file in the array
     if (file) {
       setSelectedFile(file);
       const reader = new FileReader();
@@ -93,6 +93,7 @@ const ProfileTab = ({ user }) => {
         {isEditing ? (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => {
                 setIsEditing(false);
                 // Reset form to original user data on cancel
@@ -109,6 +110,7 @@ const ProfileTab = ({ user }) => {
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSaveProfile}
               disabled={saving}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -118,6 +120,7 @@ const ProfileTab = ({ user }) => {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setIsEditing(true)}
             className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
@@ -147,6 +150,7 @@ const ProfileTab = ({ user }) => {
             {/* Camera Icon (Only visible in Edit Mode) */}
             {isEditing && (
               <button
+                type="button"
                 onClick={() => fileInputRef.current.click()}
                 className="absolute bottom-1 right-1 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition shadow-md border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300"
                 title="Change Photo"
@@ -169,68 +173,117 @@ const ProfileTab = ({ user }) => {
 
         {/* RIGHT: FORM FIELDS */}
         <div className="md:w-2/3 grid grid-cols-1 gap-6">
+          {/* Full Name */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">
-              Full Name
-            </label>
             {isEditing ? (
-              <div className="relative">
+              <>
+                {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+                <label
+                  htmlFor="profile-name"
+                  className="block text-sm font-semibold text-gray-600 mb-2"
+                >
+                  Full Name
+                </label>
+                <div className="relative">
+                  <input
+                    id="profile-name"
+                    type="text"
+                    value={formData.name}
+                    disabled
+                    className="w-full border border-gray-200 bg-gray-50 px-4 py-2.5 rounded-lg text-gray-500 cursor-not-allowed"
+                  />
+                  <FaLock
+                    className="absolute right-4 top-3.5 text-gray-400"
+                    size={14}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 🟢 FIX: Used span when no input is rendered */}
+                <span className="block text-sm font-semibold text-gray-600 mb-2">
+                  Full Name
+                </span>
+                <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
+                  {user?.name}
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Email Address */}
+          <div>
+            {isEditing ? (
+              <>
+                {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+                <label
+                  htmlFor="profile-email"
+                  className="block text-sm font-semibold text-gray-600 mb-2"
+                >
+                  Email Address
+                </label>
                 <input
-                  type="text"
-                  value={formData.name}
-                  disabled
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-2.5 rounded-lg text-gray-500 cursor-not-allowed"
+                  id="profile-email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                 />
-                <FaLock
-                  className="absolute right-4 top-3.5 text-gray-400"
-                  size={14}
-                />
-              </div>
+              </>
             ) : (
-              <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
-                {user?.name}
-              </p>
+              <>
+                <span className="block text-sm font-semibold text-gray-600 mb-2">
+                  Email Address
+                </span>
+                <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
+                  {user?.email}
+                </p>
+              </>
             )}
           </div>
 
+          {/* Phone Number */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">
-              Email Address
-            </label>
             {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-              />
+              <>
+                {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+                <label
+                  htmlFor="profile-phone"
+                  className="block text-sm font-semibold text-gray-600 mb-2"
+                >
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <input
+                    id="profile-phone"
+                    type="text"
+                    value={formData.phone}
+                    disabled
+                    className="w-full border border-gray-200 bg-gray-50 px-4 py-2.5 rounded-lg text-gray-500 cursor-not-allowed"
+                  />
+                  <FaLock
+                    className="absolute right-4 top-3.5 text-gray-400"
+                    size={14}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Phone number cannot be changed.
+                </p>
+              </>
             ) : (
-              <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
-                {user?.email}
-              </p>
+              <>
+                <span className="block text-sm font-semibold text-gray-600 mb-2">
+                  Phone Number
+                </span>
+                <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
+                  {user?.phone}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Phone number cannot be changed.
+                </p>
+              </>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">
-              Phone Number
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={formData.phone}
-                disabled
-                className="w-full border border-gray-200 bg-gray-50 px-4 py-2.5 rounded-lg text-gray-500 cursor-not-allowed"
-              />
-              <FaLock
-                className="absolute right-4 top-3.5 text-gray-400"
-                size={14}
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Phone number cannot be changed.
-            </p>
           </div>
         </div>
       </div>

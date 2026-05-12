@@ -88,10 +88,15 @@ const SecurityTab = ({ userId }) => {
       <form onSubmit={handlePasswordChange} className="max-w-lg">
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+            <label
+              htmlFor="current-password"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
               Current Password
             </label>
             <input
+              id="current-password"
               type="password"
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
@@ -104,10 +109,15 @@ const SecurityTab = ({ userId }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+            <label
+              htmlFor="new-password"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
               New Password
             </label>
             <input
+              id="new-password"
               type="password"
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
@@ -120,10 +130,15 @@ const SecurityTab = ({ userId }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            {/* 🟢 FIX: Added htmlFor and id to link label and input */}
+            <label
+              htmlFor="confirm-password"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
               Confirm New Password
             </label>
             <input
+              id="confirm-password"
               type="password"
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"

@@ -110,10 +110,15 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
       >
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Added htmlFor to match input id */}
+          <label
+            htmlFor="boy-name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Name
           </label>
           <input
+            id="boy-name"
             type="text"
             placeholder="John Doe"
             required
@@ -125,10 +130,14 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="boy-email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email
           </label>
           <input
+            id="boy-email"
             type="email"
             placeholder="john@example.com"
             required
@@ -140,11 +149,15 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
         {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="boy-password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Temporary Password
           </label>
           <div className="relative">
             <input
+              id="boy-password"
               type={showPassword ? "text" : "password"}
               required
               className="w-full border border-gray-300 p-2.5 rounded-lg pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -164,7 +177,10 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
         {/* Phone */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="boy-phone"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Phone Number
           </label>
           <div className="flex">
@@ -172,6 +188,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
               +91
             </span>
             <input
+              id="boy-phone"
               type="text"
               placeholder="9876543210"
               required
@@ -188,10 +205,14 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
         {/* City (Locked) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="boy-city"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             City
           </label>
           <input
+            id="boy-city"
             type="text"
             className="w-full border border-gray-300 p-2.5 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed outline-none"
             value={city}
@@ -201,10 +222,14 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
         {/* Max Orders */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="boy-max-orders"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Max Daily Orders
           </label>
           <input
+            id="boy-max-orders"
             type="number"
             min="1"
             className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -214,7 +239,11 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
         </div>
 
         <div className="md:col-span-2 lg:col-span-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* 🟢 FIX: Linked the label to the dropdown toggle button for screen readers */}
+          <label
+            htmlFor="areas-toggle"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Assigned Delivery Areas <span className="text-red-500">*</span>
           </label>
 
@@ -240,6 +269,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
 
               {/* Toggle Dropdown Button */}
               <button
+                id="areas-toggle"
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex-1 min-w-[150px] text-left bg-transparent focus:outline-none text-sm text-gray-400 flex justify-between items-center py-1"
@@ -263,6 +293,7 @@ const DeliveryBoyForm = ({ onBoyAdded }) => {
                   </div>
                 ) : (
                   availableAreas.map((area) => (
+                    // 🟢 ALREADY CORRECT: The input is wrapped inside the label here
                     <label
                       key={area}
                       className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-50 last:border-none transition-colors ${assignedAreas.includes(area) ? "bg-blue-50/50" : ""}`}

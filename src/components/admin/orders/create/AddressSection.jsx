@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from "prop-types"; // 🟢 Added PropTypes import
+import PropTypes from "prop-types";
 import { FiAlertCircle, FiMapPin } from "react-icons/fi";
 
 const AddressSection = ({
@@ -26,6 +26,7 @@ const AddressSection = ({
       {user.addresses && user.addresses.length > 0 ? (
         <div className="space-y-2 mb-4">
           <select
+            aria-label="Select Delivery Address" // 🟢 Added aria-label for accessibility
             value={selectedAddress?.id || ""}
             onChange={(e) =>
               setSelectedAddress(
@@ -63,8 +64,12 @@ const AddressSection = ({
         >
           {/* Address Line 1 */}
           <div>
-            <label className="text-xs text-gray-500">Address Line 1</label>
+            {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+            <label htmlFor="addressLine1" className="text-xs text-gray-500">
+              Address Line 1
+            </label>
             <input
+              id="addressLine1"
               {...registerAddress("addressLine1", {
                 required: "Address is required",
               })}
@@ -80,8 +85,12 @@ const AddressSection = ({
 
           {/* Delivery Area (Dropdown) */}
           <div>
-            <label className="text-xs text-gray-500">Delivery Area</label>
+            {/* 🟢 FIX: Linked label to select via htmlFor and id */}
+            <label htmlFor="area" className="text-xs text-gray-500">
+              Delivery Area
+            </label>
             <select
+              id="area"
               {...registerAddress("area", {
                 required: "Area is required",
               })}
@@ -89,7 +98,6 @@ const AddressSection = ({
             >
               <option value="">-- Select Area --</option>
               {availableAreas && availableAreas.length > 0 ? (
-                // 🟢 Fix: Removed idx from map, used unique area string as key
                 availableAreas.map((area) => (
                   <option key={area} value={area}>
                     {area}
@@ -107,8 +115,12 @@ const AddressSection = ({
           {/* City & State (Locked) */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-gray-500">City</label>
+              {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+              <label htmlFor="city" className="text-xs text-gray-500">
+                City
+              </label>
               <input
+                id="city"
                 {...registerAddress("city")}
                 value={FIXED_CITY}
                 readOnly
@@ -116,8 +128,12 @@ const AddressSection = ({
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500">State</label>
+              {/* 🟢 FIX: Linked label to input via htmlFor and id */}
+              <label htmlFor="state" className="text-xs text-gray-500">
+                State
+              </label>
               <input
+                id="state"
                 {...registerAddress("state")}
                 value={FIXED_STATE}
                 readOnly
@@ -141,7 +157,6 @@ const AddressSection = ({
   );
 };
 
-// 🟢 Fix: Added comprehensive PropTypes validation mapping nested objects
 AddressSection.propTypes = {
   user: PropTypes.shape({
     addresses: PropTypes.arrayOf(

@@ -53,6 +53,7 @@ const BankDetailsTab = ({ user }) => {
     } catch (error) {
       console.error(error);
       globalThis.alert("Failed to update bank details.");
+    } finally {
       setSaving(false);
     }
   };
@@ -67,6 +68,7 @@ const BankDetailsTab = ({ user }) => {
         {isEditing ? (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => {
                 setIsEditing(false);
                 // Reset form
@@ -81,6 +83,7 @@ const BankDetailsTab = ({ user }) => {
               <FaTimes /> Cancel
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold shadow-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -90,6 +93,7 @@ const BankDetailsTab = ({ user }) => {
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setIsEditing(true)}
             className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
@@ -102,66 +106,103 @@ const BankDetailsTab = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Bank Name */}
         <div>
-          <label className="block text-sm font-semibold text-gray-600 mb-2">
-            Bank Name
-          </label>
           {isEditing ? (
-            <input
-              type="text"
-              name="bankName"
-              value={formData.bankName}
-              onChange={handleChange}
-              placeholder="e.g. HDFC Bank"
-              className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <>
+              {/* 🟢 FIX: Used htmlFor and id to link label and input */}
+              <label
+                htmlFor="bankName"
+                className="block text-sm font-semibold text-gray-600 mb-2"
+              >
+                Bank Name
+              </label>
+              <input
+                id="bankName"
+                type="text"
+                name="bankName"
+                value={formData.bankName}
+                onChange={handleChange}
+                placeholder="e.g. HDFC Bank"
+                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </>
           ) : (
-            <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
-              {user.bankName || "Not provided"}
-            </p>
+            <>
+              {/* 🟢 FIX: Used a span in read-only mode so screen readers don't look for a missing input */}
+              <span className="block text-sm font-semibold text-gray-600 mb-2">
+                Bank Name
+              </span>
+              <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2">
+                {user.bankName || "Not provided"}
+              </p>
+            </>
           )}
         </div>
 
         {/* IFSC Code */}
         <div>
-          <label className="block text-sm font-semibold text-gray-600 mb-2">
-            IFSC Code
-          </label>
           {isEditing ? (
-            <input
-              type="text"
-              name="ifscCode"
-              value={formData.ifscCode}
-              onChange={handleChange}
-              placeholder="e.g. HDFC0001234"
-              className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase"
-            />
+            <>
+              {/* 🟢 FIX: Used htmlFor and id to link label and input */}
+              <label
+                htmlFor="ifscCode"
+                className="block text-sm font-semibold text-gray-600 mb-2"
+              >
+                IFSC Code
+              </label>
+              <input
+                id="ifscCode"
+                type="text"
+                name="ifscCode"
+                value={formData.ifscCode}
+                onChange={handleChange}
+                placeholder="e.g. HDFC0001234"
+                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase"
+              />
+            </>
           ) : (
-            <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2 uppercase">
-              {user.ifscCode || "Not provided"}
-            </p>
+            <>
+              <span className="block text-sm font-semibold text-gray-600 mb-2">
+                IFSC Code
+              </span>
+              <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2 uppercase">
+                {user.ifscCode || "Not provided"}
+              </p>
+            </>
           )}
         </div>
 
         {/* Account Number */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-600 mb-2">
-            Account Number
-          </label>
           {isEditing ? (
-            <input
-              type="text"
-              name="accountNumber"
-              value={formData.accountNumber}
-              onChange={handleChange}
-              placeholder="Enter Account Number"
-              className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <>
+              {/* 🟢 FIX: Used htmlFor and id to link label and input */}
+              <label
+                htmlFor="accountNumber"
+                className="block text-sm font-semibold text-gray-600 mb-2"
+              >
+                Account Number
+              </label>
+              <input
+                id="accountNumber"
+                type="text"
+                name="accountNumber"
+                value={formData.accountNumber}
+                onChange={handleChange}
+                placeholder="Enter Account Number"
+                className="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </>
           ) : (
-            <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2 tracking-wider">
-              {user.accountNumber
-                ? `XXXX-XXXX-${String(user.accountNumber).slice(-4)}`
-                : "Not provided"}
-            </p>
+            <>
+              <span className="block text-sm font-semibold text-gray-600 mb-2">
+                Account Number
+              </span>
+              <p className="text-gray-900 font-medium text-lg border-b border-gray-100 pb-2 tracking-wider">
+                {user.accountNumber
+                  ? `XXXX-XXXX-${String(user.accountNumber).slice(-4)}`
+                  : "Not provided"}
+              </p>
+            </>
           )}
         </div>
       </div>

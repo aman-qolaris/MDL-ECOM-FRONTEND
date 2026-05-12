@@ -113,12 +113,17 @@ const Login = () => {
         >
           {/* Phone Number Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="login-phone"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Phone Number
             </label>
             <div className="relative">
               <FaPhoneAlt className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="login-phone" // 🟢 FIX: Added id matching the htmlFor
                 {...register("phone")}
                 type="tel"
                 maxLength={10}
@@ -133,12 +138,17 @@ const Login = () => {
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="login-password"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Password
             </label>
             <div className="relative">
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="login-password" // 🟢 FIX: Added id matching the htmlFor
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"

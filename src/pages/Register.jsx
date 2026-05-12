@@ -134,12 +134,17 @@ const Register = () => {
         >
           {/* Name Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="register-name"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Full Name <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaUser className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="register-name" // 🟢 FIX: Added id matching the htmlFor
                 {...register("name")}
                 type="text"
                 placeholder="John Doe"
@@ -154,7 +159,11 @@ const Register = () => {
 
           {/* Email Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="register-email"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Email Address{" "}
               <span className="text-xs text-gray-400 font-normal">
                 (Optional)
@@ -163,6 +172,7 @@ const Register = () => {
             <div className="relative">
               <FaEnvelope className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="register-email" // 🟢 FIX: Added id matching the htmlFor
                 {...register("email")}
                 type="email"
                 placeholder="john@example.com"
@@ -176,12 +186,17 @@ const Register = () => {
 
           {/* Phone Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="register-phone"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Phone Number <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaPhoneAlt className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="register-phone" // 🟢 FIX: Added id matching the htmlFor
                 {...register("phone")}
                 type="tel"
                 placeholder="9876543210"
@@ -199,12 +214,17 @@ const Register = () => {
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="register-password"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="register-password" // 🟢 FIX: Added id matching the htmlFor
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
@@ -226,12 +246,17 @@ const Register = () => {
 
           {/* Confirm Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 pl-1">
+            {/* 🟢 FIX: Added htmlFor to link label to input */}
+            <label
+              htmlFor="register-confirm-password"
+              className="block text-sm font-medium text-gray-700 mb-1 pl-1"
+            >
               Confirm Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <FaLock className="absolute top-3.5 left-3 text-gray-400" />
               <input
+                id="register-confirm-password" // 🟢 FIX: Added id matching the htmlFor
                 {...register("confirmPassword")}
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"

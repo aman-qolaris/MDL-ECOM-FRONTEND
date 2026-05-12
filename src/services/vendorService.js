@@ -45,8 +45,6 @@ export const loginVendor = async (credentials) => {
 export const getVendorDashboardStats = async (dateFilter = null) => {
   try {
     // REPLACED direct axios calls with api.get()
-    // The interceptor in api.js will automatically attach the Vendor Token
-    // and use the correct Base URL.
     const [ordersRes, productsRes] = await Promise.all([
       api.get("/orders/vendor/orders"),
       api.get("/products/vendor/my-products"),
@@ -56,6 +54,7 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
     const products = productsRes.data;
 
     // --- APPLY DATE FILTER IF PROVIDED ---
+    // 🟢 FIX: Used optional chaining for dateFilter properties
     if (dateFilter?.start && dateFilter?.end) {
       orders = orders.filter((item) =>
         isWithinRange(item.createdAt, dateFilter.start, dateFilter.end),
@@ -79,9 +78,10 @@ export const getVendorDashboardStats = async (dateFilter = null) => {
       .reduce((acc, item) => acc + (Number.parseFloat(item.price) || 0), 0);
 
     // Today's Orders
-    const todayStr = new Date().toISOString().split("T");
-    const todayOrders = orders.filter(
-      (item) => item.createdAt && item.createdAt.startsWith(todayStr),
+    // 🟢 FIX: Used optional chaining to access the first element of the split array safely
+    const todayStr = new Date().toISOString().split("T")?.[0];
+    const todayOrders = orders.filter((item) =>
+      item.createdAt?.startsWith(todayStr),
     ).length;
 
     // Pending Orders

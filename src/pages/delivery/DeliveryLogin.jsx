@@ -67,7 +67,6 @@ const DeliveryLogin = () => {
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] p-4 relative overflow-hidden">
-      {/* CSS for custom animations */}
       <style>{`
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
@@ -75,28 +74,19 @@ const DeliveryLogin = () => {
           66% { transform: translate(-20px, 20px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
         }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
-        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 
-      {/* Background Blobs */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
       <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
 
-      {/* GLASS CARD */}
       <div className="bg-white/70 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50 relative z-10 animate-fadeIn">
-        {/* Header Icon */}
         <div className="flex justify-center mb-6">
           <div className="bg-gradient-to-tr from-green-100 to-emerald-100 p-4 rounded-full text-green-600 shadow-md ring-4 ring-white/50">
             <FaTruck size={32} />
@@ -119,32 +109,42 @@ const DeliveryLogin = () => {
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Phone Number Field */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 pl-1">
+            {/* ✅ FIX: Added htmlFor linking to input id */}
+            <label
+              htmlFor="delivery-phone"
+              className="block text-sm font-semibold text-gray-700 mb-2 pl-1"
+            >
               Phone Number
             </label>
             <div className="relative group">
               <FaPhoneAlt className="absolute top-3.5 left-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
               <input
+                id="delivery-phone" // ✅ FIX: Matches htmlFor above
                 type="text"
                 required
-                maxLength="10" // ✅ HTML limit
+                maxLength="10"
                 className="w-full pl-11 pr-4 py-3 rounded-xl bg-gray-50/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none transition-all duration-300 shadow-sm"
                 placeholder="Enter 10-digit mobile number"
                 value={phone}
-                onChange={handlePhoneChange} // ✅ Use custom handler
-                inputMode="numeric" // ✅ Shows number pad on mobile
+                onChange={handlePhoneChange}
+                inputMode="numeric"
               />
             </div>
           </div>
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 pl-1">
+            {/* ✅ FIX: Added htmlFor linking to input id */}
+            <label
+              htmlFor="delivery-password"
+              className="block text-sm font-semibold text-gray-700 mb-2 pl-1"
+            >
               Password
             </label>
             <div className="relative group">
               <FaLock className="absolute top-3.5 left-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
               <input
+                id="delivery-password" // ✅ FIX: Matches htmlFor above
                 type={showPassword ? "text" : "password"}
                 required
                 className="w-full pl-11 pr-12 py-3 rounded-xl bg-gray-50/50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none transition-all duration-300 shadow-sm"
@@ -156,6 +156,7 @@ const DeliveryLogin = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute top-3.5 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"} // ✅ bonus: fixes icon-only button accessibility
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>

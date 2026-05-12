@@ -105,17 +105,19 @@ const OrderItemCard = ({
   const isItemCancelled = item.status === "CANCELLED";
   const hasReturn = item.returnStatus && item.returnStatus !== "NONE";
 
+  // 🟢 FIX: Extracted nested ternary operation into an independent if/else block
+  let cardStyleClass = "bg-white border-gray-200";
+  if (hasReturn) {
+    cardStyleClass = "bg-orange-50/40 border-orange-200";
+  } else if (item.status === "PACKED") {
+    cardStyleClass = "bg-green-50 border-green-200";
+  } else if (isItemCancelled) {
+    cardStyleClass = "bg-red-50 border-red-200 opacity-75";
+  }
+
   return (
     <div
-      className={`flex flex-col p-4 rounded-lg border transition ${
-        hasReturn
-          ? "bg-orange-50/40 border-orange-200"
-          : item.status === "PACKED"
-            ? "bg-green-50 border-green-200"
-            : isItemCancelled
-              ? "bg-red-50 border-red-200 opacity-75"
-              : "bg-white border-gray-200"
-      }`}
+      className={`flex flex-col p-4 rounded-lg border transition ${cardStyleClass}`}
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full">
         {/* PRODUCT INFO */}

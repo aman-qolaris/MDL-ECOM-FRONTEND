@@ -29,15 +29,19 @@ const RecentlyViewed = () => {
               <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <FaHistory />
               </span>
-              Recently Viewed
+              {/* 🟢 FIX: Wrapped raw text in a span to eliminate ambiguous spacing and let flex gap-2 handle it */}
+              <span>Recently Viewed</span>
             </h2>
 
             {recentProducts.length > 0 && (
               <button
+                type="button" // 🟢 Added type="button" for good measure
                 onClick={clearHistory}
-                className="text-xs sm:text-sm text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-2 font-medium"
+                className="text-xs sm:text-sm text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors flex items-center gap-2 font-medium focus:outline-none focus:ring-2 focus:ring-red-200"
               >
-                <FaTrash /> Clear
+                <FaTrash />
+                {/* 🟢 FIX: Wrapped raw text in a span here as well */}
+                <span>Clear</span>
               </button>
             )}
           </div>
@@ -53,8 +57,9 @@ const RecentlyViewed = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => navigate("/shop")}
-                className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
               >
                 Browse Products
               </button>

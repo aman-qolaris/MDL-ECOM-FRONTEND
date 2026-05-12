@@ -38,8 +38,8 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
 
   return (
     <div
-      // 🟢 FIX: Cleaned up the broken 'z-' class and moved inline style to Tailwind arbitrary value
-      className="fixed inset-0 z- flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+      // 🟢 FIX: Fixed the broken 'z-' class to 'z-50'
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
         {/* Header */}
@@ -48,6 +48,7 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
             {title || "Cancel Order"}
           </h3>
           <button
+            type="button" // 🟢 Added type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-200 rounded p-1"
           >
@@ -72,31 +73,44 @@ const CancelRequestModal = ({ isOpen, onClose, onSubmit, loading, title }) => {
 
           {/* Reasons */}
           <div className="space-y-4 mb-6">
-            <label className="block text-sm font-bold text-gray-700">
+            {/* 🟢 FIX: Changed <label> to <p> since it's a heading for a group, not a specific input control */}
+            <p className="block text-sm font-bold text-gray-700">
               Reason for Cancellation <span className="text-red-500">*</span>
-            </label>
+            </p>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-              {cancelReasons.map((r) => (
-                <label
-                  key={r}
-                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
-                    reason === r
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="cancelReason"
-                    value={r}
-                    checked={reason === r}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer"
-                  />
-                  <span className="text-sm font-medium text-gray-700">{r}</span>
-                </label>
-              ))}
+            <div
+              role="radiogroup"
+              aria-label="Reason for cancellation"
+              className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar"
+            >
+              {cancelReasons.map((r, index) => {
+                const uniqueId = `cancel-reason-${index}`;
+                return (
+                  // 🟢 FIX: Added htmlFor to explicitly link the label to the radio input
+                  <label
+                    key={r}
+                    htmlFor={uniqueId}
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                      reason === r
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      id={uniqueId} // 🟢 FIX: Added matching id
+                      type="radio"
+                      name="cancelReason"
+                      value={r}
+                      checked={reason === r}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {r}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
 
             {/* Error */}
